@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>img/icons8-clear-48.png</file>
+        <file>img/icons8-mute-48.png</file>
+        <file>img/icons8-pause-48.png</file>
+        <file>img/icons8-play-48.png</file>
+        <file>img/icons8-sound-48.png</file>
+        <file>img/icons8-stop-48.png</file>
+    </qresource>
+</RCC>

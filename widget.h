@@ -40,6 +40,7 @@ private slots:
         void handleSliderMoved(int position);        // NEW
  void handleMediaError(QMediaPlayer::Error error);
 void updateLastTrackPosition(qint64 position);
+ void handlePauseButton();
 private:
  int m_lastTrackIndex;     // index of last playing track
    qint64 m_lastTrackPosition; // position in milliseconds
