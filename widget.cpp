@@ -23,7 +23,7 @@ Widget::Widget(QWidget *parent)
       m_isMuted(false)
 {
     ui->setupUi(this);
-    setWindowTitle ("Player");
+    setWindowTitle ("AudioPlayer");
     setAcceptDrops(true);
 
     m_player->setPlaylist(m_playlist);

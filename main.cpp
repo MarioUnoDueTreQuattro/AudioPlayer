@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     QCoreApplication::setOrganizationName("andreag");
-    QCoreApplication::setApplicationName("Player");
+    QCoreApplication::setApplicationName("AudioPlayer");
     QString serverName = "SingleInstancePlayerUniqueServer";
 
     SingleInstance instance(serverName);
