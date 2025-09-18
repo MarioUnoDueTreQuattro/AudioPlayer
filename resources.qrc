@@ -6,5 +6,12 @@
         <file>img/icons8-play-48.png</file>
         <file>img/icons8-sound-48.png</file>
         <file>img/icons8-stop-48.png</file>
+        <file>img/icons8-wrench-48.png</file>
+        <file>img/icons8-loop-48.png</file>
+        <file>img/icons8-random-48.png</file>
+        <file>img/icons8-right-48.png</file>
+        <file>img/icons8-fast-forward-48.png</file>
+        <file>img/icons8-repeat-one-48.png</file>
+        <file>img/icons8-rewind-48.png</file>
     </qresource>
 </RCC>

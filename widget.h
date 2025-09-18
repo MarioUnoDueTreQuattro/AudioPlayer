@@ -5,6 +5,7 @@
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
 #include <QListWidgetItem>
+#include <QStack>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -25,8 +26,11 @@ protected:
     // Enable drag & drop
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
+    void handleModeButton();  // NEW slot
+    void updateModeButtonIcon(); // Helper to update icon
     void handlePlayButton();
     void handleStopButton();
     void handleClearButton();
@@ -36,20 +40,25 @@ private slots:
     void handleVolumeChanged(int value);
     void handleMuteButton();
     void handlePositionChanged(qint64 position);  // NEW
-        void handleDurationChanged(qint64 duration);  // NEW
-        void handleSliderMoved(int position);        // NEW
- void handleMediaError(QMediaPlayer::Error error);
-void updateLastTrackPosition(qint64 position);
- void handlePauseButton();
+    void handleDurationChanged(qint64 duration);  // NEW
+    void handleSliderMoved(int position);        // NEW
+    void handleMediaError(QMediaPlayer::Error error);
+    void updateLastTrackPosition(qint64 position);
+    void handlePauseButton();
+    void on_prevButton_clicked();
+    void on_nextButton_clicked();
+    void on_configureButton_clicked();
+
 private:
- int m_lastTrackIndex;     // index of last playing track
-   qint64 m_lastTrackPosition; // position in milliseconds
-   int m_lastVolume;                       // remember last non-mute volume
+    QStack<int> m_shuffleHistory;  // store played indices in shuffle mode
+    int m_lastTrackIndex;     // index of last playing track
+    qint64 m_lastTrackPosition; // position in milliseconds
+    int m_lastVolume;                       // remember last non-mute volume
     bool m_isMuted;
     void addFileToPlaylist(const QString &filePath);
     void loadSettings();                    // <--- NEW
-      void saveSettings();
-      void updateMuteButtonIcon();
+    void saveSettings();
+    void updateMuteButtonIcon();
     Ui::Widget *ui;
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;

@@ -13,6 +13,9 @@
 #include <QDir>
 #include <QFileInfoList>
 #include <QDirIterator>
+#include <QRandomGenerator>
+#include <QScreen>
+#include <QGuiApplication>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -54,12 +57,38 @@ Widget::Widget(QWidget *parent)
         this, SLOT(handleMediaError(QMediaPlayer::Error)));
     connect(m_player, SIGNAL(positionChanged(qint64)),
         this, SLOT(updateLastTrackPosition(qint64)));
+    connect(ui->modeButton, SIGNAL(clicked()), this, SLOT(handleModeButton()));
 }
 
 Widget::~Widget()
 {
-    saveSettings();
+    // saveSettings();
     delete ui;
+}
+
+void Widget::closeEvent(QCloseEvent *event)
+{
+    QSettings settings(QApplication::organizationName(),
+        QApplication::applicationName());
+    // Save window geometry & state
+    settings.setValue("windowGeometry", saveGeometry());
+    // settings.setValue("windowState", saveState());
+    // Save volume & mute
+    settings.setValue("volume", m_lastVolume);
+    settings.setValue("muted", m_isMuted);
+    // Save playlist files
+    QStringList playlistFiles;
+    for (int i = 0; i < m_playlist->mediaCount(); ++i)
+    {
+        QUrl url = m_playlist->media(i).canonicalUrl();
+        if (url.isLocalFile())
+            playlistFiles << url.toLocalFile();
+    }
+    settings.setValue("playlistFiles", playlistFiles);
+    // Save last track & position
+    settings.setValue("lastTrackIndex", m_playlist->currentIndex());
+    settings.setValue("lastTrackPosition", m_player->position());
+    QWidget::closeEvent(event); // call base implementation
 }
 
 void Widget::openFiles(const QStringList &filePaths)
@@ -67,26 +96,57 @@ void Widget::openFiles(const QStringList &filePaths)
     this->showNormal();
     this->raise();
     this->activateWindow();
+    // for (const QString &path : filePaths)
+    // {
+    // addFileToPlaylist(path);
+    // }
+    // int trackToPlay = 0;
+    // if (m_playlist->mediaCount() > 0)
+    // {
+    //        // Restore last track index if valid
+    // if (m_lastTrackIndex >= 0 && m_lastTrackIndex < m_playlist->mediaCount())
+    // {
+    // trackToPlay = m_lastTrackIndex;
+    // }
+    // m_playlist->setCurrentIndex(trackToPlay);
+    // m_player->play();
+    //        // Restore last position if available
+    // if (m_lastTrackPosition > 0)
+    // {
+    // m_player->setPosition(m_lastTrackPosition);
+    // }
+    // }
+    int firstNewIndex = m_playlist->mediaCount(); // track where new files start
     for (const QString &path : filePaths)
     {
         addFileToPlaylist(path);
     }
     int trackToPlay = 0;
-    if (m_playlist->mediaCount() > 0)
+    if (!filePaths.isEmpty())
+    {
+        // Play the first newly added file
+        trackToPlay = firstNewIndex;
+        m_lastTrackPosition = 0; // start from beginning
+    }
+    else if (m_playlist->mediaCount() > 0)
     {
         // Restore last track index if valid
         if (m_lastTrackIndex >= 0 && m_lastTrackIndex < m_playlist->mediaCount())
         {
             trackToPlay = m_lastTrackIndex;
         }
+    }
+    if (m_playlist->mediaCount() > 0)
+    {
         m_playlist->setCurrentIndex(trackToPlay);
         m_player->play();
-        // Restore last position if available
-        if (m_lastTrackPosition > 0)
+        // Restore last position only if not starting a new file
+        if (filePaths.isEmpty() && m_lastTrackPosition > 0)
         {
             m_player->setPosition(m_lastTrackPosition);
         }
     }
+    saveSettings();
 }
 
 void Widget::addFileToPlaylist(const QString &filePath)
@@ -178,7 +238,7 @@ void Widget::dropEvent(QDropEvent *event)
     if (!files.isEmpty())
     {
         openFiles(files);
-        saveSettings(); // update saved playlist after new files are added
+        //saveSettings(); // update saved playlist after new files are added
     }
 }
 
@@ -259,9 +319,23 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
 
 void Widget::handleClearButton()
 {
-    m_player->stop();
-    m_playlist->clear();
-    ui->listWidget->clear();
+    // Ask for confirmation before clearing the playlist
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Clear Playlist",
+            "Are you sure you want to clear the playlist?",
+            QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes)
+    {
+        m_player->stop();
+        m_playlist->clear();
+        ui->listWidget->clear();
+        // Reset last track info
+        m_lastTrackIndex = -1;
+        m_lastTrackPosition = 0;
+        // Save the updated settings
+        saveSettings();
+    }
+    // if No, do nothing
 }
 
 void Widget::loadSettings()
@@ -294,6 +368,34 @@ void Widget::loadSettings()
         if (m_lastTrackPosition > 0)
             m_player->setPosition(m_lastTrackPosition);
     }
+    // Restore playback mode
+    int modeValue = settings.value("playbackMode", (int)QMediaPlaylist::Sequential).toInt();
+    m_playlist->setPlaybackMode(static_cast<QMediaPlaylist::PlaybackMode>(modeValue));
+    updateModeButtonIcon();
+    // --- Restore window geometry ---
+    QByteArray geometry = settings.value("windowGeometry").toByteArray();
+    if (!geometry.isEmpty())
+        restoreGeometry(geometry);
+    // Ensure window is fully visible on any screen
+    QRect winRect = frameGeometry();
+    bool visibleOnAnyScreen = false;
+    for (QScreen * screen : QGuiApplication::screens())
+    {
+        if (screen->availableGeometry().contains(winRect))
+        {
+            visibleOnAnyScreen = true;
+            break;
+        }
+    }
+    if (!visibleOnAnyScreen)
+    {
+        // Move to primary screen center
+        QRect primaryRect = QGuiApplication::primaryScreen()->availableGeometry();
+        int x = primaryRect.x() + (primaryRect.width() - winRect.width()) / 2;
+        int y = primaryRect.y() + (primaryRect.height() - winRect.height()) / 2;
+        move(x, y);
+    }
+    // restoreState(settings.value("windowState").toByteArray());
 }
 
 void Widget::saveSettings()
@@ -315,6 +417,10 @@ void Widget::saveSettings()
     // Last track & position
     settings.setValue("lastTrackIndex", m_playlist->currentIndex());
     settings.setValue("lastTrackPosition", m_player->position());
+    // Save playback mode
+    settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
+    // Save window position and size
+    settings.setValue("windowGeometry", saveGeometry());
 }
 
 // ------------------- Slots -------------------
@@ -415,4 +521,127 @@ void Widget::handleMediaError(QMediaPlayer::Error error)
 void Widget::updateLastTrackPosition(qint64 position)
 {
     m_lastTrackPosition = position;
+}
+
+void Widget::on_nextButton_clicked()
+{
+    if (m_playlist->mediaCount() == 0)
+        return;
+    QMediaPlaylist::PlaybackMode currentMode = m_playlist->playbackMode();
+    if (currentMode == QMediaPlaylist::Random)
+    {
+        int count = m_playlist->mediaCount();
+        if (count > 1)
+        {
+            int currentIndex = m_playlist->currentIndex();
+            if (currentIndex >= 0)
+                m_shuffleHistory.push(currentIndex);  // remember current before moving
+            int newIndex;
+            do
+            {
+                newIndex = QRandomGenerator::global()->bounded(count);
+            }
+            while (newIndex == currentIndex);   // avoid picking same
+            m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+            m_playlist->setCurrentIndex(newIndex);
+            m_playlist->setPlaybackMode(currentMode);
+        }
+    }
+    else if (currentMode == QMediaPlaylist::CurrentItemInLoop)
+    {
+        int currentIndex = m_playlist->currentIndex();
+        int nextIndex = (currentIndex + 1) % m_playlist->mediaCount();
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        m_playlist->setCurrentIndex(nextIndex);
+        m_playlist->setPlaybackMode(currentMode);
+    }
+    else
+    {
+        m_playlist->next();
+    }
+    m_player->play();
+    saveSettings();
+}
+
+void Widget::on_prevButton_clicked()
+{
+    if (m_playlist->mediaCount() == 0)
+        return;
+    QMediaPlaylist::PlaybackMode currentMode = m_playlist->playbackMode();
+    if (currentMode == QMediaPlaylist::Random && !m_shuffleHistory.isEmpty())
+    {
+        int lastIndex = m_shuffleHistory.pop(); // go back to last track
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        m_playlist->setCurrentIndex(lastIndex);
+        m_playlist->setPlaybackMode(currentMode);
+    }
+    else if (currentMode == QMediaPlaylist::CurrentItemInLoop)
+    {
+        int currentIndex = m_playlist->currentIndex();
+        int prevIndex = (currentIndex - 1 + m_playlist->mediaCount()) % m_playlist->mediaCount();
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        m_playlist->setCurrentIndex(prevIndex);
+        m_playlist->setPlaybackMode(currentMode);
+    }
+    else
+    {
+        m_playlist->previous();
+    }
+    m_player->play();
+    saveSettings();
+}
+
+void Widget::on_configureButton_clicked()
+{
+}
+
+void Widget::handleModeButton()
+{
+    // Cycle through modes: Sequential -> Loop -> Random -> back to Sequential
+    QMediaPlaylist::PlaybackMode mode = m_playlist->playbackMode();
+    switch (mode)
+    {
+    case QMediaPlaylist::Sequential:
+        m_playlist->setPlaybackMode(QMediaPlaylist::Loop);  // Loop All
+        break;
+    case QMediaPlaylist::Loop:
+        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop);  // Loop One
+        break;
+    case QMediaPlaylist::CurrentItemInLoop:
+        m_playlist->setPlaybackMode(QMediaPlaylist::Random);  // Shuffle
+        break;
+    case QMediaPlaylist::Random:
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        break;
+    default:
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        break;
+    }
+    updateModeButtonIcon();
+    saveSettings();  // Save current mode
+}
+
+void Widget::updateModeButtonIcon()
+{
+    switch (m_playlist->playbackMode())
+    {
+    case QMediaPlaylist::Sequential:
+        ui->modeButton->setIcon(QIcon(":/img/img/icons8-right-48.png"));
+        ui->modeButton->setToolTip("Sequential mode");
+        break;
+    case QMediaPlaylist::Loop:
+        ui->modeButton->setIcon(QIcon(":/img/img/icons8-loop-48.png"));
+        ui->modeButton->setToolTip("Loop all tracks");
+        break;
+    case QMediaPlaylist::CurrentItemInLoop:
+        ui->modeButton->setIcon(QIcon(":/img/img/icons8-repeat-one-48.png"));
+        ui->modeButton->setToolTip("Repeat current track");
+        break;
+    case QMediaPlaylist::Random:
+        ui->modeButton->setIcon(QIcon(":/img/img/icons8-random-48.png"));
+        ui->modeButton->setToolTip("Shuffle mode");
+        break;
+    default:
+        break;
+    }
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>305</width>
-    <height>175</height>
+    <width>350</width>
+    <height>187</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -91,6 +91,12 @@
             <iconset resource="resources.qrc">
              <normaloff>:/img/img/icons8-mute-48.png</normaloff>:/img/img/icons8-mute-48.png</iconset>
            </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
           </widget>
          </item>
         </layout>
@@ -116,6 +122,12 @@
         <iconset resource="resources.qrc">
          <normaloff>:/img/img/icons8-play-48.png</normaloff>:/img/img/icons8-play-48.png</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
@@ -129,6 +141,12 @@
        <property name="icon">
         <iconset resource="resources.qrc">
          <normaloff>:/img/img/icons8-pause-48.png</normaloff>:/img/img/icons8-pause-48.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
        </property>
       </widget>
      </item>
@@ -144,6 +162,74 @@
         <iconset resource="resources.qrc">
          <normaloff>:/img/img/icons8-stop-48.png</normaloff>:/img/img/icons8-stop-48.png</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="prevButton">
+       <property name="toolTip">
+        <string>Previous</string>
+       </property>
+       <property name="statusTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/img/img/icons8-rewind-48.png</normaloff>:/img/img/icons8-rewind-48.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="nextButton">
+       <property name="toolTip">
+        <string>Next</string>
+       </property>
+       <property name="statusTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/img/img/icons8-fast-forward-48.png</normaloff>:/img/img/icons8-fast-forward-48.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="modeButton">
+       <property name="toolTip">
+        <string>Play mode</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
@@ -157,6 +243,32 @@
        <property name="icon">
         <iconset resource="resources.qrc">
          <normaloff>:/img/img/icons8-clear-48.png</normaloff>:/img/img/icons8-clear-48.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="configureButton">
+       <property name="toolTip">
+        <string>Configure</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/img/img/icons8-wrench-48.png</normaloff>:/img/img/icons8-wrench-48.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
        </property>
       </widget>
      </item>
