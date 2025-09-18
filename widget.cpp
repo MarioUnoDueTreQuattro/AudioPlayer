@@ -30,10 +30,9 @@ Widget::Widget(QWidget *parent)
     setAcceptDrops(true);
     m_player->setPlaylist(m_playlist);
     loadSettings();  // Load volume/mute state before connecting slider
-    // Apply loaded volume
+   // Apply loaded volume
     m_player->setVolume(m_lastVolume);
     ui->volumeSlider->setValue(m_lastVolume);
-    updateMuteButtonIcon();
     ui->listWidget -> setAlternatingRowColors(true);
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
     connect(ui->pauseButton, SIGNAL(clicked()), this, SLOT(handlePauseButton()));
@@ -75,7 +74,7 @@ void Widget::closeEvent(QCloseEvent *event)
     // settings.setValue("windowState", saveState());
     // Save volume & mute
     settings.setValue("volume", m_lastVolume);
-    settings.setValue("muted", m_isMuted);
+    //settings.setValue("muted", m_isMuted);
     // Save playlist files
     QStringList playlistFiles;
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
@@ -344,7 +343,8 @@ void Widget::loadSettings()
         QApplication::applicationName());
     // Volume
     m_lastVolume = settings.value("volume", 50).toInt();
-    m_isMuted = settings.value("muted", false).toBool();
+    //m_isMuted = settings.value("muted", false).toBool();
+    m_isMuted = false;          // force unmuted
     ui->volumeSlider->setValue(m_lastVolume);
     ui->volumeLabel->setText(QString::number(m_lastVolume) + "%");
     m_player->setVolume(m_isMuted ? 0 : m_lastVolume);
@@ -404,7 +404,7 @@ void Widget::saveSettings()
         QApplication::applicationName());
     // Volume
     settings.setValue("volume", m_lastVolume);
-    settings.setValue("muted", m_isMuted);
+    //settings.setValue("muted", m_isMuted);
     // Playlist files
     QStringList playlistFiles;
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
@@ -452,8 +452,9 @@ void Widget::handleMuteButton()
         m_player->setVolume(0);
         ui->volumeLabel->setText("0%");
     }
+
     updateMuteButtonIcon();
-    saveSettings();
+    //saveSettings(); // optional: still save the mute state if you want
 }
 
 void Widget::updateMuteButtonIcon()
