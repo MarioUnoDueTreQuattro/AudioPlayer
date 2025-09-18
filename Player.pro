@@ -33,5 +33,10 @@ RESOURCES += \
 
 RC_FILE = appicon.rc
 
+#win32:RC_ICONS = icons8-play-96.ico
+
 DISTFILES += \
     appicon.rc
+
+VERSION = 1.0.0.1
+DEFINES += APP_VERSION=\\\"$$VERSION\\\"

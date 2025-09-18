@@ -31,6 +31,7 @@ Widget::Widget(QWidget *parent)
     m_player->setVolume(m_lastVolume);
     ui->volumeSlider->setValue(m_lastVolume);
     updateMuteButtonIcon();
+    ui->listWidget -> setAlternatingRowColors(true);
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
     connect(ui->pauseButton, SIGNAL(clicked()), this, SLOT(handlePauseButton()));
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(handleStopButton()));
