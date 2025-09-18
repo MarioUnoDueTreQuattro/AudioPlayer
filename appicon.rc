@@ -1,6 +1,6 @@
 #include <windows.h>
 
-1 ICON "icons8-play-96.ico"
+IDI_ICON1 ICON "icons8-play-96.ico"
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,0,1
@@ -23,8 +23,8 @@ BEGIN
             VALUE "ProductName", "AudioPlayer\0"
             VALUE "ProductVersion", "1.0.0.1\0"
             VALUE "LegalCopyright", "© 2025 andreag\0"
-END
-    END
+        END   // end of "040904b0"
+    END       // end of "StringFileInfo"
 
     BLOCK "VarFileInfo"
     BEGIN

@@ -33,7 +33,7 @@ RESOURCES += \
 
 RC_FILE = appicon.rc
 
-#win32:RC_ICONS = icons8-play-96.ico
+win32:RC_ICONS = icons8-play-96.ico
 
 DISTFILES += \
     appicon.rc
