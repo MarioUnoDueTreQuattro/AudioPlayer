@@ -149,6 +149,12 @@ void Widget::openFiles(const QStringList &filePaths)
             m_player->setPosition(m_lastTrackPosition);
         }
     }
+    if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
+    {
+        m_shuffleHistory.clear(); // no history needed
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        updateModeButtonIcon();
+    }
     saveSettings();
 }
 
@@ -409,6 +415,12 @@ void Widget::loadSettings()
     // Start playback if playlist not empty
     if (m_playlist->mediaCount() > 0)
         m_player->play();
+    if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
+    {
+        m_shuffleHistory.clear(); // no history needed
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        updateModeButtonIcon();
+    }
 }
 
 void Widget::saveSettings()
@@ -433,7 +445,7 @@ void Widget::saveSettings()
     settings.setValue("lastTrackIndex", m_playlist->currentIndex());
     settings.setValue("lastTrackPosition", m_player->position());
     // --- Playback mode ---
-    settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
+    // settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
     // --- Window geometry ---
     //settings.setValue("windowGeometry", saveGeometry());
     settings.sync();
@@ -637,7 +649,9 @@ void Widget::handleModeButton()
         break;
     }
     updateModeButtonIcon();
-    saveSettings();  // Save current mode
+    QSettings settings;
+    settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
+    //saveSettings();  // Save current mode
 }
 
 void Widget::updateModeButtonIcon()
@@ -718,6 +732,12 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
         if (m_lastTrackPosition > 0)
             m_player->setPosition(m_lastTrackPosition);
     }
+    if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
+    {
+        m_shuffleHistory.clear(); // no history needed
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        updateModeButtonIcon();
+    }
 }
 
 void Widget::savePlaylistFile(const QString &path)
@@ -752,6 +772,7 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
     contextMenu.addSeparator();
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
+    QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
     QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
     saveAction->setIcon(QIcon(":/img/img/icons8-folder-save-48.png"));
     loadAction->setIcon(QIcon(":/img/img/icons8-folder-load-48.png"));
@@ -770,6 +791,10 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     {
         handleRemoveSelected();
     }
+    else if (selectedAction == clearExceptSelectedAction)
+    {
+        clearExceptSelected();
+    }
     else if (selectedAction == clearAction)
     {
         clearPlaylist(false); // ask confirmation
@@ -778,6 +803,42 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     {
         scrollToCurrentTrack ();
     }
+}
+
+void Widget::clearExceptSelected()
+{
+    int selectedRow = ui->listWidget->currentRow();
+    if (selectedRow < 0 || selectedRow >= m_playlist->mediaCount())
+        return;
+    QUrl currentTrackUrl = m_playlist->media(selectedRow).canonicalUrl();
+    qint64 currentPosition = m_player->position();
+    // Remove all items except the selected one
+    for (int i = m_playlist->mediaCount() - 1; i >= 0; --i)
+    {
+        if (i == selectedRow)
+            continue;
+        // Remove from shuffle history if used
+        for (int j = m_shuffleHistory.size() - 1; j >= 0; --j)
+        {
+            if (m_shuffleHistory[j] == i)
+                m_shuffleHistory.remove(j);
+            else if (m_shuffleHistory[j] > i)
+                m_shuffleHistory[j]--; // shift down
+        }
+        delete ui->listWidget->takeItem(i);
+        m_playlist->removeMedia(i);
+    }
+    // Keep the selected track
+    m_playlist->setCurrentIndex(0);
+    m_player->setPosition(currentPosition);
+    m_player->play();
+    if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
+    {
+        m_shuffleHistory.clear(); // no history needed
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        updateModeButtonIcon();
+    }
+    saveSettings();
 }
 
 void Widget::handleRemoveSelected()
@@ -848,6 +909,12 @@ void Widget::handleRemoveSelected()
             if (m_player->state() != QMediaPlayer::PlayingState)
                 m_player->play();
         }
+    }
+    if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
+    {
+        m_shuffleHistory.clear(); // no history needed
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        updateModeButtonIcon();
     }
     saveSettings(); // persist updated playlistFiles
 }

@@ -33,9 +33,10 @@ private slots:
     void updateModeButtonIcon(); // Helper to update icon
     void handlePlayButton();
     void handleStopButton();
-  void clearPlaylist(bool silent = false);
-  void handleClearPlaylist();
-  void handleItemDoubleClicked();
+    void clearExceptSelected();
+    void clearPlaylist(bool silent = false);
+    void handleClearPlaylist();
+    void handleItemDoubleClicked();
     void handleMediaStateChanged(QMediaPlayer::State state);
     void handlePlaylistCurrentIndexChanged(int index);
     void handleVolumeChanged(int value);
@@ -51,19 +52,19 @@ private slots:
     void on_configureButton_clicked();
     void handleSavePlaylist();
     void handleLoadPlaylist();
- void showPlaylistContextMenu(const QPoint &pos);
-   void handleRemoveSelected();
+    void showPlaylistContextMenu(const QPoint &pos);
+    void handleRemoveSelected();
 private:
-   void scrollToCurrentTrack();
-     QString m_lastPlaylistPath;
-     QStack<int> m_shuffleHistory;  // store played indices in shuffle mode
+    void scrollToCurrentTrack();
+    QString m_lastPlaylistPath;
+    QStack<int> m_shuffleHistory;  // store played indices in shuffle mode
     int m_lastTrackIndex;     // index of last playing track
     qint64 m_lastTrackPosition; // position in milliseconds
     int m_lastVolume;                       // remember last non-mute volume
     bool m_isMuted;
     void addFileToPlaylist(const QString &filePath);
     void loadPlaylistFile(const QString &path, bool restoreLastTrack = true);
-       void savePlaylistFile(const QString &path);
+    void savePlaylistFile(const QString &path);
     void loadSettings();                    // <--- NEW
     void saveSettings();
     void updateMuteButtonIcon();

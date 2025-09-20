@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     }
     // Try sending files to running instance
     bool connectedToPrimary = instance.sendMessageToPrimary(args);
-    if (connectedToPrimary && !args.isEmpty())
+    if (connectedToPrimary )//&& !args.isEmpty())
     {
         qDebug() << "Sent files to running instance. Exiting.";
         return 0;
