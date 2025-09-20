@@ -13,5 +13,8 @@
         <file>img/icons8-fast-forward-48.png</file>
         <file>img/icons8-repeat-one-48.png</file>
         <file>img/icons8-rewind-48.png</file>
+        <file>img/icons8-folder-load-48.png</file>
+        <file>img/icons8-folder-save-48.png</file>
+        <file>img/icons8-delete-48.png</file>
     </qresource>
 </RCC>
