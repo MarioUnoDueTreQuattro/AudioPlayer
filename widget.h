@@ -56,6 +56,8 @@ private slots:
     void showPlaylistContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
+    void playSilence(int ms = 500);
+    void playSilence2(int ms = 500);
     void scrollToCurrentTrack();
     QString m_lastPlaylistPath;
     QString m_lastDialogPlaylistPath;

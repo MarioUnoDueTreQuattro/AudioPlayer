@@ -19,6 +19,10 @@
 #include <QFileDialog>
 #include <QMenu>
 #include <QStandardPaths>
+#include <QThread>
+#include <QBuffer>
+#include <QAudioFormat>
+#include <QAudioOutput>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -62,6 +66,8 @@ Widget::~Widget()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
+    //qDebug() << "closeEvent";
+    //this->hide ();
     QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     // Save window geometry & state
     settings.setValue("windowGeometry", saveGeometry());
@@ -82,15 +88,120 @@ void Widget::closeEvent(QCloseEvent *event)
     settings.setValue("lastTrackIndex", m_playlist->currentIndex());
     settings.setValue("lastTrackPosition", m_player->position());
     settings.sync ();
-//    disconnect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
-//    disconnect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
-//    disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
-//    disconnect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChanged(qint64)));
-//    // disconnect(ui->positionSlider, SIGNAL(sliderMoved(int)),    this, SLOT(handleSliderMoved(int)));
-//    disconnect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(handleMediaError(QMediaPlayer::Error)));
-//    disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(updateLastTrackPosition(qint64)));
-    m_player->stop();
+    // disconnect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
+    // disconnect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
+    // disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
+    // disconnect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChanged(qint64)));
+    //    // disconnect(ui->positionSlider, SIGNAL(sliderMoved(int)),    this, SLOT(handleSliderMoved(int)));
+    // disconnect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(handleMediaError(QMediaPlayer::Error)));
+    // disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(updateLastTrackPosition(qint64)));
+    if (m_player)
+    {
+        // disconnect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
+        // disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
+        // disconnect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChanged(qint64)));
+        // disconnect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(handleMediaError(QMediaPlayer::Error)));
+        // disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(updateLastTrackPosition(qint64)));
+        // Disconnect signals
+        disconnect(m_player, nullptr, this, nullptr);
+        disconnect(m_playlist, nullptr, this, nullptr);
+        //m_playlist->clear();
+        m_player->stop();
+        playSilence(100);
+        // QAudioFormat af;
+        // QAudioOutput m_audioOutput = new QAudioOutput(af ,this);
+        // m_player->setAudioOutput(m_audioOutput);
+        // Clear playlist and delete objects
+        if (m_playlist)
+        {
+            //m_playlist->clear();
+            delete m_playlist;
+            m_playlist = nullptr;
+        }
+        delete m_player;
+        m_player = nullptr;
+    }
+    // Optional: give a short time to release audio device
+    // QCoreApplication::processEvents();
+    // QThread::msleep(500);
     QWidget::closeEvent(event); // call base implementation
+}
+
+void Widget::playSilence(int ms)
+{
+    // Configure a simple PCM format
+    QAudioFormat format;
+    format.setSampleRate(44100);
+    format.setChannelCount(2);
+    format.setSampleSize(16);
+    format.setCodec("audio/pcm");
+    format.setByteOrder(QAudioFormat::LittleEndian);
+    format.setSampleType(QAudioFormat::SignedInt);
+    // Prepare silent audio buffer
+    QByteArray silence(ms * format.sampleRate() * format.channelCount() * (format.sampleSize() / 8), 0);
+    QBuffer *buffer = new QBuffer(this);
+    buffer->setData(silence);
+    buffer->open(QIODevice::ReadOnly);
+    // Play through QAudioOutput
+    QAudioOutput *audioOut = new QAudioOutput(format, this);
+    audioOut->start(buffer);
+    // Delete after finished
+    connect(audioOut, &QAudioOutput::stateChanged, this, [buffer, audioOut](QAudio::State state)
+    {
+        if (state == QAudio::IdleState || state == QAudio::StoppedState)
+        {
+            audioOut->stop();
+            buffer->close();
+            buffer->deleteLater();
+            audioOut->deleteLater();
+        }
+    });
+}
+
+void Widget::playSilence2(int ms)
+{
+    // Stop current playback if needed
+    m_player->stop();
+    // Generate an in-memory silent WAV
+    QByteArray data;
+    QDataStream out(&data, QIODevice::WriteOnly);
+    out.setByteOrder(QDataStream::LittleEndian);
+    int sampleRate = 44100;
+    int numSamples = sampleRate * ms / 1000;
+    int numChannels = 2;
+    int bytesPerSample = 2; // 16-bit PCM
+    int byteRate = sampleRate * numChannels * bytesPerSample;
+    int dataSize = numSamples * numChannels * bytesPerSample;
+    // Write WAV header
+    out.writeRawData("RIFF", 4);
+    out << quint32(36 + dataSize);
+    out.writeRawData("WAVEfmt ", 8);
+    out << quint32(16);      // PCM chunk size
+    out << quint16(1);       // PCM format
+    out << quint16(numChannels);
+    out << quint32(sampleRate);
+    out << quint32(byteRate);
+    out << quint16(numChannels * bytesPerSample);
+    out << quint16(8 * bytesPerSample);
+    out.writeRawData("data", 4);
+    out << quint32(dataSize);
+    // Write silence samples (all zeros)
+    data.append(QByteArray(dataSize, 0));
+    // Play using QMediaPlayer
+    QBuffer *buffer = new QBuffer(this);
+    buffer->setData(data);
+    buffer->open(QIODevice::ReadOnly);
+    connect(m_player, &QMediaPlayer::mediaStatusChanged, this,
+        [buffer, this](QMediaPlayer::MediaStatus status)
+    {
+        if (status == QMediaPlayer::EndOfMedia || status == QMediaPlayer::InvalidMedia)
+        {
+            buffer->close();
+            buffer->deleteLater();
+        }
+    });
+    m_player->setMedia(QMediaContent(), buffer);
+    m_player->play();
 }
 
 void Widget::resizeEvent(QResizeEvent *event)
