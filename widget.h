@@ -33,8 +33,8 @@ private slots:
     void updateModeButtonIcon(); // Helper to update icon
     void handlePlayButton();
     void handleStopButton();
-  void handleClearButton(bool silent = false);
-  void onClearButtonClicked();
+  void clearPlaylist(bool silent = false);
+  void handleClearPlaylist();
   void handleItemDoubleClicked();
     void handleMediaStateChanged(QMediaPlayer::State state);
     void handlePlaylistCurrentIndexChanged(int index);
@@ -54,6 +54,7 @@ private slots:
  void showPlaylistContextMenu(const QPoint &pos);
    void handleRemoveSelected();
 private:
+   void scrollToCurrentTrack();
      QString m_lastPlaylistPath;
      QStack<int> m_shuffleHistory;  // store played indices in shuffle mode
     int m_lastTrackIndex;     // index of last playing track

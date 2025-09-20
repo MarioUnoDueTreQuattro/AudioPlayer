@@ -39,7 +39,6 @@ Widget::Widget(QWidget *parent)
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
     connect(ui->pauseButton, SIGNAL(clicked()), this, SLOT(handlePauseButton()));
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(handleStopButton()));
-    connect(ui->clearButton, SIGNAL(clicked()), this, SLOT(onClearButtonClicked()));
     connect(ui->volumeSlider, SIGNAL(valueChanged(int)), this, SLOT(handleVolumeChanged(int)));
     connect(ui->muteButton, SIGNAL(clicked()), this, SLOT(handleMuteButton())); // NEW
     connect(ui->listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)),
@@ -322,12 +321,12 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     }
 }
 
-void Widget::onClearButtonClicked()
+void Widget::handleClearPlaylist()
 {
-    handleClearButton(false); // normal behavior with confirmation
+    clearPlaylist(false); // normal behavior with confirmation
 }
 
-void Widget::handleClearButton(bool silent /* = false */)
+void Widget::clearPlaylist(bool silent /* = false */)
 {
     if (!silent)
     {
@@ -746,6 +745,9 @@ void Widget::savePlaylistFile(const QString &path)
 void Widget::showPlaylistContextMenu(const QPoint &pos)
 {
     QMenu contextMenu(this);
+    QAction *scrollToPlayingAction = contextMenu.addAction(tr("Scroll to currently playing"));
+    scrollToPlayingAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
+    contextMenu.addSeparator();
     QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
     QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
     contextMenu.addSeparator();
@@ -756,7 +758,7 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     clearAction->setIcon(QIcon(":/img/img/icons8-clear-48.png"));
     removeSelectedAction->setIcon(QIcon(":/img/img/icons8-delete-48.png"));
     QAction *selectedAction = contextMenu.exec(ui->listWidget->mapToGlobal(pos));
-  if (selectedAction == saveAction)
+    if (selectedAction == saveAction)
     {
         handleSavePlaylist();
     }
@@ -770,7 +772,11 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     }
     else if (selectedAction == clearAction)
     {
-        handleClearButton(false); // ask confirmation
+        clearPlaylist(false); // ask confirmation
+    }
+    else if (selectedAction == scrollToPlayingAction)
+    {
+        scrollToCurrentTrack ();
     }
 }
 
@@ -779,25 +785,21 @@ void Widget::handleRemoveSelected()
     QList<QListWidgetItem *> selectedItems = ui->listWidget->selectedItems();
     if (selectedItems.isEmpty())
         return;
-
     QUrl currentTrackUrl = m_playlist->currentMedia().canonicalUrl();
     qint64 currentPosition = m_player->position();
-
     // Sort items from bottom to top to avoid row shifting
     std::sort(selectedItems.begin(), selectedItems.end(),
-        [this](QListWidgetItem *a, QListWidgetItem *b) {
-            return ui->listWidget->row(a) > ui->listWidget->row(b);
-        });
-
+        [this](QListWidgetItem * a, QListWidgetItem * b)
+    {
+        return ui->listWidget->row(a) > ui->listWidget->row(b);
+    });
     bool currentRemoved = false;
-
     for (QListWidgetItem *item : selectedItems)
     {
         int row = ui->listWidget->row(item);
         QUrl trackUrl = m_playlist->media(row).canonicalUrl();
         if (trackUrl == currentTrackUrl)
             currentRemoved = true;
-
         // Remove any reference in shuffle history
         for (int i = m_shuffleHistory.size() - 1; i >= 0; --i)
         {
@@ -806,28 +808,23 @@ void Widget::handleRemoveSelected()
             else if (m_shuffleHistory[i] > row)
                 m_shuffleHistory[i]--; // shift down indices
         }
-
         delete ui->listWidget->takeItem(row);
         m_playlist->removeMedia(row);
     }
-
     if (m_playlist->mediaCount() == 0)
     {
         m_player->stop();
         saveSettings(); // update saved playlist
         return;
     }
-
     if (currentRemoved)
     {
         // Current track removed → play next logical track
         int newIndex = m_playlist->currentIndex();
         if (newIndex >= m_playlist->mediaCount())
             newIndex = m_playlist->mediaCount() - 1;
-
         if (m_playlist->playbackMode() == QMediaPlaylist::Random)
             m_shuffleHistory.clear();
-
         m_playlist->setCurrentIndex(newIndex);
         m_player->play();
     }
@@ -847,13 +844,21 @@ void Widget::handleRemoveSelected()
         {
             if (existingIndex != m_playlist->currentIndex())
                 m_playlist->setCurrentIndex(existingIndex);
-
             m_player->setPosition(currentPosition);
-
             if (m_player->state() != QMediaPlayer::PlayingState)
                 m_player->play();
         }
     }
-
     saveSettings(); // persist updated playlistFiles
+}
+
+void Widget::scrollToCurrentTrack()
+{
+    int currentIndex = m_playlist->currentIndex();
+    if (currentIndex >= 0 && currentIndex < ui->listWidget->count())
+    {
+        QListWidgetItem *item = ui->listWidget->item(currentIndex);
+        ui->listWidget->setCurrentRow(currentIndex);  // highlight
+        ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+    }
 }
