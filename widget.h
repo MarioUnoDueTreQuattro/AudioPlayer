@@ -30,6 +30,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
  void resizeEvent(QResizeEvent *event) override;
 private slots:
+    void handleSilenceFinished(QAudio::State state);
     void handleModeButton();  // NEW slot
     void updateModeButtonIcon(); // Helper to update icon
     void handlePlayButton();

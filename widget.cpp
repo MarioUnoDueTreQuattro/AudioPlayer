@@ -129,7 +129,7 @@ void Widget::closeEvent(QCloseEvent *event)
 
 void Widget::playSilence(int ms)
 {
-    // Configure a simple PCM format
+    // Configure PCM format for silence
     QAudioFormat format;
     format.setSampleRate(44100);
     format.setChannelCount(2);
@@ -137,25 +137,39 @@ void Widget::playSilence(int ms)
     format.setCodec("audio/pcm");
     format.setByteOrder(QAudioFormat::LittleEndian);
     format.setSampleType(QAudioFormat::SignedInt);
-    // Prepare silent audio buffer
+    // Prepare a buffer of silence
     QByteArray silence(ms * format.sampleRate() * format.channelCount() * (format.sampleSize() / 8), 0);
-    QBuffer *buffer = new QBuffer(this);
+    QBuffer *buffer = new QBuffer;
     buffer->setData(silence);
     buffer->open(QIODevice::ReadOnly);
-    // Play through QAudioOutput
+    // Create an audio output instance
     QAudioOutput *audioOut = new QAudioOutput(format, this);
+    // Store buffer pointer in audioOut properties for later cleanup
+    audioOut->setProperty("silenceBuffer", QVariant::fromValue<void*>(buffer));
+    // Connect stateChanged signal for this audioOut instance
+    connect(audioOut, SIGNAL(stateChanged(QAudio::State)),
+        this, SLOT(handleSilenceFinished(QAudio::State)));
+    // Start playback
     audioOut->start(buffer);
-    // Delete after finished
-    connect(audioOut, &QAudioOutput::stateChanged, this, [buffer, audioOut](QAudio::State state)
+}
+
+void Widget::handleSilenceFinished(QAudio::State state)
+{
+    QAudioOutput *audioOut = qobject_cast<QAudioOutput *>(sender());
+    if (!audioOut)
+        return;
+    if (state == QAudio::IdleState || state == QAudio::StoppedState)
     {
-        if (state == QAudio::IdleState || state == QAudio::StoppedState)
+        // Retrieve and delete the buffer associated with this audioOut
+        QBuffer *buffer = static_cast<QBuffer *>(audioOut->property("silenceBuffer").value<void*>());
+        if (buffer)
         {
-            audioOut->stop();
             buffer->close();
             buffer->deleteLater();
-            audioOut->deleteLater();
         }
-    });
+        audioOut->stop();
+        audioOut->deleteLater();
+    }
 }
 
 void Widget::playSilence2(int ms)
