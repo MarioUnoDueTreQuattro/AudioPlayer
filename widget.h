@@ -2,6 +2,7 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include <QResizeEvent>
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
 #include <QListWidgetItem>
@@ -27,7 +28,7 @@ protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
-
+ void resizeEvent(QResizeEvent *event) override;
 private slots:
     void handleModeButton();  // NEW slot
     void updateModeButtonIcon(); // Helper to update icon

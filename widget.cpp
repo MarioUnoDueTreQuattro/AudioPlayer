@@ -70,8 +70,7 @@ Widget::~Widget()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
-    QSettings settings(QApplication::organizationName(),
-        QApplication::applicationName());
+    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     // Save window geometry & state
     settings.setValue("windowGeometry", saveGeometry());
     // settings.setValue("windowState", saveState());
@@ -92,6 +91,19 @@ void Widget::closeEvent(QCloseEvent *event)
     settings.setValue("lastTrackPosition", m_player->position());
     settings.sync ();
     QWidget::closeEvent(event); // call base implementation
+}
+
+void Widget::resizeEvent(QResizeEvent *event)
+{
+    // QSize newSize = event->size();
+    // QSize oldSize = event->oldSize();
+    // qDebug() << "Widget resized from" << oldSize << "to" << newSize;
+    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    // Save window geometry & state
+    settings.setValue("windowGeometry", saveGeometry());
+    // settings.setValue("windowState", saveState());
+    // Call base implementation (optional if QWidget)
+    QWidget::resizeEvent(event);
 }
 
 void Widget::openFiles(const QStringList &filePaths)
