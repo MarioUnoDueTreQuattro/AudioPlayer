@@ -58,6 +58,7 @@ private slots:
 private:
     void scrollToCurrentTrack();
     QString m_lastPlaylistPath;
+    QString m_lastDialogPlaylistPath;
     QStack<int> m_shuffleHistory;  // store played indices in shuffle mode
     int m_lastTrackIndex;     // index of last playing track
     qint64 m_lastTrackPosition; // position in milliseconds

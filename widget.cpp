@@ -18,6 +18,7 @@
 #include <QGuiApplication>
 #include <QFileDialog>
 #include <QMenu>
+#include <QStandardPaths>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -41,25 +42,16 @@ Widget::Widget(QWidget *parent)
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(handleStopButton()));
     connect(ui->volumeSlider, SIGNAL(valueChanged(int)), this, SLOT(handleVolumeChanged(int)));
     connect(ui->muteButton, SIGNAL(clicked()), this, SLOT(handleMuteButton())); // NEW
-    connect(ui->listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)),
-        this, SLOT(handleItemDoubleClicked()));
-    connect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
-        this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
-    connect(m_playlist, SIGNAL(currentIndexChanged(int)),
-        this, SLOT(handlePlaylistCurrentIndexChanged(int)));
-    connect(m_player, SIGNAL(positionChanged(qint64)),
-        this, SLOT(handlePositionChanged(qint64)));
-    connect(m_player, SIGNAL(durationChanged(qint64)),
-        this, SLOT(handleDurationChanged(qint64)));
-    connect(ui->positionSlider, SIGNAL(sliderMoved(int)),
-        this, SLOT(handleSliderMoved(int)));
-    connect(m_player, SIGNAL(error(QMediaPlayer::Error)),
-        this, SLOT(handleMediaError(QMediaPlayer::Error)));
-    connect(m_player, SIGNAL(positionChanged(qint64)),
-        this, SLOT(updateLastTrackPosition(qint64)));
+    connect(ui->listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(handleItemDoubleClicked()));
+    connect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
+    connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
+    connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
+    connect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChanged(qint64)));
+    connect(ui->positionSlider, SIGNAL(sliderMoved(int)), this, SLOT(handleSliderMoved(int)));
+    connect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(handleMediaError(QMediaPlayer::Error)));
+    connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(updateLastTrackPosition(qint64)));
     connect(ui->modeButton, SIGNAL(clicked()), this, SLOT(handleModeButton()));
-    connect(ui->listWidget, &QListWidget::customContextMenuRequested,
-        this, &Widget::showPlaylistContextMenu);
+    connect(ui->listWidget, &QListWidget::customContextMenuRequested, this, &Widget::showPlaylistContextMenu);
 }
 
 Widget::~Widget()
@@ -90,6 +82,14 @@ void Widget::closeEvent(QCloseEvent *event)
     settings.setValue("lastTrackIndex", m_playlist->currentIndex());
     settings.setValue("lastTrackPosition", m_player->position());
     settings.sync ();
+//    disconnect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
+//    disconnect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
+//    disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
+//    disconnect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChanged(qint64)));
+//    // disconnect(ui->positionSlider, SIGNAL(sliderMoved(int)),    this, SLOT(handleSliderMoved(int)));
+//    disconnect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(handleMediaError(QMediaPlayer::Error)));
+//    disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(updateLastTrackPosition(qint64)));
+    m_player->stop();
     QWidget::closeEvent(event); // call base implementation
 }
 
@@ -395,7 +395,7 @@ void Widget::loadSettings()
             int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
             m_playlist->setCurrentIndex(idx);
             ui->listWidget->setCurrentRow(idx);
-            ui->listWidget->scrollToItem(ui->listWidget->item(idx));
+            ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
             if (m_lastTrackPosition > 0)
                 m_player->setPosition(m_lastTrackPosition);
         }
@@ -693,8 +693,11 @@ void Widget::updateModeButtonIcon()
 
 void Widget::handleLoadPlaylist()
 {
+    QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QSettings settings;
+    m_lastDialogPlaylistPath = settings.value("m_lastDialogPlaylistPath", documentsPath).toString ();
     QString fileName = QFileDialog::getOpenFileName(
-            this, tr("Load Playlist"), QDir::homePath(), tr("Playlist (*.m3u *.txt);;All Files (*)"));
+            this, tr("Load Playlist"), m_lastDialogPlaylistPath, tr("Playlist (*.m3u *.txt);;All Files (*)"));
     if (fileName.isEmpty())
         return;
     loadPlaylistFile(fileName);
@@ -709,8 +712,11 @@ void Widget::handleLoadPlaylist()
 
 void Widget::handleSavePlaylist()
 {
+    QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QSettings settings;
+    m_lastDialogPlaylistPath = settings.value("m_lastDialogPlaylistPath", documentsPath).toString ();
     QString fileName = QFileDialog::getSaveFileName(
-            this, tr("Save Playlist"), QDir::homePath() + "/playlist.m3u", tr("M3U Playlist (*.m3u);;Text Files (*.txt);;All Files (*)"));
+            this, tr("Save Playlist"), m_lastDialogPlaylistPath + "/playlist.m3u", tr("M3U Playlist (*.m3u);;Text Files (*.txt);;All Files (*)"));
     if (fileName.isEmpty())
         return;
     savePlaylistFile(fileName);
@@ -740,7 +746,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
         int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
         m_playlist->setCurrentIndex(idx);
         ui->listWidget->setCurrentRow(idx);
-        ui->listWidget->scrollToItem(ui->listWidget->item(idx));
+        ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
         if (m_lastTrackPosition > 0)
             m_player->setPosition(m_lastTrackPosition);
     }
@@ -750,6 +756,8 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
         updateModeButtonIcon();
     }
+    QSettings settings;
+    settings.setValue("m_lastDialogPlaylistPath", filePath);
 }
 
 void Widget::savePlaylistFile(const QString &path)
@@ -771,6 +779,8 @@ void Widget::savePlaylistFile(const QString &path)
     }
     f.close();
     m_lastPlaylistPath = path;
+    QSettings settings;
+    settings.setValue("m_lastDialogPlaylistPath", path);
     saveSettings(); // persist lastPlaylistPath and playlist if you want immediacy
 }
 
