@@ -56,6 +56,7 @@ Widget::Widget(QWidget *parent)
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(updateLastTrackPosition(qint64)));
     connect(ui->modeButton, SIGNAL(clicked()), this, SLOT(handleModeButton()));
     connect(ui->listWidget, &QListWidget::customContextMenuRequested, this, &Widget::showPlaylistContextMenu);
+    connect(ui->modeButton, &QListWidget::customContextMenuRequested, this, &Widget::showModeButtonContextMenu);
 }
 
 Widget::~Widget()
@@ -797,19 +798,19 @@ void Widget::updateModeButtonIcon()
     {
     case QMediaPlaylist::Sequential:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-right-48.png"));
-        ui->modeButton->setToolTip("Sequential mode");
+        ui->modeButton->setToolTip("Sequential");
         break;
     case QMediaPlaylist::Loop:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-loop-48.png"));
-        ui->modeButton->setToolTip("Loop all tracks");
+        ui->modeButton->setToolTip("Loop all");
         break;
     case QMediaPlaylist::CurrentItemInLoop:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-repeat-one-48.png"));
-        ui->modeButton->setToolTip("Repeat current track");
+        ui->modeButton->setToolTip("Repeat current");
         break;
     case QMediaPlaylist::Random:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-random-48.png"));
-        ui->modeButton->setToolTip("Shuffle mode");
+        ui->modeButton->setToolTip("Shuffle (Random)");
         break;
     default:
         break;
@@ -950,6 +951,39 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     {
         scrollToCurrentTrack ();
     }
+}
+
+void Widget::showModeButtonContextMenu(const QPoint &pos)
+{
+    QMenu contextMenu(this);
+    QAction *playModeSequentialAction = contextMenu.addAction(tr("Sequential"));
+    QAction *playModeLoopAction = contextMenu.addAction(tr("Loop all"));
+    QAction *playModeCurrentItemLoopAction = contextMenu.addAction(tr("Repeat current"));
+    QAction *playModeRandomAction = contextMenu.addAction(tr("Shuffle (Random)"));
+    playModeSequentialAction->setIcon(QIcon(":/img/img/icons8-right-48.png"));
+    playModeLoopAction->setIcon(QIcon(":/img/img/icons8-loop-48.png"));
+    playModeCurrentItemLoopAction->setIcon(QIcon(":/img/img/icons8-repeat-one-48.png"));
+    playModeRandomAction->setIcon(QIcon(":/img/img/icons8-random-48.png"));
+    QAction *selectedAction = contextMenu.exec(ui->modeButton->mapToGlobal(pos));
+    if (selectedAction == playModeSequentialAction)
+    {
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+    }
+    else if (selectedAction == playModeLoopAction)
+    {
+        m_playlist->setPlaybackMode(QMediaPlaylist::Loop);  // Loop All
+    }
+    else if (selectedAction == playModeCurrentItemLoopAction)
+    {
+        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop);  // Loop One
+    }
+    else if (selectedAction == playModeRandomAction)
+    {
+        m_playlist->setPlaybackMode(QMediaPlaylist::Random);  // Shuffle
+    }
+    updateModeButtonIcon();
+    QSettings settings;
+    settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
 }
 
 void Widget::clearExceptSelected()

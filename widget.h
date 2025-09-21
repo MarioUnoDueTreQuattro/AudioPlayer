@@ -55,6 +55,7 @@ private slots:
     void handleSavePlaylist();
     void handleLoadPlaylist();
     void showPlaylistContextMenu(const QPoint &pos);
+    void showModeButtonContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
     void playSilence(int ms = 500);
