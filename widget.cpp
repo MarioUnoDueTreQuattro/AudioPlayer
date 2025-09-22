@@ -24,6 +24,8 @@
 #include <QBuffer>
 #include <QAudioFormat>
 #include <QAudioOutput>
+#include <QStyleFactory>
+#include <QPalette>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -487,16 +489,14 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
-    int iListWidgetCount=ui->listWidget->count();
-    for (int iIdx=0; iIdx< iListWidgetCount;iIdx++)
+    int iListWidgetCount = ui->listWidget->count();
+    for (int iIdx = 0; iIdx < iListWidgetCount; iIdx++)
     {
         ui->listWidget->item (iIdx)->setIcon (QIcon());
     }
-
     if (index >= 0 && index < iListWidgetCount)
     {
-
-                ui->listWidget->setCurrentRow(index);
+        ui->listWidget->setCurrentRow(index);
         this->setWindowTitle ("AudioPlayer - " + currentTrackName ());
         // this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
         ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
@@ -540,6 +540,9 @@ void Widget::loadSettings()
 {
     QSettings settings(QApplication::organizationName(),
         QApplication::applicationName());
+    m_sTheme = settings.value("Theme").toString();
+    m_sPalette = settings.value("ThemePalette", "Light").toString();
+    setTheme ();
     // --- Volume ---
     m_lastVolume = settings.value("volume", 50).toInt();
     m_isMuted = false; // force unmuted
@@ -1167,6 +1170,62 @@ void Widget::handleRemoveSelected()
         updateModeButtonIcon();
     }
     saveSettings(); // persist updated playlistFiles
+}
+
+void Widget::setTheme()
+{
+    qDebug() << __PRETTY_FUNCTION__ ;
+    if (m_sTheme != "")
+    {
+        QApplication::setStyle(QStyleFactory::create(m_sTheme));
+    }
+    if (m_sPalette != "")
+    {
+        if (m_sPalette == "Dark")
+        {
+            // QPalette darkPalette;
+            // darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+            // darkPalette.setColor(QPalette::WindowText, Qt::white);
+            // darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+            // darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+            // darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+            // darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+            // darkPalette.setColor(QPalette::Text, Qt::white);
+            // darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+            // darkPalette.setColor(QPalette::ButtonText, Qt::white);
+            // darkPalette.setColor(QPalette::BrightText, Qt::red);
+            // darkPalette.setColor(QPalette::Highlight, QColor(142, 45, 197).lighter());
+            // darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+            QPalette darkPalette;
+            darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+            darkPalette.setColor(QPalette::WindowText, Qt::white);
+            darkPalette.setColor(QPalette::Base, QColor(35, 35, 35));
+            darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+            darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+            darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+            darkPalette.setColor(QPalette::Text, Qt::white);
+            darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+            darkPalette.setColor(QPalette::ButtonText, Qt::white);
+            darkPalette.setColor(QPalette::BrightText, Qt::red);
+            darkPalette.setColor(QPalette::Highlight, QColor(173, 216, 230));
+            darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+            QApplication::setPalette(darkPalette);
+        }
+        else
+        {
+            QApplication::setPalette(QApplication::style()->standardPalette());
+        }
+    }
+    if (m_sTheme != "" )
+    {
+        // Force widgets to re-polish
+        foreach (QWidget *widget, QApplication::allWidgets())
+        {
+            widget->style()->unpolish(widget);
+            widget->style()->polish(widget);
+            widget->update();
+        }
+    }
 }
 
 void Widget::scrollToCurrentTrack()

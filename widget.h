@@ -59,6 +59,9 @@ private slots:
     void showModeButtonContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
+    QString m_sTheme;
+    QString m_sPalette;
+    void setTheme();
     QString currentTrackName();
     void playSilence(int ms = 500);
     void playSilence2(int ms = 500);

@@ -23,6 +23,10 @@ private slots:
 
 private:
     Ui::Settings *ui;
+    QString m_sTheme;
+    QString m_sPalette;
+    void saveSettings();
+    void loadSettings();
 };
 
 #endif // SETTINGS_H
