@@ -770,6 +770,9 @@ void Widget::handleModeButton()
     QMediaPlaylist::PlaybackMode mode = m_playlist->playbackMode();
     switch (mode)
     {
+    case QMediaPlaylist::CurrentItemOnce:
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);  // Loop All
+        break;
     case QMediaPlaylist::Sequential:
         m_playlist->setPlaybackMode(QMediaPlaylist::Loop);  // Loop All
         break;
@@ -780,7 +783,7 @@ void Widget::handleModeButton()
         m_playlist->setPlaybackMode(QMediaPlaylist::Random);  // Shuffle
         break;
     case QMediaPlaylist::Random:
-        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemOnce);
         break;
     default:
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
@@ -807,6 +810,10 @@ void Widget::updateModeButtonIcon()
     case QMediaPlaylist::CurrentItemInLoop:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-repeat-one-48.png"));
         ui->modeButton->setToolTip("Repeat current");
+        break;
+    case QMediaPlaylist::CurrentItemOnce:
+        ui->modeButton->setIcon(QIcon(":/img/img/icons8-once-48.png"));
+        ui->modeButton->setToolTip("Play current once");
         break;
     case QMediaPlaylist::Random:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-random-48.png"));
@@ -956,6 +963,7 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
 void Widget::showModeButtonContextMenu(const QPoint &pos)
 {
     QMenu contextMenu(this);
+    QAction *playModeCurrentItemOnceAction = contextMenu.addAction(tr("Play current once"));
     QAction *playModeSequentialAction = contextMenu.addAction(tr("Sequential"));
     QAction *playModeLoopAction = contextMenu.addAction(tr("Loop all"));
     QAction *playModeCurrentItemLoopAction = contextMenu.addAction(tr("Repeat current"));
@@ -963,6 +971,7 @@ void Widget::showModeButtonContextMenu(const QPoint &pos)
     playModeSequentialAction->setIcon(QIcon(":/img/img/icons8-right-48.png"));
     playModeLoopAction->setIcon(QIcon(":/img/img/icons8-loop-48.png"));
     playModeCurrentItemLoopAction->setIcon(QIcon(":/img/img/icons8-repeat-one-48.png"));
+    playModeCurrentItemOnceAction->setIcon(QIcon(":/img/img/icons8-once-48.png"));
     playModeRandomAction->setIcon(QIcon(":/img/img/icons8-random-48.png"));
     QAction *selectedAction = contextMenu.exec(ui->modeButton->mapToGlobal(pos));
     if (selectedAction == playModeSequentialAction)
@@ -976,6 +985,10 @@ void Widget::showModeButtonContextMenu(const QPoint &pos)
     else if (selectedAction == playModeCurrentItemLoopAction)
     {
         m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop);  // Loop One
+    }
+    else if (selectedAction == playModeCurrentItemOnceAction)
+    {
+        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemOnce);  // Loop One
     }
     else if (selectedAction == playModeRandomAction)
     {
