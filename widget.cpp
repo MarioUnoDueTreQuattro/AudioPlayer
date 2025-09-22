@@ -809,11 +809,15 @@ void Widget::on_prevButton_clicked()
 void Widget::on_configureButton_clicked()
 {
     Settings settingsDialog;       //=new configureDialog(this);
-    //connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(loadListFromFile()));
+    connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(settingsDialogAccepted()));
     // cd.setParent (this);
     settingsDialog.setWindowTitle("Configure");
     settingsDialog.exec();
+}
 
+void Widget::settingsDialogAccepted()
+{
+    qDebug() << __PRETTY_FUNCTION__ ;
 }
 
 void Widget::handleModeButton()

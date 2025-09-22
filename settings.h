@@ -15,6 +15,12 @@ public:
     explicit Settings(QWidget *parent = nullptr);
     ~Settings();
 
+private slots:
+    void on_comboBoxTheme_activated(const QString &arg1);
+    void on_comboBoxColor_activated(const QString &arg1);
+
+    void on_Settings_accepted();
+
 private:
     Ui::Settings *ui;
 };
