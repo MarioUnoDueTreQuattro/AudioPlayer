@@ -232,6 +232,36 @@ void Widget::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
+QString Widget::currentItemName()
+{
+    QString sCurrent="";
+    if (!m_playlist)
+        return sCurrent;
+
+    int index = m_playlist->currentIndex();
+    if (index < 0)
+    {
+        qDebug() << "No current item in playlist";
+        return "No current item in playlist";
+    }
+
+    QMediaContent mediaContent = m_playlist->media(index);
+    QUrl mediaUrl = mediaContent.canonicalUrl();
+
+    if (mediaUrl.isLocalFile())
+    {
+        QFileInfo fileInfo(mediaUrl.toLocalFile());
+        sCurrent=fileInfo.fileName();
+        qDebug() << "Now playing:" <<sCurrent;  // just file name
+    }
+    else
+    {
+        sCurrent= mediaUrl.toString();
+        qDebug() << "Now playing URL:" << sCurrent;
+    }
+    return sCurrent;
+}
+
 void Widget::openFiles(const QStringList &filePaths)
 {
     this->showNormal();
@@ -281,6 +311,8 @@ void Widget::openFiles(const QStringList &filePaths)
     {
         m_playlist->setCurrentIndex(trackToPlay);
         m_player->play();
+        this->setWindowTitle ("AudioPlayer - " + currentItemName ());
+        //this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
         // Restore last position only if not starting a new file
         if (filePaths.isEmpty() && m_lastTrackPosition > 0)
         {
@@ -302,7 +334,7 @@ void Widget::addFileToPlaylist(const QString &filePath)
     if (!fi.exists())
         return;
     QString ext = fi.suffix().toLower();
-    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac")
+    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus")
         return;
     // Avoid duplicate entries
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
@@ -371,7 +403,7 @@ void Widget::dropEvent(QDropEvent *event)
             if (fi.isDir())
             {
                 QDirIterator it(fi.absoluteFilePath(),
-                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac",
+                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus",
                     QDir::Files,
                     QDirIterator::Subdirectories);
                 while (it.hasNext())
@@ -458,6 +490,8 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     if (index >= 0 && index < ui->listWidget->count())
     {
         ui->listWidget->setCurrentRow(index);
+        this->setWindowTitle ("AudioPlayer - " + currentItemName ());
+//        this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
     }
     else
     {
@@ -553,6 +587,8 @@ void Widget::loadSettings()
     // Start playback if playlist not empty
     if (m_playlist->mediaCount() > 0)
         m_player->play();
+    this->setWindowTitle ("AudioPlayer - " + currentItemName ());
+
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
         m_shuffleHistory.clear(); // no history needed
@@ -809,7 +845,7 @@ void Widget::updateModeButtonIcon()
         break;
     case QMediaPlaylist::CurrentItemInLoop:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-repeat-one-48.png"));
-        ui->modeButton->setToolTip("Repeat current");
+        ui->modeButton->setToolTip("Loop current");
         break;
     case QMediaPlaylist::CurrentItemOnce:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-once-48.png"));
@@ -966,7 +1002,7 @@ void Widget::showModeButtonContextMenu(const QPoint &pos)
     QAction *playModeCurrentItemOnceAction = contextMenu.addAction(tr("Play current once"));
     QAction *playModeSequentialAction = contextMenu.addAction(tr("Sequential"));
     QAction *playModeLoopAction = contextMenu.addAction(tr("Loop all"));
-    QAction *playModeCurrentItemLoopAction = contextMenu.addAction(tr("Repeat current"));
+    QAction *playModeCurrentItemLoopAction = contextMenu.addAction(tr("Loop current"));
     QAction *playModeRandomAction = contextMenu.addAction(tr("Shuffle (Random)"));
     playModeSequentialAction->setIcon(QIcon(":/img/img/icons8-right-48.png"));
     playModeLoopAction->setIcon(QIcon(":/img/img/icons8-loop-48.png"));

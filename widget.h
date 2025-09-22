@@ -58,6 +58,7 @@ private slots:
     void showModeButtonContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
+    QString currentItemName();
     void playSilence(int ms = 500);
     void playSilence2(int ms = 500);
     void scrollToCurrentTrack();
