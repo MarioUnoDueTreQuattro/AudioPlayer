@@ -254,7 +254,7 @@
      <item>
       <widget class="QPushButton" name="configureButton">
        <property name="toolTip">
-        <string>Configure</string>
+        <string>Settings</string>
        </property>
        <property name="text">
         <string/>

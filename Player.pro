@@ -12,15 +12,18 @@ TEMPLATE = app
 SOURCES += \
     clickableslider.cpp \
     main.cpp \
+    settings.cpp \
     singleinstance.cpp \
     widget.cpp
 
 HEADERS += \
     clickableslider.h \
+    settings.h \
     singleinstance.h \
     widget.h
 
 FORMS += \
+    settings.ui \
     widget.ui
 
 # Default rules for deployment.

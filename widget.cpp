@@ -1,4 +1,5 @@
 #include "widget.h"
+#include "settings.h"
 #include "ui_widget.h"
 #include <QFileInfo>
 #include <QMimeData>
@@ -232,31 +233,28 @@ void Widget::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
-QString Widget::currentItemName()
+QString Widget::currentTrackName()
 {
-    QString sCurrent="";
+    QString sCurrent = "";
     if (!m_playlist)
         return sCurrent;
-
     int index = m_playlist->currentIndex();
     if (index < 0)
     {
         qDebug() << "No current item in playlist";
         return "No current item in playlist";
     }
-
     QMediaContent mediaContent = m_playlist->media(index);
     QUrl mediaUrl = mediaContent.canonicalUrl();
-
     if (mediaUrl.isLocalFile())
     {
         QFileInfo fileInfo(mediaUrl.toLocalFile());
-        sCurrent=fileInfo.fileName();
-        qDebug() << "Now playing:" <<sCurrent;  // just file name
+        sCurrent = fileInfo.fileName();
+        qDebug() << "Now playing:" << sCurrent; // just file name
     }
     else
     {
-        sCurrent= mediaUrl.toString();
+        sCurrent = mediaUrl.toString();
         qDebug() << "Now playing URL:" << sCurrent;
     }
     return sCurrent;
@@ -311,7 +309,9 @@ void Widget::openFiles(const QStringList &filePaths)
     {
         m_playlist->setCurrentIndex(trackToPlay);
         m_player->play();
-        this->setWindowTitle ("AudioPlayer - " + currentItemName ());
+        this->setWindowTitle ("AudioPlayer - " + currentTrackName ());
+        ui->listWidget->currentItem ()->setTextColor (QColor::fromRgb (0, 0, 128));
+        ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
         //this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
         // Restore last position only if not starting a new file
         if (filePaths.isEmpty() && m_lastTrackPosition > 0)
@@ -487,11 +487,20 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
-    if (index >= 0 && index < ui->listWidget->count())
+    int iListWidgetCount=ui->listWidget->count();
+    for (int iIdx=0; iIdx< iListWidgetCount;iIdx++)
     {
-        ui->listWidget->setCurrentRow(index);
-        this->setWindowTitle ("AudioPlayer - " + currentItemName ());
-//        this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
+        ui->listWidget->item (iIdx)->setIcon (QIcon());
+    }
+
+    if (index >= 0 && index < iListWidgetCount)
+    {
+
+                ui->listWidget->setCurrentRow(index);
+        this->setWindowTitle ("AudioPlayer - " + currentTrackName ());
+        // this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
+        ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
+        ui->listWidget->currentItem ()->setTextColor (QColor::fromRgb (32, 32, 128));
     }
     else
     {
@@ -587,8 +596,9 @@ void Widget::loadSettings()
     // Start playback if playlist not empty
     if (m_playlist->mediaCount() > 0)
         m_player->play();
-    this->setWindowTitle ("AudioPlayer - " + currentItemName ());
-
+    this->setWindowTitle ("AudioPlayer - " + currentTrackName ());
+    ui->listWidget->currentItem ()->setTextColor (QColor::fromRgb (0, 0, 128));
+    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
         m_shuffleHistory.clear(); // no history needed
@@ -798,6 +808,12 @@ void Widget::on_prevButton_clicked()
 
 void Widget::on_configureButton_clicked()
 {
+    Settings settingsDialog;       //=new configureDialog(this);
+    //connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(loadListFromFile()));
+    // cd.setParent (this);
+    settingsDialog.setWindowTitle("Configure");
+    settingsDialog.exec();
+
 }
 
 void Widget::handleModeButton()
