@@ -128,6 +128,7 @@ void Settings::saveSettings()
     settings.setValue ("Theme", m_sTheme);
     settings.setValue ("ThemePalette", m_sPalette);
     settings.setValue("PlayedTextColor", m_playedTextColor.name());
+    settings.setValue("AutoPlay",ui->checkBoxAutoPlay->isChecked ());
     settings.sync();
 }
 
@@ -142,6 +143,8 @@ void Settings::loadSettings()
     palette.setColor(QPalette::Button, m_playedTextColor);
     ui->pushButtonPlayedTextColor->setAutoFillBackground(true);
     ui->pushButtonPlayedTextColor->setPalette(palette);
+    bool bAutoplay= settings.value("AutoPlay", true).toBool ();
+    ui->checkBoxAutoPlay->setChecked (bAutoplay);
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()

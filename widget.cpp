@@ -311,12 +311,10 @@ void Widget::openFiles(const QStringList &filePaths)
     if (m_playlist->mediaCount() > 0)
     {
         m_playlist->setCurrentIndex(trackToPlay);
-        m_player->play();
-        QString sPlaying = currentTrackName ();
-        m_playedList.append (sPlaying);
-        this->setWindowTitle ("AudioPlayer - " + sPlaying);
-        ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
-        ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
+        if (m_bAutoplay)
+        {
+            handlePlay ();
+        }
         //this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
         // Restore last position only if not starting a new file
         if (filePaths.isEmpty() && m_lastTrackPosition > 0)
@@ -448,6 +446,16 @@ void Widget::handleStopButton()
     m_player->stop();
 }
 
+void Widget::handlePlay()
+{
+    m_player->play();
+    QString sPlaying = currentTrackName ();
+    m_playedList.append (sPlaying);
+    this->setWindowTitle ("AudioPlayer - " + sPlaying);
+    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
+    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
+}
+
 void Widget::handleItemDoubleClicked()
 {
     int idx = ui->listWidget->currentRow();
@@ -455,7 +463,7 @@ void Widget::handleItemDoubleClicked()
     {
         m_playlist->setCurrentIndex(idx);
         if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
-        m_player->play();
+        handlePlay();
     }
 }
 
@@ -498,12 +506,10 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     if (index >= 0 && index < iListWidgetCount)
     {
         ui->listWidget->setCurrentRow(index);
-        QString sPlaying = currentTrackName ();
-        m_playedList.append (sPlaying);
-        this->setWindowTitle ("AudioPlayer - " + sPlaying);
-        ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
-        ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
-        // this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
+        if (m_player->state() == QMediaPlayer::PlayingState | m_bAutoplay)
+        {
+            handlePlay ();
+        }
     }
     else
     {
@@ -546,6 +552,7 @@ void Widget::loadSettings()
     m_sTheme = settings.value("Theme").toString();
     m_sPalette = settings.value("ThemePalette", "Light").toString();
     setTheme ();
+    m_bAutoplay = settings.value("AutoPlay", true).toBool ();
     QString colorName = settings.value("PlayedTextColor", "#000080").toString();
     m_playedTextColor = QColor(colorName);
     // --- Volume ---
@@ -603,12 +610,10 @@ void Widget::loadSettings()
     }
     // Start playback if playlist not empty
     if (m_playlist->mediaCount() > 0)
-        m_player->play();
-    QString sPlaying = currentTrackName ();
-    m_playedList.append (sPlaying);
-    this->setWindowTitle ("AudioPlayer - " + sPlaying);
-    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
-    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
+        if (m_bAutoplay)
+        {
+            handlePlay ();
+        }
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
         m_shuffleHistory.clear(); // no history needed
@@ -923,8 +928,11 @@ void Widget::handleLoadPlaylist()
     // if you want to immediately select/play the last track, you can:
     if (m_playlist->mediaCount() > 0)
     {
-        m_playlist->setCurrentIndex(0);
-        m_player->play();
+        if (m_bAutoplay)
+        {
+            m_player->play();
+            m_playlist->setCurrentIndex(0);
+        }
     }
     saveSettings(); // store lastPlaylistPath etc.
 }
@@ -1009,8 +1017,8 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QAction *scrollToPlayingAction = contextMenu.addAction(tr("Scroll to currently playing"));
     scrollToPlayingAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
     contextMenu.addSeparator();
-    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
     QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
+    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
     contextMenu.addSeparator();
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
@@ -1111,7 +1119,10 @@ void Widget::clearExceptSelected()
     // Keep the selected track
     m_playlist->setCurrentIndex(0);
     m_player->setPosition(currentPosition);
-    m_player->play();
+    if (m_player->state() == QMediaPlayer::PlayingState)
+    {
+        handlePlay ();
+    }
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
         m_shuffleHistory.clear(); // no history needed
@@ -1167,7 +1178,10 @@ void Widget::handleRemoveSelected()
         if (m_playlist->playbackMode() == QMediaPlaylist::Random)
             m_shuffleHistory.clear();
         m_playlist->setCurrentIndex(newIndex);
-        m_player->play();
+        if (m_player->state() == QMediaPlayer::PlayingState)
+        {
+            handlePlay ();
+        }
     }
     else
     {
@@ -1186,8 +1200,10 @@ void Widget::handleRemoveSelected()
             if (existingIndex != m_playlist->currentIndex())
                 m_playlist->setCurrentIndex(existingIndex);
             m_player->setPosition(currentPosition);
-            if (m_player->state() != QMediaPlayer::PlayingState)
-                m_player->play();
+            if (m_player->state() == QMediaPlayer::PlayingState)
+            {
+                handlePlay ();
+            }
         }
     }
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)

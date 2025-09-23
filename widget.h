@@ -20,6 +20,8 @@ public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget();
 
+    void handlePlay();
+
 public slots:
     void openFiles(const QStringList &filePaths);
 
@@ -59,6 +61,7 @@ private slots:
     void showModeButtonContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
+    bool m_bAutoplay;
     QList<QString> m_playedList;
     QColor m_playedTextColor;
     QString m_sTheme;

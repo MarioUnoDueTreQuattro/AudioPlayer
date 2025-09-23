@@ -19,13 +19,9 @@ public:
 private slots:
     void on_comboBoxTheme_activated(const QString &arg1);
     void on_comboBoxColor_activated(const QString &arg1);
-
     void on_Settings_accepted();
-
     void on_pushButtonPlayedTextColor_clicked();
-
     void on_buttonBox_clicked(QAbstractButton *button);
-
 private:
     Ui::Settings *ui;
     QString m_sTheme;
