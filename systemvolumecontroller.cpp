@@ -43,6 +43,11 @@ void SystemVolumeController::initialize()
         qWarning() << "Failed to activate IAudioEndpointVolume";
         m_endpointVolume = nullptr;
     }
+    // Register for notifications
+       hr = m_endpointVolume->RegisterControlChangeNotify(this);
+       if (FAILED(hr)) {
+           qWarning() << "Failed to register volume change notifications";
+       }
 }
 
 void SystemVolumeController::cleanup()
@@ -98,4 +103,42 @@ void SystemVolumeController::mute(bool enable)
 void SystemVolumeController::toggleMute()
 {
     mute(!isMuted());
+}
+
+STDMETHODIMP SystemVolumeController::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
+{
+    if (!pNotify) return E_POINTER;
+
+    float newVolume = pNotify->fMasterVolume;
+    BOOL muted = pNotify->bMuted;
+
+    emit volumeChanged(newVolume);
+    emit muteStateChanged(muted);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemVolumeController::QueryInterface(REFIID iid, void **ppvObject)
+{
+    if (iid == __uuidof(IUnknown) || iid == __uuidof(IAudioEndpointVolumeCallback)) {
+        *ppvObject = static_cast<IAudioEndpointVolumeCallback *>(this);
+        AddRef();
+        return S_OK;
+    }
+    *ppvObject = nullptr;
+    return E_NOINTERFACE;
+}
+
+ULONG STDMETHODCALLTYPE SystemVolumeController::AddRef()
+{
+    return InterlockedIncrement(&m_refCount);
+}
+
+ULONG STDMETHODCALLTYPE SystemVolumeController::Release()
+{
+    LONG ref = InterlockedDecrement(&m_refCount);
+    if (ref == 0) {
+        delete this;
+    }
+    return ref;
 }

@@ -64,6 +64,10 @@ Widget::Widget(QWidget *parent)
     connect(ui->listWidget, &QListWidget::customContextMenuRequested, this, &Widget::showPlaylistContextMenu);
     connect(ui->modeButton, &QListWidget::customContextMenuRequested, this, &Widget::showModeButtonContextMenu);
     connect(ui->volumeSlider, &QListWidget::customContextMenuRequested, this, &Widget::showVolumeSliderContextMenu);
+    connect(m_systemVolumeController, SIGNAL(volumeChanged(float)),
+               this, SLOT(onSystemVolumeChanged(float)));
+       connect(m_systemVolumeController, SIGNAL(muteStateChanged(bool)),
+               this, SLOT(onSystemMuteChanged(bool)));
 }
 
 Widget::~Widget()
@@ -735,7 +739,7 @@ void Widget::updateMuteButtonIcon()
         if (m_isMuted)
         {
             ui->muteButton->setChecked (true);
-            //ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
         }
         else
         {
@@ -749,7 +753,7 @@ void Widget::updateMuteButtonIcon()
         if (bMuted)
         {
             ui->muteButton->setChecked (true);
-            //ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
         }
         else
         {
@@ -1382,5 +1386,27 @@ void Widget::scrollToCurrentTrack()
         QListWidgetItem *item = ui->listWidget->item(currentIndex);
         ui->listWidget->setCurrentRow(currentIndex);  // highlight
         ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+    }
+}
+
+void Widget::onSystemVolumeChanged(float newVolume)
+{
+    qDebug() << "System volume changed: " << newVolume;
+    if (m_bSystemVolumeSlider)
+    {
+        int iVol = int (m_systemVolumeController->volume () * 100.01f);
+        qDebug() << "Current master volume:" << iVol;
+        ui->volumeSlider->setValue (iVol);
+        ui->volumeLabel->setText(QString::number(iVol) + "%");
+    }
+}
+
+void Widget::onSystemMuteChanged(bool muted)
+{
+    qDebug() << "System mute state changed: " << muted;
+    if (m_bSystemVolumeSlider)
+    {
+        updateMuteButtonIcon ();
+        if (muted) ui->volumeLabel->setText("0%");
     }
 }

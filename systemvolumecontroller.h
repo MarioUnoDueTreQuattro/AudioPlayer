@@ -6,7 +6,7 @@
 #include <Mmdeviceapi.h>
 #include <Endpointvolume.h>
 
-class SystemVolumeController : public QObject
+class SystemVolumeController : public QObject, public IAudioEndpointVolumeCallback
 {
     Q_OBJECT
 
@@ -30,7 +30,17 @@ private:
     void initialize();
     void cleanup();
 
+
+    // COM callback interface
+    STDMETHODIMP OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify);
+
+    // IUnknown methods required by COM
+    STDMETHODIMP QueryInterface(REFIID iid, void **ppvObject);
+    ULONG STDMETHODCALLTYPE AddRef();
+    ULONG STDMETHODCALLTYPE Release();
+
     IAudioEndpointVolume *m_endpointVolume;
+    LONG m_refCount;
 };
 
 #endif // SYSTEMVOLUMECONTROLLER_H

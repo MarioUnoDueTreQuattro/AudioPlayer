@@ -33,7 +33,9 @@ protected:
     void closeEvent(QCloseEvent *event) override;
  void resizeEvent(QResizeEvent *event) override;
 private slots:
-   void settingsDialogAccepted();
+ void onSystemVolumeChanged(float newVolume);
+    void onSystemMuteChanged(bool muted);
+    void settingsDialogAccepted();
    void handleSilenceFinished(QAudio::State state);
     void handleModeButton();  // NEW slot
     void updateModeButtonIcon(); // Helper to update icon
