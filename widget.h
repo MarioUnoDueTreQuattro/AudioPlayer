@@ -7,6 +7,7 @@
 #include <QMediaPlaylist>
 #include <QListWidgetItem>
 #include <QStack>
+#include "systemvolumecontroller.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -59,9 +60,12 @@ private slots:
     void handleLoadPlaylist();
     void showPlaylistContextMenu(const QPoint &pos);
     void showModeButtonContextMenu(const QPoint &pos);
+    void showVolumeSliderContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
+    SystemVolumeController *m_systemVolumeController;
     bool m_bAutoplay;
+    bool m_bSystemVolumeSlider;
     QList<QString> m_playedList;
     QColor m_playedTextColor;
     QString m_sTheme;

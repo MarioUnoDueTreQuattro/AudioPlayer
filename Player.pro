@@ -14,12 +14,14 @@ SOURCES += \
     main.cpp \
     settings.cpp \
     singleinstance.cpp \
+    systemvolumecontroller.cpp \
     widget.cpp
 
 HEADERS += \
     clickableslider.h \
     settings.h \
     singleinstance.h \
+    systemvolumecontroller.h \
     widget.h
 
 FORMS += \
@@ -40,6 +42,8 @@ win32:RC_ICONS = icons8-play-96.ico
 
 DISTFILES += \
     appicon.rc
+
+LIBS += -lole32
 
 VERSION = 1.0.0.2
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

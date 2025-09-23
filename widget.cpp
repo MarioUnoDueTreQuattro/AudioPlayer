@@ -39,6 +39,8 @@ Widget::Widget(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle ("AudioPlayer");
     setAcceptDrops(true);
+    m_bSystemVolumeSlider = false;
+    m_systemVolumeController = new SystemVolumeController(this);
     m_player->setPlaylist(m_playlist);
     loadSettings();  // Load volume/mute state before connecting slider
     // Apply loaded volume
@@ -61,6 +63,7 @@ Widget::Widget(QWidget *parent)
     connect(ui->modeButton, SIGNAL(clicked()), this, SLOT(handleModeButton()));
     connect(ui->listWidget, &QListWidget::customContextMenuRequested, this, &Widget::showPlaylistContextMenu);
     connect(ui->modeButton, &QListWidget::customContextMenuRequested, this, &Widget::showModeButtonContextMenu);
+    connect(ui->volumeSlider, &QListWidget::customContextMenuRequested, this, &Widget::showVolumeSliderContextMenu);
 }
 
 Widget::~Widget()
@@ -654,30 +657,73 @@ void Widget::saveSettings()
 
 void Widget::handleVolumeChanged(int value)
 {
-    m_lastVolume = value;
-    ui->volumeLabel->setText(QString::number(value) + "%");  // NEW
-    if (!m_isMuted)
+    if (m_bSystemVolumeSlider == false)
     {
-        m_player->setVolume(value);
+        m_lastVolume = value;
+        ui->volumeLabel->setText(QString::number(value) + "%");  // NEW
+        if (!m_isMuted)
+        {
+            m_player->setVolume(value);
+        }
+        saveSettings();
     }
-    saveSettings();
+    else
+    {
+        float fVol = float (float(value) / 100.0f);
+        int iVol = int (fVol * 100.01f);
+        // qDebug() << "Current master volume f:" << fVol;
+        // qDebug() << "Current master volume i:" << iVol;
+        m_systemVolumeController->setVolume (fVol);
+        ui->volumeSlider->setValue (iVol);
+        ui->volumeLabel->setText(QString::number(iVol) + "%");
+    }
 }
 
 void Widget::handleMuteButton()
 {
-    if (m_isMuted)
+    if (m_bSystemVolumeSlider == false)
     {
-        // Unmute
-        m_isMuted = false;
-        m_player->setVolume(m_lastVolume);
-        ui->volumeLabel->setText(QString::number(m_lastVolume) + "%");
+        if (m_isMuted)
+        {
+            // Unmute
+            m_isMuted = false;
+            m_player->setVolume(m_lastVolume);
+            ui->volumeLabel->setText(QString::number(m_lastVolume) + "%");
+        }
+        else
+        {
+            // Mute
+            m_isMuted = true;
+            m_player->setVolume(0);
+            ui->volumeLabel->setText("0%");
+        }
     }
     else
     {
-        // Mute
-        m_isMuted = true;
-        m_player->setVolume(0);
-        ui->volumeLabel->setText("0%");
+        bool bMuted = m_systemVolumeController->isMuted ();
+        if (bMuted)
+        {
+            // Unmute
+            m_systemVolumeController->mute (false);
+            int iVol = int (m_systemVolumeController->volume () * 100.01f);
+            qDebug() << "Current master volume:" << iVol;
+            ui->volumeSlider->setValue (iVol);
+            ui->volumeLabel->setText(QString::number(iVol) + "%");
+        }
+        else
+        {
+            // Mute
+            m_systemVolumeController->mute (true);
+            m_isMuted = true;
+            ui->volumeLabel->setText("0%");
+        }
+        // float fVol = float (float(value) / 100.0f);
+        // int iVol = int (fVol * 100.01f);
+        //       // qDebug() << "Current master volume f:" << fVol;
+        //       // qDebug() << "Current master volume i:" << iVol;
+        // m_systemVolumeController->setVolume (fVol);
+        // ui->volumeSlider->setValue (iVol);
+        // ui->volumeLabel->setText(QString::number(iVol) + "%");
     }
     updateMuteButtonIcon();
     //saveSettings(); // optional: still save the mute state if you want
@@ -685,13 +731,29 @@ void Widget::handleMuteButton()
 
 void Widget::updateMuteButtonIcon()
 {
-    if (m_isMuted)
+    if (m_bSystemVolumeSlider == false)
     {
-        ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+        if (m_isMuted)
+        {
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+        }
+        else
+        {
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
+        }
     }
     else
     {
-        ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
+        bool bMuted = m_systemVolumeController->isMuted ();
+        if (bMuted)
+        {
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+        }
+        else
+        {
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
+        }
+
     }
 }
 
@@ -1091,6 +1153,44 @@ void Widget::showModeButtonContextMenu(const QPoint &pos)
     updateModeButtonIcon();
     QSettings settings;
     settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
+}
+
+void Widget::showVolumeSliderContextMenu(const QPoint &pos)
+{
+    QMenu contextMenu(this);
+    QAction *systemVolumeAction = contextMenu.addAction(tr("System volume"));
+    QAction *playerVolumeAction = contextMenu.addAction(tr("AudioPlayer volume"));
+    systemVolumeAction->setCheckable(true);
+    playerVolumeAction->setCheckable(true);
+    if (m_bSystemVolumeSlider)
+    {
+        systemVolumeAction->setChecked (true);
+        playerVolumeAction->setChecked (false);
+    }
+    else
+    {
+        systemVolumeAction->setChecked (false);
+        playerVolumeAction->setChecked (true);
+    }
+    QAction *selectedAction = contextMenu.exec(ui->volumeSlider->mapToGlobal(pos));
+    if (selectedAction == systemVolumeAction)
+    {
+        systemVolumeAction->setChecked (true);
+        playerVolumeAction->setChecked (false);
+        m_bSystemVolumeSlider = true;
+        int iVol = int (m_systemVolumeController->volume () * 100.01f);
+        qDebug() << "Current master volume:" << iVol;
+        ui->volumeSlider->setValue (iVol);
+        ui->volumeLabel->setText(QString::number(iVol) + "%");
+    }
+    else if (selectedAction == playerVolumeAction)
+    {
+        systemVolumeAction->setChecked (false);
+        playerVolumeAction->setChecked (true);
+        m_bSystemVolumeSlider = false;
+        ui->volumeSlider->setValue (m_lastVolume);
+    }
+    updateMuteButtonIcon ();
 }
 
 void Widget::clearExceptSelected()
