@@ -714,7 +714,6 @@ void Widget::handleMuteButton()
         {
             // Mute
             m_systemVolumeController->mute (true);
-            m_isMuted = true;
             ui->volumeLabel->setText("0%");
         }
         // float fVol = float (float(value) / 100.0f);
@@ -735,10 +734,12 @@ void Widget::updateMuteButtonIcon()
     {
         if (m_isMuted)
         {
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+            ui->muteButton->setChecked (true);
+            //ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
         }
         else
         {
+            ui->muteButton->setChecked (false);
             ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
         }
     }
@@ -747,10 +748,12 @@ void Widget::updateMuteButtonIcon()
         bool bMuted = m_systemVolumeController->isMuted ();
         if (bMuted)
         {
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+            ui->muteButton->setChecked (true);
+            //ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
         }
         else
         {
+            ui->muteButton->setChecked (false);
             ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
         }
 
