@@ -59,6 +59,8 @@ private slots:
     void showModeButtonContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
+    QList<QString> m_playedList;
+    QColor m_playedTextColor;
     QString m_sTheme;
     QString m_sPalette;
     void setTheme();

@@ -26,6 +26,7 @@
 #include <QAudioOutput>
 #include <QStyleFactory>
 #include <QPalette>
+#include <QDirIterator>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -311,8 +312,10 @@ void Widget::openFiles(const QStringList &filePaths)
     {
         m_playlist->setCurrentIndex(trackToPlay);
         m_player->play();
-        this->setWindowTitle ("AudioPlayer - " + currentTrackName ());
-        ui->listWidget->currentItem ()->setTextColor (QColor::fromRgb (0, 0, 128));
+        QString sPlaying = currentTrackName ();
+        m_playedList.append (sPlaying);
+        this->setWindowTitle ("AudioPlayer - " + sPlaying);
+        ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
         ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
         //this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
         // Restore last position only if not starting a new file
@@ -390,9 +393,6 @@ void Widget::dragEnterEvent(QDragEnterEvent *event)
 //}
 
 // Recursive
-
-#include <QDirIterator>
-
 void Widget::dropEvent(QDropEvent *event)
 {
     QStringList files;
@@ -454,6 +454,7 @@ void Widget::handleItemDoubleClicked()
     if (idx >= 0 && idx < m_playlist->mediaCount())
     {
         m_playlist->setCurrentIndex(idx);
+        if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
         m_player->play();
     }
 }
@@ -497,10 +498,12 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     if (index >= 0 && index < iListWidgetCount)
     {
         ui->listWidget->setCurrentRow(index);
-        this->setWindowTitle ("AudioPlayer - " + currentTrackName ());
-        // this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
+        QString sPlaying = currentTrackName ();
+        m_playedList.append (sPlaying);
+        this->setWindowTitle ("AudioPlayer - " + sPlaying);
+        ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
         ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
-        ui->listWidget->currentItem ()->setTextColor (QColor::fromRgb (32, 32, 128));
+        // this->setWindowTitle ("AudioPlayer - " + ui->listWidget->currentItem ()->text ());
     }
     else
     {
@@ -543,6 +546,8 @@ void Widget::loadSettings()
     m_sTheme = settings.value("Theme").toString();
     m_sPalette = settings.value("ThemePalette", "Light").toString();
     setTheme ();
+    QString colorName = settings.value("PlayedTextColor", "#000080").toString();
+    m_playedTextColor = QColor(colorName);
     // --- Volume ---
     m_lastVolume = settings.value("volume", 50).toInt();
     m_isMuted = false; // force unmuted
@@ -599,8 +604,10 @@ void Widget::loadSettings()
     // Start playback if playlist not empty
     if (m_playlist->mediaCount() > 0)
         m_player->play();
-    this->setWindowTitle ("AudioPlayer - " + currentTrackName ());
-    ui->listWidget->currentItem ()->setTextColor (QColor::fromRgb (0, 0, 128));
+    QString sPlaying = currentTrackName ();
+    m_playedList.append (sPlaying);
+    this->setWindowTitle ("AudioPlayer - " + sPlaying);
+    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
     ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
@@ -813,6 +820,7 @@ void Widget::on_configureButton_clicked()
 {
     Settings settingsDialog;       //=new configureDialog(this);
     connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(settingsDialogAccepted()));
+    connect(&settingsDialog, SIGNAL(applyClicked()), this, SLOT(settingsDialogAccepted()));
     // cd.setParent (this);
     settingsDialog.setWindowTitle("Configure");
     settingsDialog.exec();
@@ -820,12 +828,31 @@ void Widget::on_configureButton_clicked()
 
 void Widget::settingsDialogAccepted()
 {
-    qDebug() << __PRETTY_FUNCTION__ ;
+    //qDebug() << __PRETTY_FUNCTION__ ;
+    QSettings settings;
+    QString colorName = settings.value("PlayedTextColor", "#000080").toString();
+    m_playedTextColor = QColor(colorName);
+    int iTotalItems = ui->listWidget->count();
+    int iCount = m_playedList.count ();
+    for (int iIdx = 0; iIdx < iCount; iIdx++)
+    {
+        const QString &playedName = m_playedList.at(iIdx);
+        for (int iPlaylistItem = 0; iPlaylistItem < iTotalItems; iPlaylistItem++)
+        {
+            QListWidgetItem *item = ui->listWidget->item(iPlaylistItem);
+            if (item->text () == playedName)
+            {
+                //qDebug() << "found: " << playedName;
+                item->setForeground(QBrush(m_playedTextColor));
+                // ui->listWidget->item (iPlaylistItem)->setTextColor (m_playedTextColor);
+                break;
+            }
+        }
+    }
 }
 
 void Widget::handleModeButton()
 {
-    // Cycle through modes: Sequential -> Loop -> Random -> back to Sequential
     QMediaPlaylist::PlaybackMode mode = m_playlist->playbackMode();
     switch (mode)
     {
@@ -1174,7 +1201,7 @@ void Widget::handleRemoveSelected()
 
 void Widget::setTheme()
 {
-    qDebug() << __PRETTY_FUNCTION__ ;
+    //qDebug() << __PRETTY_FUNCTION__ ;
     if (m_sTheme != "")
     {
         QApplication::setStyle(QStyleFactory::create(m_sTheme));

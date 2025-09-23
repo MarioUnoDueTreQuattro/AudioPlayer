@@ -41,5 +41,5 @@ win32:RC_ICONS = icons8-play-96.ico
 DISTFILES += \
     appicon.rc
 
-VERSION = 1.0.0.1
+VERSION = 1.0.0.2
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

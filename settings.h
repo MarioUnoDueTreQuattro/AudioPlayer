@@ -2,6 +2,7 @@
 #define SETTINGS_H
 
 #include <QDialog>
+#include <QDialogButtonBox>
 
 namespace Ui {
 class Settings;
@@ -21,12 +22,19 @@ private slots:
 
     void on_Settings_accepted();
 
+    void on_pushButtonPlayedTextColor_clicked();
+
+    void on_buttonBox_clicked(QAbstractButton *button);
+
 private:
     Ui::Settings *ui;
     QString m_sTheme;
     QString m_sPalette;
+    QColor m_playedTextColor;
     void saveSettings();
     void loadSettings();
+signals:
+    void applyClicked();  // custom signal
 };
 
 #endif // SETTINGS_H

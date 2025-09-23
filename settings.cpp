@@ -8,6 +8,7 @@
 #include <QPalette>
 #include <QDebug>
 #include <QSettings>
+#include <QColorDialog>
 
 Settings::Settings(QWidget *parent) :
     QDialog(parent),
@@ -126,6 +127,7 @@ void Settings::saveSettings()
     QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     settings.setValue ("Theme", m_sTheme);
     settings.setValue ("ThemePalette", m_sPalette);
+    settings.setValue("PlayedTextColor", m_playedTextColor.name());
     settings.sync();
 }
 
@@ -134,4 +136,56 @@ void Settings::loadSettings()
     QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     m_sTheme = settings.value("Theme").toString();
     m_sPalette = settings.value("ThemePalette", "Light").toString();
+    QString colorName = settings.value("PlayedTextColor", "#000080").toString();
+    m_playedTextColor = QColor(colorName);
+    QPalette palette = ui->pushButtonPlayedTextColor->palette();
+    palette.setColor(QPalette::Button, m_playedTextColor);
+    ui->pushButtonPlayedTextColor->setAutoFillBackground(true);
+    ui->pushButtonPlayedTextColor->setPalette(palette);
+}
+
+void Settings::on_pushButtonPlayedTextColor_clicked()
+{
+    // Open color dialog, with white as default
+    QColor chosenColor = QColorDialog::getColor(m_playedTextColor, this, "Select a color");
+    if (chosenColor.isValid())
+    {
+        m_playedTextColor=chosenColor;
+        QPalette palette = ui->pushButtonPlayedTextColor->palette();
+        palette.setColor(QPalette::Button, m_playedTextColor);
+        ui->pushButtonPlayedTextColor->setAutoFillBackground(true);
+        ui->pushButtonPlayedTextColor->setPalette(palette);
+        //ui->pushButtonPlayedTextColor->update ();
+    }
+}
+
+void Settings::on_buttonBox_clicked(QAbstractButton *button)
+{
+    QDialogButtonBox *buttonBox = qobject_cast<QDialogButtonBox *>(sender());
+          if (!buttonBox) return;
+
+          QDialogButtonBox::ButtonRole role = buttonBox->buttonRole(button);
+          switch (role)
+                 {
+                 case QDialogButtonBox::ApplyRole:
+                     qDebug() << "Apply clicked -> apply changes without closing";
+                     //applySettings();
+                     on_Settings_accepted();
+                      emit applyClicked();   // <-- EMIT CUSTOM SIGNAL
+              break;
+
+//                 case QDialogButtonBox::AcceptRole:
+//                     qDebug() << "OK clicked -> apply + close";
+//                     applySettings();
+//                     accept();
+//                     break;
+
+//                 case QDialogButtonBox::RejectRole:
+//                     qDebug() << "Cancel clicked -> discard + close";
+//                     reject();
+//                     break;
+
+                 default:
+                     break;
+                 }
 }
