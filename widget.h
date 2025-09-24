@@ -31,12 +31,13 @@ protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
- void resizeEvent(QResizeEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 private slots:
- void onSystemVolumeChanged(float newVolume);
+    void onSystemVolumeChanged(float newVolume);
     void onSystemMuteChanged(bool muted);
+    void onDefaultDeviceChanged();
     void settingsDialogAccepted();
-   void handleSilenceFinished(QAudio::State state);
+    void handleSilenceFinished(QAudio::State state);
     void handleModeButton();  // NEW slot
     void updateModeButtonIcon(); // Helper to update icon
     void handlePlayButton();
