@@ -27,6 +27,7 @@
 #include <QStyleFactory>
 #include <QPalette>
 #include <QDirIterator>
+#include <QToolTip>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -1409,8 +1410,11 @@ void Widget::onDefaultDeviceChanged()
 
 void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyName)
 {
-    qDebug() << __PRETTY_FUNCTION__ << "Device ID: " << deviceId << " Device name: " << friendlyName;
-    //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
+    qDebug() << __PRETTY_FUNCTION__ <<"Device name: " << friendlyName;
+QString sToolTipMessage="Default audio playback device changed to:<br><b>" + friendlyName + "</b>";
+    QPoint globalPos = ui->volumeSlider->mapToGlobal(QPoint(ui->volumeSlider->width() /2 , ui->volumeSlider->height()/2));
+ QToolTip::showText(globalPos, sToolTipMessage, ui->volumeSlider);
+ //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
     bool wasPlaying = false;
     if (m_player && m_player->state() == QMediaPlayer::PlayingState)
     {

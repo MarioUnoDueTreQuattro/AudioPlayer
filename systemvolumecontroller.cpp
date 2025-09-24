@@ -158,7 +158,7 @@ STDMETHODIMP SystemVolumeController::OnDefaultDeviceChanged(EDataFlow flow, ERol
     m_lastDeviceId = deviceId;
     m_deviceFriendlyName = friendlyName;
 
-    qDebug() << __PRETTY_FUNCTION__ << "New default device:" << deviceId;
+    //qDebug() << __PRETTY_FUNCTION__ << "New default device:" << deviceId;
     qDebug() << __PRETTY_FUNCTION__ << "Friendly name:" << friendlyName;
 
     emit defaultDeviceChanged(m_lastDeviceId, friendlyName);
@@ -217,22 +217,22 @@ QString SystemVolumeController::friendlyNameForDefaultDevice()
         PROPVARIANT varName;
         PropVariantInit(&varName);
 
-        // Manual definition of PKEY_Device_FriendlyName
-        PROPERTYKEY keyFriendlyName;
-        keyFriendlyName.fmtid.Data1 = 0xa45c254e;
-        keyFriendlyName.fmtid.Data2 = 0xdf1c;
-        keyFriendlyName.fmtid.Data3 = 0x4efd;
-        keyFriendlyName.fmtid.Data4[0] = 0x80;
-        keyFriendlyName.fmtid.Data4[1] = 0x20;
-        keyFriendlyName.fmtid.Data4[2] = 0x67;
-        keyFriendlyName.fmtid.Data4[3] = 0xd1;
-        keyFriendlyName.fmtid.Data4[4] = 0x46;
-        keyFriendlyName.fmtid.Data4[5] = 0xa8;
-        keyFriendlyName.fmtid.Data4[6] = 0x50;
-        keyFriendlyName.fmtid.Data4[7] = 0x01;
-        keyFriendlyName.pid = 14;
+//        // Manual definition of PKEY_Device_FriendlyName
+//        PROPERTYKEY keyFriendlyName;
+//        keyFriendlyName.fmtid.Data1 = 0xa45c254e;
+//        keyFriendlyName.fmtid.Data2 = 0xdf1c;
+//        keyFriendlyName.fmtid.Data3 = 0x4efd;
+//        keyFriendlyName.fmtid.Data4[0] = 0x80;
+//        keyFriendlyName.fmtid.Data4[1] = 0x20;
+//        keyFriendlyName.fmtid.Data4[2] = 0x67;
+//        keyFriendlyName.fmtid.Data4[3] = 0xd1;
+//        keyFriendlyName.fmtid.Data4[4] = 0x46;
+//        keyFriendlyName.fmtid.Data4[5] = 0xa8;
+//        keyFriendlyName.fmtid.Data4[6] = 0x50;
+//        keyFriendlyName.fmtid.Data4[7] = 0x01;
+//        keyFriendlyName.pid = 14;
 
-        if (SUCCEEDED(props->GetValue(keyFriendlyName, &varName))) {
+        if (SUCCEEDED(props->GetValue(PKEY_Device_FriendlyName, &varName))) {
             if (varName.vt == VT_LPWSTR && varName.pwszVal)
                 friendlyName = QString::fromWCharArray(varName.pwszVal);
         }
@@ -311,27 +311,27 @@ void SystemVolumeController::updateCurrentDeviceInfo(IMMDevice *device)
         CoTaskMemFree(id);
     }
 
-    // Define PROPERTYKEY manually (same GUID as PKEY_Device_FriendlyName)
-    PROPERTYKEY keyFriendlyName;
-    keyFriendlyName.fmtid.Data1 = 0xa45c254e;
-    keyFriendlyName.fmtid.Data2 = 0xdf1c;
-    keyFriendlyName.fmtid.Data3 = 0x4efd;
-    keyFriendlyName.fmtid.Data4[0] = 0x80;
-    keyFriendlyName.fmtid.Data4[1] = 0x20;
-    keyFriendlyName.fmtid.Data4[2] = 0x67;
-    keyFriendlyName.fmtid.Data4[3] = 0xd1;
-    keyFriendlyName.fmtid.Data4[4] = 0x46;
-    keyFriendlyName.fmtid.Data4[5] = 0xa8;
-    keyFriendlyName.fmtid.Data4[6] = 0x50;
-    keyFriendlyName.fmtid.Data4[7] = 0x1;
-    keyFriendlyName.pid = 14; // Friendly name property
+//    // Define PROPERTYKEY manually (same GUID as PKEY_Device_FriendlyName)
+//    PROPERTYKEY keyFriendlyName;
+//    keyFriendlyName.fmtid.Data1 = 0xa45c254e;
+//    keyFriendlyName.fmtid.Data2 = 0xdf1c;
+//    keyFriendlyName.fmtid.Data3 = 0x4efd;
+//    keyFriendlyName.fmtid.Data4[0] = 0x80;
+//    keyFriendlyName.fmtid.Data4[1] = 0x20;
+//    keyFriendlyName.fmtid.Data4[2] = 0x67;
+//    keyFriendlyName.fmtid.Data4[3] = 0xd1;
+//    keyFriendlyName.fmtid.Data4[4] = 0x46;
+//    keyFriendlyName.fmtid.Data4[5] = 0xa8;
+//    keyFriendlyName.fmtid.Data4[6] = 0x50;
+//    keyFriendlyName.fmtid.Data4[7] = 0x1;
+//    keyFriendlyName.pid = 14; // Friendly name property
 
     IPropertyStore *props = nullptr;
     if (SUCCEEDED(device->OpenPropertyStore(STGM_READ, &props))) {
         PROPVARIANT varName;
         PropVariantInit(&varName);
 
-        if (SUCCEEDED(props->GetValue(keyFriendlyName, &varName))) {
+        if (SUCCEEDED(props->GetValue(PKEY_Device_FriendlyName, &varName)))  {
             if (varName.vt == VT_LPWSTR && varName.pwszVal)
                 m_deviceFriendlyName = QString::fromWCharArray(varName.pwszVal);
             PropVariantClear(&varName);
