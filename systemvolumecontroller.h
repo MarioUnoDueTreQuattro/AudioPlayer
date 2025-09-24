@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <Mmdeviceapi.h>
 #include <Endpointvolume.h>
+#include <QString>
 
 class SystemVolumeController : public QObject,
                                public IAudioEndpointVolumeCallback,
@@ -18,7 +19,9 @@ public:
 
     float volume() const;     // 0.0 - 1.0
     bool isMuted() const;
-
+    QString deviceId() const { return m_lastDeviceId; }
+       QString deviceName() const { return m_deviceName; }
+       QString deviceFriendlyName() const { return m_deviceFriendlyName; }
 public slots:
     void setVolume(float level);  // 0.0 - 1.0
     void mute(bool enable);
@@ -29,10 +32,12 @@ public slots:
 signals:
     void volumeChanged(float newVolume);
     void muteStateChanged(bool muted);
-    void defaultDeviceChanged();  // New signal to notify the app
-
+ void defaultDeviceChanged(const QString &deviceId, const QString &friendlyName);
+ void deviceInfoChanged(const QString &deviceId,
+                               const QString &friendlyName);
 private:
-QString m_lastDeviceId;
+        QString friendlyNameForDefaultDevice();
+ void updateCurrentDeviceInfo(IMMDevice *device);
     // COM callback interfaces
     STDMETHODIMP OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) override;
     STDMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDeviceId) override;
@@ -49,8 +54,11 @@ QString m_lastDeviceId;
     ULONG STDMETHODCALLTYPE Release() override;
 
     IAudioEndpointVolume *m_endpointVolume;
-    IMMDeviceEnumerator *m_deviceEnumerator;
-    LONG m_refCount;
+       IMMDeviceEnumerator *m_deviceEnumerator;
+       QString m_lastDeviceId;
+       QString m_deviceName;
+       QString m_deviceFriendlyName;
+       LONG m_refCount;
 };
 
 #endif // SYSTEMVOLUMECONTROLLER_H

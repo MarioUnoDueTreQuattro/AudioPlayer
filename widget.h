@@ -36,7 +36,8 @@ private slots:
     void onSystemVolumeChanged(float newVolume);
     void onSystemMuteChanged(bool muted);
     void onDefaultDeviceChanged();
-    void settingsDialogAccepted();
+     void onDeviceChanged(const QString &deviceId, const QString &friendlyName);
+     void settingsDialogAccepted();
     void handleSilenceFinished(QAudio::State state);
     void handleModeButton();  // NEW slot
     void updateModeButtonIcon(); // Helper to update icon

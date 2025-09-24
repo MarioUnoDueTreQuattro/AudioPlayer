@@ -68,9 +68,10 @@ Widget::Widget(QWidget *parent)
         this, SLOT(onSystemVolumeChanged(float)));
     connect(m_systemVolumeController, SIGNAL(muteStateChanged(bool)),
         this, SLOT(onSystemMuteChanged(bool)));
-    connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged()),
-        this, SLOT(onDefaultDeviceChanged()));
-}
+//    connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged()),
+//        this, SLOT(onDefaultDeviceChanged()));
+    connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged(QString,QString)),
+            this, SLOT(onDeviceChanged(QString,QString)));}
 
 Widget::~Widget()
 {
@@ -442,7 +443,7 @@ void Widget::handlePlayButton()
         m_playlist->setCurrentIndex(selectedRow);
     }
     if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
-    m_player->play();
+    handlePlay ();
 }
 
 void Widget::handlePauseButton()
@@ -453,6 +454,12 @@ void Widget::handlePauseButton()
 void Widget::handleStopButton()
 {
     m_player->stop();
+    int iListWidgetCount = ui->listWidget->count();
+    for (int iIdx = 0; iIdx < iListWidgetCount; iIdx++)
+    {
+        ui->listWidget->item (iIdx)->setIcon (QIcon());
+    }
+
 }
 
 void Widget::handlePlay()
@@ -522,7 +529,7 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     }
     else
     {
-        ui->listWidget->clearSelection();
+       // ui->listWidget->clearSelection();
     }
 }
 
@@ -1027,6 +1034,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
     QTextStream in(&file);
     m_playlist->clear();
     ui->listWidget->clear();
+    ui->listWidget->viewport()->update();
     while (!in.atEnd())
     {
         QString line = in.readLine().trimmed();
@@ -1416,33 +1424,51 @@ void Widget::onSystemMuteChanged(bool muted)
 void Widget::onDefaultDeviceChanged()
 {
     qDebug() << "Widget: Detected new default output device";
-    qDebug() << "Widget: Detected new default output device";
-
-       bool wasPlaying = false;
-       if (m_player && m_player->state() == QMediaPlayer::PlayingState)
-       {
-           wasPlaying = true;
-           m_player->pause (); // Stop to release old device
-       }
-
-       // Recreate QAudioOutput or QMediaPlayer
-//       delete m_audioOutput;
-//       m_audioOutput = new QAudioOutput(this);
-//       m_player->setAudioOutput(m_audioOutput);
-       // 2. Reinitialize SystemVolumeController safely
-          m_systemVolumeController->blockSignals(true);
-          m_systemVolumeController->cleanup();
-          m_systemVolumeController->initialize();
-          m_systemVolumeController->blockSignals(false);
-       // Sync slider/label with new device volume
-       //handleVolumeChanged(int(m_systemVolumeController->volume() * 100.0f));
-
-       if (wasPlaying)
-       {
-           m_player->play(); // Resume playback
-       }
-       // Refresh slider & label with new device volume
+    bool wasPlaying = false;
+    if (m_player && m_player->state() == QMediaPlayer::PlayingState)
+    {
+        wasPlaying = true;
+        m_player->pause (); // Stop to release old device
+    }
+    // Recreate QAudioOutput or QMediaPlayer
+    // delete m_audioOutput;
+    // m_audioOutput = new QAudioOutput(this);
+    // m_player->setAudioOutput(m_audioOutput);
+    // 2. Reinitialize SystemVolumeController safely
+    m_systemVolumeController->blockSignals(true);
+    m_systemVolumeController->cleanup();
+    m_systemVolumeController->initialize();
+    m_systemVolumeController->blockSignals(false);
+    // Sync slider/label with new device volume
+    //handleVolumeChanged(int(m_systemVolumeController->volume() * 100.0f));
+    if (wasPlaying)
+    {
+        m_player->play(); // Resume playback
+    }
+    // Refresh slider & label with new device volume
     onSystemVolumeChanged(m_systemVolumeController->volume());
-    QMessageBox::warning (this,"Audio device changed", "Default audio playback device changed.");
+    QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
+}
 
+void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyName)
+{
+    qDebug() << __PRETTY_FUNCTION__ << "Device ID: " << deviceId << " Device name: " <<friendlyName;
+    //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
+    bool wasPlaying = false;
+    if (m_player && m_player->state() == QMediaPlayer::PlayingState)
+    {
+        wasPlaying = true;
+        m_player->pause (); // Stop to release old device
+    }
+    m_systemVolumeController->blockSignals(true);
+    m_systemVolumeController->cleanup();
+    m_systemVolumeController->initialize();
+    m_systemVolumeController->blockSignals(false);
+    // Sync slider/label with new device volume
+    //handleVolumeChanged(int(m_systemVolumeController->volume() * 100.0f));
+    if (wasPlaying)
+    {
+        m_player->play(); // Resume playback
+    }
+ onSystemVolumeChanged(m_systemVolumeController->volume());
 }

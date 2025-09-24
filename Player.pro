@@ -44,6 +44,7 @@ DISTFILES += \
     appicon.rc
 
 LIBS += -lole32
+#win32:LIBS += -lPropsys
 
 VERSION = 1.0.0.2
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
