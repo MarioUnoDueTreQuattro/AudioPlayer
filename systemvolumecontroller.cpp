@@ -1,7 +1,10 @@
 #include "systemvolumecontroller.h"
 #include <QDebug>
-#include <Functiondiscoverykeys_devpkey.h>  // for PKEY_Device_FriendlyName
-
+#ifndef INITGUID
+#define INITGUID
+#endif
+#include <initguid.h>
+#include <functiondiscoverykeys_devpkey.h>
 SystemVolumeController::SystemVolumeController(QObject *parent)
     : QObject(parent),
       m_endpointVolume(nullptr),
