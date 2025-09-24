@@ -77,7 +77,6 @@ private:
     void setTheme();
     QString currentTrackName();
     void playSilence(int ms = 500);
-    void playSilence2(int ms = 500);
     void scrollToCurrentTrack();
     QString m_lastPlaylistPath;
     QString m_lastDialogPlaylistPath;

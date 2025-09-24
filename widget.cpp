@@ -68,10 +68,11 @@ Widget::Widget(QWidget *parent)
         this, SLOT(onSystemVolumeChanged(float)));
     connect(m_systemVolumeController, SIGNAL(muteStateChanged(bool)),
         this, SLOT(onSystemMuteChanged(bool)));
-//    connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged()),
-//        this, SLOT(onDefaultDeviceChanged()));
-    connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged(QString,QString)),
-            this, SLOT(onDeviceChanged(QString,QString)));}
+    // connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged()),
+    // this, SLOT(onDefaultDeviceChanged()));
+    connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged(QString, QString)),
+        this, SLOT(onDeviceChanged(QString, QString)));
+}
 
 Widget::~Widget()
 {
@@ -185,52 +186,6 @@ void Widget::handleSilenceFinished(QAudio::State state)
         audioOut->stop();
         audioOut->deleteLater();
     }
-}
-
-void Widget::playSilence2(int ms)
-{
-    // Stop current playback if needed
-    m_player->stop();
-    // Generate an in-memory silent WAV
-    QByteArray data;
-    QDataStream out(&data, QIODevice::WriteOnly);
-    out.setByteOrder(QDataStream::LittleEndian);
-    int sampleRate = 44100;
-    int numSamples = sampleRate * ms / 1000;
-    int numChannels = 2;
-    int bytesPerSample = 2; // 16-bit PCM
-    int byteRate = sampleRate * numChannels * bytesPerSample;
-    int dataSize = numSamples * numChannels * bytesPerSample;
-    // Write WAV header
-    out.writeRawData("RIFF", 4);
-    out << quint32(36 + dataSize);
-    out.writeRawData("WAVEfmt ", 8);
-    out << quint32(16);      // PCM chunk size
-    out << quint16(1);       // PCM format
-    out << quint16(numChannels);
-    out << quint32(sampleRate);
-    out << quint32(byteRate);
-    out << quint16(numChannels * bytesPerSample);
-    out << quint16(8 * bytesPerSample);
-    out.writeRawData("data", 4);
-    out << quint32(dataSize);
-    // Write silence samples (all zeros)
-    data.append(QByteArray(dataSize, 0));
-    // Play using QMediaPlayer
-    QBuffer *buffer = new QBuffer(this);
-    buffer->setData(data);
-    buffer->open(QIODevice::ReadOnly);
-    connect(m_player, &QMediaPlayer::mediaStatusChanged, this,
-        [buffer, this](QMediaPlayer::MediaStatus status)
-    {
-        if (status == QMediaPlayer::EndOfMedia || status == QMediaPlayer::InvalidMedia)
-        {
-            buffer->close();
-            buffer->deleteLater();
-        }
-    });
-    m_player->setMedia(QMediaContent(), buffer);
-    m_player->play();
 }
 
 void Widget::resizeEvent(QResizeEvent *event)
@@ -347,7 +302,7 @@ void Widget::addFileToPlaylist(const QString &filePath)
     if (!fi.exists())
         return;
     QString ext = fi.suffix().toLower();
-    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus")
+    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus" && ext != "flac")
         return;
     // Avoid duplicate entries
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
@@ -413,7 +368,7 @@ void Widget::dropEvent(QDropEvent *event)
             if (fi.isDir())
             {
                 QDirIterator it(fi.absoluteFilePath(),
-                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus",
+                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus" << "*.flac",
                     QDir::Files,
                     QDirIterator::Subdirectories);
                 while (it.hasNext())
@@ -459,7 +414,6 @@ void Widget::handleStopButton()
     {
         ui->listWidget->item (iIdx)->setIcon (QIcon());
     }
-
 }
 
 void Widget::handlePlay()
@@ -522,14 +476,14 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     if (index >= 0 && index < iListWidgetCount)
     {
         ui->listWidget->setCurrentRow(index);
-        if (m_player->state() == QMediaPlayer::PlayingState | m_bAutoplay)
+        if (m_player->state() == QMediaPlayer::PlayingState || m_bAutoplay)
         {
             handlePlay ();
         }
     }
     else
     {
-       // ui->listWidget->clearSelection();
+        // ui->listWidget->clearSelection();
     }
 }
 
@@ -643,7 +597,7 @@ void Widget::saveSettings()
     QSettings settings(QApplication::organizationName(),
         QApplication::applicationName());
     // --- Volume ---
-    settings.setValue("volume", m_lastVolume);
+    //settings.setValue("volume", m_lastVolume);
     //settings.setValue("muted", m_isMuted); // optional
     // --- Playlist files fallback ---
     QStringList playlistFiles;
@@ -678,7 +632,8 @@ void Widget::handleVolumeChanged(int value)
         {
             m_player->setVolume(value);
         }
-        saveSettings();
+        QSettings settings;
+        settings.setValue("volume", m_lastVolume);
     }
     else
     {
@@ -748,12 +703,12 @@ void Widget::updateMuteButtonIcon()
         if (m_isMuted)
         {
             ui->muteButton->setChecked (true);
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
         }
         else
         {
             ui->muteButton->setChecked (false);
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
         }
     }
     else
@@ -762,12 +717,12 @@ void Widget::updateMuteButtonIcon()
         if (bMuted)
         {
             ui->muteButton->setChecked (true);
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
         }
         else
         {
             ui->muteButton->setChecked (false);
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
+            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
         }
     }
 }
@@ -997,8 +952,10 @@ void Widget::handleLoadPlaylist()
     QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     QSettings settings;
     m_lastDialogPlaylistPath = settings.value("m_lastDialogPlaylistPath", documentsPath).toString ();
+    // QFileInfo fileInfo(m_lastDialogPlaylistPath);
+    // QString path = fileInfo.absolutePath(); // or .path()
     QString fileName = QFileDialog::getOpenFileName(
-            this, tr("Load Playlist"), m_lastDialogPlaylistPath, tr("Playlist (*.m3u *.txt);;All Files (*)"));
+            this, tr("Load Playlist"), m_lastDialogPlaylistPath, tr("Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
     loadPlaylistFile(fileName);
@@ -1020,7 +977,7 @@ void Widget::handleSavePlaylist()
     QSettings settings;
     m_lastDialogPlaylistPath = settings.value("m_lastDialogPlaylistPath", documentsPath).toString ();
     QString fileName = QFileDialog::getSaveFileName(
-            this, tr("Save Playlist"), m_lastDialogPlaylistPath + "/playlist.m3u", tr("M3U Playlist (*.m3u);;Text Files (*.txt);;All Files (*)"));
+            this, tr("Save Playlist"), m_lastDialogPlaylistPath, tr("M3U Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
     savePlaylistFile(fileName);
@@ -1452,7 +1409,7 @@ void Widget::onDefaultDeviceChanged()
 
 void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyName)
 {
-    qDebug() << __PRETTY_FUNCTION__ << "Device ID: " << deviceId << " Device name: " <<friendlyName;
+    qDebug() << __PRETTY_FUNCTION__ << "Device ID: " << deviceId << " Device name: " << friendlyName;
     //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
     bool wasPlaying = false;
     if (m_player && m_player->state() == QMediaPlayer::PlayingState)
@@ -1470,5 +1427,5 @@ void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyNam
     {
         m_player->play(); // Resume playback
     }
- onSystemVolumeChanged(m_systemVolumeController->volume());
+    onSystemVolumeChanged(m_systemVolumeController->volume());
 }
