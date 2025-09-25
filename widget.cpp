@@ -48,6 +48,74 @@ Widget::Widget(QWidget *parent)
     m_player->setVolume(m_lastVolume);
     ui->volumeSlider->setValue(m_lastVolume);
     ui->listWidget -> setAlternatingRowColors(true);
+    setSignalsConnections();
+    setKeyboardShortcuts();
+}
+
+void Widget::setKeyboardShortcuts()
+{
+    ui->playButton->setShortcut(QKeySequence(Qt::Key_Space));
+    ui->stopButton->setShortcut(QKeySequence(Qt::Key_S));
+    ui->pauseButton->setShortcut(QKeySequence(Qt::Key_P));
+    ui->muteButton->setShortcut(QKeySequence(Qt::Key_M));
+    ui->prevButton->setShortcut(QKeySequence(Qt::Key_Left));
+    ui->nextButton->setShortcut(QKeySequence(Qt::Key_Right));
+    // Volume up with '+'
+    QAction *volumeUpAction = new QAction(tr("Volume Up"), this);
+    volumeUpAction->setShortcut(QKeySequence(Qt::Key_Plus));
+    connect(volumeUpAction, SIGNAL(triggered()), this, SLOT(handleVolumeUp()));
+    addAction(volumeUpAction);
+    // Volume down with '-'
+    QAction *volumeDownAction = new QAction(tr("Volume Down"), this);
+    volumeDownAction->setShortcut(QKeySequence(Qt::Key_Minus));
+    connect(volumeDownAction, SIGNAL(triggered()), this, SLOT(handleVolumeDown()));
+    addAction(volumeDownAction);
+}
+
+void Widget::handleVolumeUp()
+{
+    int iDiff=5;
+    if (m_bSystemVolumeSlider == false)
+    {
+        int vol = qBound(0, m_lastVolume + iDiff, 100);
+        handleVolumeChanged (vol);
+        ui->volumeSlider->setValue (vol);
+        //ui->volumeLabel->setText(QString::number(vol) + "%");
+    }
+    else
+    {
+        int iCurVol=ui->volumeSlider->value ();
+        iCurVol=qBound(0,iCurVol+iDiff,100);
+        float fVol = float (float(iCurVol) / 100.0f);
+        m_systemVolumeController->setVolume (fVol);
+        ui->volumeSlider->setValue (iCurVol);
+        ui->volumeLabel->setText(QString::number(iCurVol) + "%");
+    }
+}
+
+void Widget::handleVolumeDown()
+{
+    int iDiff=-5;
+    if (m_bSystemVolumeSlider == false)
+    {
+        int vol = qBound(0, m_lastVolume + iDiff, 100);
+        handleVolumeChanged (vol);
+        ui->volumeSlider->setValue (vol);
+        //ui->volumeLabel->setText(QString::number(vol) + "%");
+    }
+    else
+    {
+        int iCurVol=ui->volumeSlider->value ();
+        iCurVol=qBound(0,iCurVol+iDiff,100);
+        float fVol = float (float(iCurVol) / 100.0f);
+        m_systemVolumeController->setVolume (fVol);
+        ui->volumeSlider->setValue (iCurVol);
+        ui->volumeLabel->setText(QString::number(iCurVol) + "%");
+    }
+}
+
+void Widget::setSignalsConnections()
+{
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
     connect(ui->pauseButton, SIGNAL(clicked()), this, SLOT(handlePauseButton()));
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(handleStopButton()));
@@ -1410,11 +1478,11 @@ void Widget::onDefaultDeviceChanged()
 
 void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyName)
 {
-    qDebug() << __PRETTY_FUNCTION__ <<"Device name: " << friendlyName;
-QString sToolTipMessage="Default audio playback device changed to:<br><b>" + friendlyName + "</b>";
-    QPoint globalPos = ui->volumeSlider->mapToGlobal(QPoint(ui->volumeSlider->width() /2 , ui->volumeSlider->height()/2));
- QToolTip::showText(globalPos, sToolTipMessage, ui->volumeSlider);
- //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
+    qDebug() << __PRETTY_FUNCTION__ << "Device name: " << friendlyName;
+    QString sToolTipMessage = "Default audio playback device changed to:<br><b>" + friendlyName + "</b>";
+    QPoint globalPos = ui->volumeSlider->mapToGlobal(QPoint(ui->volumeSlider->width() / 2, ui->volumeSlider->height() / 2));
+    QToolTip::showText(globalPos, sToolTipMessage, ui->volumeSlider);
+    //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
     bool wasPlaying = false;
     if (m_player && m_player->state() == QMediaPlayer::PlayingState)
     {

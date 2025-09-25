@@ -20,9 +20,6 @@ class Widget : public QWidget
 public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget();
-
-    void handlePlay();
-
 public slots:
     void openFiles(const QStringList &filePaths);
 
@@ -33,11 +30,13 @@ protected:
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 private slots:
+    void handleVolumeUp();
+    void handleVolumeDown();
     void onSystemVolumeChanged(float newVolume);
     void onSystemMuteChanged(bool muted);
     void onDefaultDeviceChanged();
-     void onDeviceChanged(const QString &deviceId, const QString &friendlyName);
-     void settingsDialogAccepted();
+    void onDeviceChanged(const QString &deviceId, const QString &friendlyName);
+    void settingsDialogAccepted();
     void handleSilenceFinished(QAudio::State state);
     void handleModeButton();  // NEW slot
     void updateModeButtonIcon(); // Helper to update icon
@@ -67,6 +66,9 @@ private slots:
     void showVolumeSliderContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
+    void handlePlay();
+    void setKeyboardShortcuts();
+    void setSignalsConnections();
     SystemVolumeController *m_systemVolumeController;
     bool m_bAutoplay;
     bool m_bSystemVolumeSlider;
