@@ -8,6 +8,7 @@
 #include <QListWidgetItem>
 #include <QStack>
 #include "systemvolumecontroller.h"
+#include <3rdparty/qhotkey/QHotkey/QHotkey>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -30,6 +31,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 private slots:
+    void switchVolume();
     void handleVolumeUp();
     void handleVolumeDown();
     void onSystemVolumeChanged(float newVolume);
@@ -66,7 +68,8 @@ private slots:
     void showVolumeSliderContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
-    void handlePlay();
+   QHotkey *m_hotkey;
+   void handlePlay();
     void setKeyboardShortcuts();
     void setSignalsConnections();
     SystemVolumeController *m_systemVolumeController;

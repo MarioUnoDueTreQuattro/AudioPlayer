@@ -38,6 +38,19 @@ Widget::Widget(QWidget *parent)
       m_isMuted(false)
 {
     ui->setupUi(this);
+    // m_hotkey = new QHotkey(QKeySequence("Ctrl+Shift+A"), true, this);
+    // if (!m_hotkey->isRegistered())
+    // {
+    // qDebug() << "Hotkey not registered!";
+    // }
+    // else
+    // qDebug() << "Hotkey registered!";
+    // QObject::connect(m_hotkey, &QHotkey::activated,
+    // [&]()
+    // {
+    // QMessageBox::information(nullptr, "Hotkey Pressed",
+    // "You pressed Hotkey!");
+    // });
     setWindowTitle ("AudioPlayer");
     setAcceptDrops(true);
     m_bSystemVolumeSlider = false;
@@ -70,11 +83,15 @@ void Widget::setKeyboardShortcuts()
     volumeDownAction->setShortcut(QKeySequence(Qt::Key_Minus));
     connect(volumeDownAction, SIGNAL(triggered()), this, SLOT(handleVolumeDown()));
     addAction(volumeDownAction);
+    QAction *volumeSwitchAction = new QAction(tr("Switch volume control"), this);
+    volumeSwitchAction->setShortcut(QKeySequence(Qt::Key_V));
+    connect(volumeSwitchAction, SIGNAL(triggered()), this, SLOT(switchVolume()));
+    addAction(volumeSwitchAction);
 }
 
 void Widget::handleVolumeUp()
 {
-    int iDiff=5;
+    int iDiff = 5;
     if (m_bSystemVolumeSlider == false)
     {
         int vol = qBound(0, m_lastVolume + iDiff, 100);
@@ -84,8 +101,8 @@ void Widget::handleVolumeUp()
     }
     else
     {
-        int iCurVol=ui->volumeSlider->value ();
-        iCurVol=qBound(0,iCurVol+iDiff,100);
+        int iCurVol = ui->volumeSlider->value ();
+        iCurVol = qBound(0, iCurVol + iDiff, 100);
         float fVol = float (float(iCurVol) / 100.0f);
         m_systemVolumeController->setVolume (fVol);
         ui->volumeSlider->setValue (iCurVol);
@@ -95,7 +112,7 @@ void Widget::handleVolumeUp()
 
 void Widget::handleVolumeDown()
 {
-    int iDiff=-5;
+    int iDiff = -5;
     if (m_bSystemVolumeSlider == false)
     {
         int vol = qBound(0, m_lastVolume + iDiff, 100);
@@ -105,8 +122,8 @@ void Widget::handleVolumeDown()
     }
     else
     {
-        int iCurVol=ui->volumeSlider->value ();
-        iCurVol=qBound(0,iCurVol+iDiff,100);
+        int iCurVol = ui->volumeSlider->value ();
+        iCurVol = qBound(0, iCurVol + iDiff, 100);
         float fVol = float (float(iCurVol) / 100.0f);
         m_systemVolumeController->setVolume (fVol);
         ui->volumeSlider->setValue (iCurVol);
@@ -268,6 +285,25 @@ void Widget::resizeEvent(QResizeEvent *event)
     // settings.setValue("windowState", saveState());
     // Call base implementation (optional if QWidget)
     QWidget::resizeEvent(event);
+}
+
+void Widget::switchVolume()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    if (!m_bSystemVolumeSlider)
+    {
+        m_bSystemVolumeSlider = true;
+        int iVol = int (m_systemVolumeController->volume () * 100.01f);
+        qDebug() << "Current master volume:" << iVol;
+        ui->volumeSlider->setValue (iVol);
+        ui->volumeLabel->setText(QString::number(iVol) + "%");
+    }
+    else
+    {
+        m_bSystemVolumeSlider = false;
+        ui->volumeSlider->setValue (m_lastVolume);
+    }
+    updateMuteButtonIcon ();
 }
 
 QString Widget::currentTrackName()

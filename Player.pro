@@ -46,5 +46,12 @@ DISTFILES += \
 LIBS += -lole32
 #win32:LIBS += -lPropsys
 
-VERSION = 1.0.0.2
+HEADERS += \
+    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.h \
+    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_p.h
+
+SOURCES += \
+    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.cpp \
+    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_win.cpp
+    VERSION = 1.0.0.2
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
