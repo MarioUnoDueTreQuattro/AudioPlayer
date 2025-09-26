@@ -31,6 +31,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 private slots:
+    void openGoogleSearch(const QString &text);
     void switchVolume();
     void handleVolumeUp();
     void handleVolumeDown();

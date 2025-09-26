@@ -28,6 +28,7 @@
 #include <QPalette>
 #include <QDirIterator>
 #include <QToolTip>
+#include <QDesktopServices>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -285,6 +286,20 @@ void Widget::resizeEvent(QResizeEvent *event)
     // settings.setValue("windowState", saveState());
     // Call base implementation (optional if QWidget)
     QWidget::resizeEvent(event);
+}
+
+void Widget::openGoogleSearch(const QString &text)
+{
+    // Percent-encode the query text
+    const QByteArray encodedQuery = QUrl::toPercentEncoding(text);
+    // Build google search URL (uses 'q' parameter)
+    const QUrl searchUrl(QStringLiteral("https://www.google.com/search?q=%1").arg(QString::fromUtf8(encodedQuery)));
+    // Open default browser
+    bool success = QDesktopServices::openUrl(searchUrl);
+    if (!success)
+    {
+        qWarning() << "Failed to open URL:" << searchUrl.toString();
+    }
 }
 
 void Widget::switchVolume()
@@ -1157,12 +1172,15 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QAction *scrollToPlayingAction = contextMenu.addAction(tr("Scroll to currently playing"));
     scrollToPlayingAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
     contextMenu.addSeparator();
-    QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
-    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
-    contextMenu.addSeparator();
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
     QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
+    contextMenu.addSeparator();
+    QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
+    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
+    contextMenu.addSeparator();
+    QAction* searchAction = contextMenu.addAction(tr("Search on Google"));
+    searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
     saveAction->setIcon(QIcon(":/img/img/icons8-folder-save-48.png"));
     loadAction->setIcon(QIcon(":/img/img/icons8-folder-load-48.png"));
     clearAction->setIcon(QIcon(":/img/img/icons8-clear-48.png"));
@@ -1191,6 +1209,13 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     else if (selectedAction == scrollToPlayingAction)
     {
         scrollToCurrentTrack ();
+    }
+    else if (selectedAction == searchAction)
+    {
+        QString sTrackWithoutExtension = ui->listWidget->currentItem ()->text ();
+        QFileInfo info(sTrackWithoutExtension);
+        sTrackWithoutExtension = info.completeBaseName();
+        openGoogleSearch (sTrackWithoutExtension);
     }
 }
 
