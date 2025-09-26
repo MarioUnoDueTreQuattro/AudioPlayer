@@ -29,6 +29,11 @@
 #include <QDirIterator>
 #include <QToolTip>
 #include <QDesktopServices>
+#include <fileref.h>
+#include <tag.h>
+//#include <taglib/fileref.h>
+//#include <taglib/tag.h>
+//#include <taglib/toolkit//tpropertymap.h>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -544,6 +549,51 @@ void Widget::handlePlay()
     this->setWindowTitle ("AudioPlayer - " + sPlaying);
     ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
     ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
+    QUrl mediaUrl;
+    // If you are using a playlist:
+    if (m_player->playlist())
+        mediaUrl = m_player->playlist()->currentMedia().canonicalUrl();
+    else
+        mediaUrl = m_player->media().canonicalUrl();
+    QString localFile = mediaUrl.toLocalFile();
+    qDebug() << "Current media file:" << localFile;
+    if (!localFile.isEmpty())
+    {
+        TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
+        if (!f.isNull() && f.tag())
+        {
+            TagLib::Tag *tag = f.tag();
+            auto safeString = [](const TagLib::String &str) -> QString
+            {
+                return QString::fromUtf8(str.toCString(true));
+            };
+            QString title = safeString(tag->title());
+            QString artist = safeString(tag->artist());
+            QString album = safeString(tag->album());
+            QString genre = safeString(tag->genre());
+            int year = tag->year();
+            int trackNum = tag->track();
+            qDebug() << "Title:" << (title.isEmpty() ? "[Unknown]" : title);
+            qDebug() << "Artist:" << (artist.isEmpty() ? "[Unknown]" : artist);
+            qDebug() << "Album:" << (album.isEmpty() ? "[Unknown]" : album);
+            qDebug() << "Year:" << (year == 0 ? "[Unknown]" : QString::number(year));
+            qDebug() << "Track:" << (trackNum == 0 ? "[Unknown]" : QString::number(trackNum));
+            qDebug() << "Genre:" << (genre.isEmpty() ? "[Unknown]" : genre);
+            // Optional: Format string for UI
+            QString info = QString("Artist: %1\nTitle: %2\nAlbum: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
+                title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
+            QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
+            QToolTip::showText(globalPos, info, ui->listWidget);
+        }
+        else
+        {
+            qDebug() << "Failed to read metadata!";
+        }
+    }
+    else
+    {
+        qDebug() << "File path is empty!";
+    }
 }
 
 void Widget::handleItemDoubleClicked()
@@ -1176,11 +1226,11 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
     QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
     contextMenu.addSeparator();
-    QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
-    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
-    contextMenu.addSeparator();
     QAction* searchAction = contextMenu.addAction(tr("Search on Google"));
     searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
+    contextMenu.addSeparator();
+    QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
+    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
     saveAction->setIcon(QIcon(":/img/img/icons8-folder-save-48.png"));
     loadAction->setIcon(QIcon(":/img/img/icons8-folder-load-48.png"));
     clearAction->setIcon(QIcon(":/img/img/icons8-clear-48.png"));

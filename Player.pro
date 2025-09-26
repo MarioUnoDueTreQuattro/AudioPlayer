@@ -46,6 +46,17 @@ DISTFILES += \
 LIBS += -lole32
 #win32:LIBS += -lPropsys
 
+# TagLib include path
+#INCLUDEPATH += C:/Qt/taglib-2.1.1
+INCLUDEPATH += C:/Qt/taglib-2.1.1/taglib
+INCLUDEPATH += C:/Qt/taglib-2.1.1/taglib/toolkit
+# TagLib library path and linking
+# TagLib static library
+#LIBS += "C:/Qt/taglib-2.1.1/build-taglib-2.1.1-Desktop_Qt_5_15_2_MinGW_32bit-Debug/taglib/libtag.a"
+#LIBS += -LC:/Qt/taglib-2.1.1/build-taglib-2.1.1-Desktop_Qt_5_15_2_MinGW_32bit-Debug/taglib/ -ltaglib
+# Link against the import library for the DLL
+LIBS += "C:/Qt/taglib-2.1.1/build-taglib-2.1.1-Desktop_Qt_5_15_2_MinGW_32bit-Debug/taglib/libtag.dll.a"
+DEFINES += TAGLIB_DLL
 HEADERS += \
     $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.h \
     $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_p.h

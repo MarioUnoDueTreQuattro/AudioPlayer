@@ -22,7 +22,7 @@ BEGIN
             VALUE "OriginalFilename", "AudioPlayer.exe\0"
             VALUE "ProductName", "AudioPlayer\0"
             VALUE "ProductVersion", "1.0.0.2\0"
-            VALUE "LegalCopyright", "© 2025 andreag\0"
+            VALUE "LegalCopyright", "Copyright © 2025 andreag\0"
         END   // end of "040904b0"
     END       // end of "StringFileInfo"
 
