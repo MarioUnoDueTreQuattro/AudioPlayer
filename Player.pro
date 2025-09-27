@@ -41,7 +41,8 @@ RC_FILE = appicon.rc
 win32:RC_ICONS = icons8-play-96.ico
 
 DISTFILES += \
-    appicon.rc
+    appicon.rc \
+    icons8-play-96.ico
 
 LIBS += -lole32
 #win32:LIBS += -lPropsys
