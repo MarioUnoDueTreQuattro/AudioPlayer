@@ -31,6 +31,7 @@
 #include <QDesktopServices>
 #include <fileref.h>
 #include <tag.h>
+
 //#include <taglib/fileref.h>
 //#include <taglib/tag.h>
 //#include <taglib/toolkit//tpropertymap.h>
@@ -44,6 +45,8 @@ Widget::Widget(QWidget *parent)
       m_isMuted(false)
 {
     ui->setupUi(this);
+    setFocusPolicy(Qt::StrongFocus);
+    m_infoWidget=new InfoWidget();
     // m_hotkey = new QHotkey(QKeySequence("Ctrl+Shift+A"), true, this);
     // if (!m_hotkey->isRegistered())
     // {
@@ -170,6 +173,26 @@ Widget::~Widget()
 {
     // saveSettings();
     delete ui;
+    if (m_infoWidget!=nullptr)    delete m_infoWidget;
+}
+
+void Widget::changeEvent(QEvent *event)
+{
+   qDebug() << "Window changeEvent";
+   QWidget::changeEvent(event);
+   if (event->type() == QEvent::ActivationChange)
+        {
+            if (isActiveWindow())
+            {
+                 qDebug() << "Window gained focus";
+                 if (m_infoWidget!=nullptr)
+                 {
+                     //m_infoWidget->showNormal();
+                     m_infoWidget->raise();
+                     //m_infoWidget->activateWindow();
+                 }
+            }
+    }
 }
 
 void Widget::closeEvent(QCloseEvent *event)
@@ -291,6 +314,19 @@ void Widget::resizeEvent(QResizeEvent *event)
     // settings.setValue("windowState", saveState());
     // Call base implementation (optional if QWidget)
     QWidget::resizeEvent(event);
+}
+
+void Widget::focusInEvent(QFocusEvent *event)
+{
+    qDebug() << "Il widget '" << objectName() << "' HA OTTENUTO IL FOCUS!";
+   if (m_infoWidget!=nullptr)
+   {
+       m_infoWidget->showNormal();
+       m_infoWidget->raise();
+       m_infoWidget->activateWindow();
+   }
+
+     QWidget::focusInEvent(event);
 }
 
 void Widget::openGoogleSearch(const QString &text)
@@ -584,6 +620,9 @@ void Widget::handlePlay()
                 title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
             QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
             QToolTip::showText(globalPos, info, ui->listWidget);
+if (m_infoWidget==nullptr) m_infoWidget=new InfoWidget();
+            m_infoWidget->setInfo (info);
+            m_infoWidget->show ();
         }
         else
         {

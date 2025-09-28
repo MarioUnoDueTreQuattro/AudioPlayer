@@ -9,6 +9,7 @@
 #include <QStack>
 #include "systemvolumecontroller.h"
 #include <3rdparty/qhotkey/QHotkey/QHotkey>
+#include "infowidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -30,6 +31,8 @@ protected:
     void dropEvent(QDropEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+void focusInEvent(QFocusEvent *event) override;
+void changeEvent(QEvent *event) override;
 private slots:
     void openGoogleSearch(const QString &text);
     void switchVolume();
@@ -100,6 +103,7 @@ private:
     Ui::Widget *ui;
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
+    InfoWidget *m_infoWidget;
 };
 
 #endif // WIDGET_H

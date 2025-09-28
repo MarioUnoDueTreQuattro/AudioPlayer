@@ -10,7 +10,10 @@ TEMPLATE = app
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    3rdparty/qhotkey/QHotkey/qhotkey.cpp \
+    3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
     clickableslider.cpp \
+    infowidget.cpp \
     main.cpp \
     settings.cpp \
     singleinstance.cpp \
@@ -18,13 +21,17 @@ SOURCES += \
     widget.cpp
 
 HEADERS += \
+    3rdparty/qhotkey/QHotkey/qhotkey.h \
+    3rdparty/qhotkey/QHotkey/qhotkey_p.h \
     clickableslider.h \
+    infowidget.h \
     settings.h \
     singleinstance.h \
     systemvolumecontroller.h \
     widget.h
 
 FORMS += \
+    infowidget.ui \
     settings.ui \
     widget.ui
 
@@ -61,12 +68,12 @@ INCLUDEPATH += C:/Qt/taglib/include/taglib
 #LIBS += "C:/Qt/taglib-2.1.1/build-taglib-2.1.1-Desktop_Qt_5_15_2_MinGW_32bit-Debug/taglib/libtag.dll.a"
 LIBS += "C:/Qt/taglib/lib/libtag.dll.a"
 DEFINES += TAGLIB_DLL
-HEADERS += \
-    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.h \
-    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_p.h
+#HEADERS += \
+#    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.h \
+#    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_p.h
 
-SOURCES += \
-    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.cpp \
-    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_win.cpp
+#SOURCES += \
+#    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.cpp \
+#    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_win.cpp
     VERSION = 1.0.0.2
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
