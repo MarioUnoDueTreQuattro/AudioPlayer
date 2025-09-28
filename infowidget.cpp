@@ -20,6 +20,7 @@
 #include <vorbisfile.h>
 #include <speexfile.h>
 #include <wavfile.h>
+#include <wavproperties.h>
 
 InfoWidget::InfoWidget(QWidget *parent) :
     QWidget(parent),
@@ -81,7 +82,8 @@ QString InfoWidget::getInfo()
 
 void InfoWidget::setFile(const QString &localFile)
 {
-   m_Info="Info is empty.";
+    bool bFomatFound = false;
+    m_Info = "Info is empty.";
     if (!localFile.isEmpty())
     {
         // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
@@ -152,8 +154,8 @@ void InfoWidget::setFile(const QString &localFile)
             info.append ("\n");
             info.append ("Lenght: ");
             info.append (formatTime (lengthSeconds));
-//            info.append (QString::number (lengthSeconds));
-//            info.append (" seconds");
+            // info.append (QString::number (lengthSeconds));
+            // info.append (" seconds");
             info.append ("\n");
             info.append ("Bitrate (kbit/s): ");
             info.append (QString::number (bitrate));
@@ -163,6 +165,7 @@ void InfoWidget::setFile(const QString &localFile)
             info.append ("\n");
             info.append ("Channels: ");
             info.append (QString::number (channels));
+            //delete properties;
             TagLib::MPEG::File *mpegFile = dynamic_cast<TagLib::MPEG::File *>(m_FileRef->file());
             if (mpegFile)
             {
@@ -211,76 +214,111 @@ void InfoWidget::setFile(const QString &localFile)
                 // Puoi ottenere anche più dettagli specifici qui, come il bit per campione
                 // (properties->bitsPerSample() non è sempre affidabile in TagLib,
                 // specialmente per MP3)
+                // delete mpegFile;
+                bFomatFound = true;
             }
-            TagLib::MP4::File *mp4File = dynamic_cast<TagLib::MP4::File *>(m_FileRef->file());
-            if (mp4File)
+            if (!bFomatFound)
             {
-                // Se il cast ha successo, è un file MP4/M4A.
-                qDebug() << "Il file è un MP4 (M4A) riconosciuto da TagLib!";
-                // Qui puoi continuare a lavorare con 'mp4File' per accedere
-                // a proprietà specifiche MP4 come i tag 'covr' (immagine)
-                info.append ("\n");
-                info.append ("Format: MP4 (AAC, ALAC, M4A...) ");
+                TagLib::MP4::File *mp4File = dynamic_cast<TagLib::MP4::File *>(m_FileRef->file());
+                if (mp4File)
+                {
+                    // Se il cast ha successo, è un file MP4/M4A.
+                    qDebug() << "Il file è un MP4 (M4A) riconosciuto da TagLib!";
+                    // Qui puoi continuare a lavorare con 'mp4File' per accedere
+                    // a proprietà specifiche MP4 come i tag 'covr' (immagine)
+                    info.append ("\n");
+                    info.append ("Format: MP4 (AAC, ALAC, M4A...) ");
+                    bFomatFound = true;
+                }
             }
-            TagLib::FLAC::File *flacFile = dynamic_cast<TagLib::FLAC::File *>(m_FileRef->file());
-            if (flacFile)
+            if (!bFomatFound)
             {
-                // Se il cast ha successo, è un file FLAC.
-                qDebug() << "Il file è un formato FLAC riconosciuto da TagLib!";
-                // Qui puoi continuare a lavorare con 'flacFile' per accedere
-                // a proprietà specifiche del FLAC se necessario.
-                info.append ("\n");
-                info.append ("Format: FLAC");
+                TagLib::FLAC::File *flacFile = dynamic_cast<TagLib::FLAC::File *>(m_FileRef->file());
+                {
+                    if (flacFile)
+                    {
+                        // Se il cast ha successo, è un file FLAC.
+                        qDebug() << "Il file è un formato FLAC riconosciuto da TagLib!";
+                        // Qui puoi continuare a lavorare con 'flacFile' per accedere
+                        // a proprietà specifiche del FLAC se necessario.
+                        info.append ("\n");
+                        info.append ("Format: FLAC");
+                        bFomatFound = true;
+                    }
+                }
             }
-            TagLib::Ogg::Opus::File *opusFile = dynamic_cast<TagLib::Ogg::Opus::File *>(m_FileRef->file());
-            if (opusFile)
+            if (!bFomatFound)
             {
-                // Se il cast ha successo, è un file FLAC.
-                qDebug() << "Il file è un formato Ogg Opus riconosciuto da TagLib!";
-                // Qui puoi continuare a lavorare con 'flacFile' per accedere
-                // a proprietà specifiche del FLAC se necessario.
-                info.append ("\n");
-                info.append ("Format: Ogg Opus");
+                TagLib::Ogg::Opus::File *opusFile = dynamic_cast<TagLib::Ogg::Opus::File *>(m_FileRef->file());
+                if (opusFile)
+                {
+                    // Se il cast ha successo, è un file FLAC.
+                    qDebug() << "Il file è un formato Ogg Opus riconosciuto da TagLib!";
+                    // Qui puoi continuare a lavorare con 'flacFile' per accedere
+                    // a proprietà specifiche del FLAC se necessario.
+                    info.append ("\n");
+                    info.append ("Format: Ogg Opus");
+                    bFomatFound = true;
+                }
             }
-            TagLib::Ogg::Vorbis::File *oggFile = dynamic_cast<TagLib::Ogg::Vorbis::File *>(m_FileRef->file());
-            if (oggFile)
+            if (!bFomatFound)
             {
-                // Se il cast ha successo, è un file FLAC.
-                qDebug() << "Il file è un formato Ogg Vorbis riconosciuto da TagLib!";
-                // Qui puoi continuare a lavorare con 'flacFile' per accedere
-                // a proprietà specifiche del FLAC se necessario.
-                info.append ("\n");
-                info.append ("Format: Ogg Vorbis");
+                TagLib::Ogg::Vorbis::File *oggFile = dynamic_cast<TagLib::Ogg::Vorbis::File *>(m_FileRef->file());
+                if (oggFile)
+                {
+                    // Se il cast ha successo, è un file FLAC.
+                    qDebug() << "Il file è un formato Ogg Vorbis riconosciuto da TagLib!";
+                    // Qui puoi continuare a lavorare con 'flacFile' per accedere
+                    // a proprietà specifiche del FLAC se necessario.
+                    info.append ("\n");
+                    info.append ("Format: Ogg Vorbis");
+                    bFomatFound = true;
+                }
             }
-            TagLib::Ogg::FLAC::File *oggFlacFile = dynamic_cast<TagLib::Ogg::FLAC::File *>(m_FileRef->file());
-            if (oggFlacFile)
+            if (!bFomatFound)
             {
-                // Se il cast ha successo, è un file FLAC.
-                qDebug() << "Il file è un formato Ogg FLAC riconosciuto da TagLib!";
-                // Qui puoi continuare a lavorare con 'flacFile' per accedere
-                // a proprietà specifiche del FLAC se necessario.
-                info.append ("\n");
-                info.append ("Format: Ogg FLAC");
+                TagLib::Ogg::FLAC::File *oggFlacFile = dynamic_cast<TagLib::Ogg::FLAC::File *>(m_FileRef->file());
+                if (oggFlacFile)
+                {
+                    // Se il cast ha successo, è un file FLAC.
+                    qDebug() << "Il file è un formato Ogg FLAC riconosciuto da TagLib!";
+                    // Qui puoi continuare a lavorare con 'flacFile' per accedere
+                    // a proprietà specifiche del FLAC se necessario.
+                    info.append ("\n");
+                    info.append ("Format: Ogg FLAC");
+                    bFomatFound = true;
+                }
             }
-            TagLib::Ogg::Speex::File *speexFile = dynamic_cast<TagLib::Ogg::Speex::File *>(m_FileRef->file());
-            if (speexFile)
+            if (!bFomatFound)
             {
-                // Se il cast ha successo, è un file FLAC.
-                qDebug() << "Il file è un formato Ogg Speex riconosciuto da TagLib!";
-                // Qui puoi continuare a lavorare con 'flacFile' per accedere
-                // a proprietà specifiche del FLAC se necessario.
-                info.append ("\n");
-                info.append ("Format: Ogg Speex");
+                TagLib::Ogg::Speex::File *speexFile = dynamic_cast<TagLib::Ogg::Speex::File *>(m_FileRef->file());
+                if (speexFile)
+                {
+                    // Se il cast ha successo, è un file FLAC.
+                    qDebug() << "Il file è un formato Ogg Speex riconosciuto da TagLib!";
+                    // Qui puoi continuare a lavorare con 'flacFile' per accedere
+                    // a proprietà specifiche del FLAC se necessario.
+                    info.append ("\n");
+                    info.append ("Format: Ogg Speex");
+                    bFomatFound = true;
+                }
             }
-            TagLib::RIFF::WAV::File *wavFile = dynamic_cast<TagLib::RIFF::WAV::File *>(m_FileRef->file());
-            if (wavFile)
+            if (!bFomatFound)
             {
-                // Se il cast ha successo, è un file WAV.
-                qDebug() << "Il file è un formato WAV (RIFF) riconosciuto da TagLib!";
-                info.append ("\n");
-                info.append ("Format: WAV (RIFF)");
+                TagLib::RIFF::WAV::File *wavFile = dynamic_cast<TagLib::RIFF::WAV::File *>(m_FileRef->file());
+                if (wavFile)
+                {
+                    info.append ("\n");
+                    info.append ("Bits: ");
+                    info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
+                    // Se il cast ha successo, è un file WAV.
+                    qDebug() << "Il file è un formato WAV (RIFF) riconosciuto da TagLib!";
+                    info.append ("\n");
+                    info.append ("Format: WAV (RIFF)");
+                    bFomatFound = true;
+                }
             }
-            m_Info=info;
+            m_Info = info;
             setInfo (info);
             // qDebug() << "--- Dettagli Audio ---";
             // qDebug() << "Durata:" << lengthSeconds << "secondi";
@@ -305,7 +343,9 @@ void InfoWidget::setFile(const QString &localFile)
         {
             qDebug() << "Failed to read metadata!";
         }
+        m_FileRef->file ()->clear ();
         delete m_FileRef;
+        m_FileRef = nullptr;
     }
     else
     {
@@ -405,20 +445,16 @@ QString InfoWidget::formatTime(int totalSeconds)
 {
     // 1. Calcola i minuti
     int minutes = totalSeconds / 60;
-
     // 2. Calcola i secondi rimanenti
     int seconds = totalSeconds % 60;
-
     // 3. Converte i minuti in stringa
     // Il formato è semplice, non è necessario il padding per i minuti
     QString minutesStr = QString::number(minutes);
-
     // 4. Converte i secondi in stringa, assicurando due cifre (padding)
     // - campo di 2 cifre (width = 2)
     // - carattere '0' per il riempimento (fillChar = '0')
     // - allineamento a destra (right justification)
     QString secondsStr = QString::number(seconds).rightJustified(2, '0');
-
     // 5. Combina il risultato nel formato finale
     return minutesStr + ":" + secondsStr;
 }

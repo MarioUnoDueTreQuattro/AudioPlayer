@@ -29,8 +29,8 @@
 #include <QDirIterator>
 #include <QToolTip>
 #include <QDesktopServices>
-#include <fileref.h>
-#include <tag.h>
+//#include <fileref.h>
+//#include <tag.h>
 
 //#include <taglib/fileref.h>
 //#include <taglib/tag.h>
@@ -614,6 +614,13 @@ void Widget::handleStopButton()
 
 void Widget::handlePlay()
 {
+    m_player->stop ();
+    m_player->play();
+    QString sPlaying = currentTrackName ();
+    m_playedList.append (sPlaying);
+    this->setWindowTitle ("AudioPlayer - " + sPlaying);
+    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
+    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
     QUrl mediaUrl;
     // If you are using a playlist:
     if (m_player->playlist())
@@ -701,12 +708,6 @@ void Widget::handlePlay()
     {
         qDebug() << "File path is empty!";
     }
-    m_player->play();
-    QString sPlaying = currentTrackName ();
-    m_playedList.append (sPlaying);
-    this->setWindowTitle ("AudioPlayer - " + sPlaying);
-    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
-    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
 }
 
 void Widget::handleItemDoubleClicked()
