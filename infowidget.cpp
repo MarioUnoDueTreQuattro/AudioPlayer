@@ -9,12 +9,14 @@
 //#include <QScreen>
 #include <QSettings>
 #include <QPalette>
+#include <QIcon>
 
 InfoWidget::InfoWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::InfoWidget)
 {
     ui->setupUi(this);
+    setWindowIcon (QIcon(":/img/img/icons8-play-32.ico"));
     setWindowFlags(Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
     loadSettings();
     QPalette palette = ui->textEditInfo->palette();

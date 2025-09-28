@@ -1183,6 +1183,15 @@ void Widget::settingsDialogAccepted()
             //m_infoWidget->show ();
             m_infoWidget->raise();
         }
+        else
+        {
+            m_bInfoWindowHasBeenMinimized = false;
+            m_infoWidget->show ();
+            //m_infoWidget->showNormal();
+            //m_infoWidget->show ();
+            m_infoWidget->raise();
+        }
+
     }
     //m_infoWidget->setStyle (this->style ());
 }
