@@ -129,6 +129,7 @@ void Settings::saveSettings()
     settings.setValue ("ThemePalette", m_sPalette);
     settings.setValue("PlayedTextColor", m_playedTextColor.name());
     settings.setValue("AutoPlay",ui->checkBoxAutoPlay->isChecked ());
+    settings.setValue("ShowInfo",ui->checkBoxInfo->isChecked ());
     settings.sync();
 }
 
@@ -145,6 +146,9 @@ void Settings::loadSettings()
     ui->pushButtonPlayedTextColor->setPalette(palette);
     bool bAutoplay= settings.value("AutoPlay", true).toBool ();
     ui->checkBoxAutoPlay->setChecked (bAutoplay);
+    bool bShowInfo= settings.value("ShowInfo", true).toBool ();
+    ui->checkBoxInfo->setChecked (bShowInfo);
+
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()

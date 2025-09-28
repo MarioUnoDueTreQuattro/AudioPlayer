@@ -34,7 +34,8 @@ protected:
 void focusInEvent(QFocusEvent *event) override;
 void changeEvent(QEvent *event) override;
 private slots:
-    void openGoogleSearch(const QString &text);
+   void infoWindowClosed();
+   void openGoogleSearch(const QString &text);
     void switchVolume();
     void handleVolumeUp();
     void handleVolumeDown();
@@ -78,6 +79,9 @@ private:
     void setSignalsConnections();
     SystemVolumeController *m_systemVolumeController;
     bool m_bAutoplay;
+    bool m_bShowInfo;
+    bool m_bInfoWindowHasBeenMinimized;
+    bool m_bInfoWindowHasBeenClosed;
     bool m_bSystemVolumeSlider;
     QList<QString> m_playedList;
     QColor m_playedTextColor;

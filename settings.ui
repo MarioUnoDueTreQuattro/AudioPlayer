@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>270</width>
-    <height>159</height>
+    <width>284</width>
+    <height>184</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -82,6 +82,13 @@
     <widget class="QCheckBox" name="checkBoxAutoPlay">
      <property name="text">
       <string>Automatic playback on startup and on playlist load</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="checkBoxInfo">
+     <property name="text">
+      <string>Show information window</string>
      </property>
     </widget>
    </item>

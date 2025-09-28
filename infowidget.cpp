@@ -8,6 +8,7 @@
 #include <QDebug>
 //#include <QScreen>
 #include <QSettings>
+#include <QPalette>
 
 InfoWidget::InfoWidget(QWidget *parent) :
     QWidget(parent),
@@ -16,6 +17,13 @@ InfoWidget::InfoWidget(QWidget *parent) :
     ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
     loadSettings();
+    QPalette palette = ui->textEditInfo->palette();
+    palette.setColor(QPalette::Base, palette.color(QPalette::Window));
+    ui->textEditInfo->setPalette (palette);
+    // Imposta la forma del frame a nessuna forma
+    ui->textEditInfo->setFrameShape(QFrame::NoFrame);
+    // Imposta l'ombra del frame a nessuna ombra
+    ui->textEditInfo->setFrameShadow(QFrame::Plain);
     ui->textEditInfo->move(0, 0);
     ui->textEditInfo-> setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     // 1. Disabilita il ritorno a capo per far contare la larghezza
@@ -62,18 +70,18 @@ void InfoWidget::setInfo(QString sInfo)
     ui->textEditInfo->setText (sInfo);
 }
 
-void InfoWidget::on_pushButtonClose_clicked()
-{
-    this->close ();
-}
+//void InfoWidget::on_pushButtonClose_clicked()
+//{
+// this->close ();
+//}
 
 void InfoWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
     {
         // Chiamiamo la funzione close() per chiudere il widget di primo livello (la finestra).
-        qDebug("Finestra chiusa tramite click del mouse!");
-        close();
+        //qDebug("Finestra chiusa tramite click del mouse!");
+        //close();
         //deleteLater();
     }
     // È buona norma chiamare l'implementazione della classe base
@@ -83,16 +91,35 @@ void InfoWidget::mousePressEvent(QMouseEvent *event)
 
 void InfoWidget::moveEvent(QMoveEvent *event)
 {
+    // Chiamiamo la funzione di base per garantire che l'evento venga gestito normalmente
+    QWidget::moveEvent(event);
+    // 2. Chiama la funzione di salvataggio
+    saveSettings();
+    // (Opzionale) Puoi usare event->pos() per vedere la nuova posizione, ma
+    // QWidget::pos() è più diretto dopo la chiamata alla base.
+    //qDebug() << "Window moved to: " << pos();
+}
 
-        // Chiamiamo la funzione di base per garantire che l'evento venga gestito normalmente
-        QWidget::moveEvent(event);
+void InfoWidget::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::StyleChange || event->type() == QEvent::PaletteChange)
+    {
+        //qDebug() << "Stile del widget cambiato!";
+        // Inserisci qui il tuo codice per reagire al cambio di stile
+        //QPalette palette = ui->textEditInfo->palette();
+        QPalette palette = this->palette();
+        palette.setColor(QPalette::Base, palette.color(QPalette::Window));
+        ui->textEditInfo->setPalette (palette);
+    }
+    // 2. Chiama l'implementazione della classe base
+    QWidget::changeEvent(event);
+}
 
-        // 2. Chiama la funzione di salvataggio
-        saveSettings();
-
-        // (Opzionale) Puoi usare event->pos() per vedere la nuova posizione, ma
-        // QWidget::pos() è più diretto dopo la chiamata alla base.
-        qDebug() << "Window moved to: " << pos();
+void InfoWidget::closeEvent(QCloseEvent *event)
+{
+    emit windowClosed();
+    event->accept();
+    QWidget::closeEvent(event);
 }
 
 void InfoWidget::saveSettings()
@@ -100,35 +127,31 @@ void InfoWidget::saveSettings()
     // QSettings richiede il nome dell'Organizzazione e dell'Applicazione
     // per creare un percorso di salvataggio univoco.
     QSettings settings;
-
     // Salva la posizione corrente del widget (coordinate x, y)
     settings.setValue("InfoWidgetPosition", pos());
-
     // Potresti anche salvare la dimensione (larghezza, altezza)
     settings.setValue("InfoWidgetSsize", size());
-
     // In Qt, le impostazioni vengono salvate automaticamente
 }
 
 void InfoWidget::loadSettings()
 {
     QSettings settings;
-
     // 1. Carica la posizione
     QPoint savedPos = settings.value("InfoWidgetPosition", QPoint(100, 100)).toPoint();
-
     // 2. Carica la dimensione
     QSize savedSize = settings.value("InfoWidgetSsize", QSize(300, 100)).toSize();
-
     // 3. Applica le impostazioni
     resize(savedSize);
-
     // Controlla se la posizione salvata è visibile su qualsiasi schermo
     // (Utile se l'utente ha staccato un monitor).
     QScreen *screen = QGuiApplication::screenAt(savedPos);
-    if (screen) {
+    if (screen)
+    {
         move(savedPos);
-    } else {
+    }
+    else
+    {
         // Se la posizione non è valida, centra la finestra
         // La posizione di default (100, 100) verrà usata se la chiave non esiste
         move(QPoint(100, 100));

@@ -42,11 +42,13 @@ Widget::Widget(QWidget *parent)
       m_player(new QMediaPlayer(this)),
       m_playlist(new QMediaPlaylist(this)),
       m_lastVolume(50),
-      m_isMuted(false)
+      m_isMuted(false),
+      m_bInfoWindowHasBeenMinimized(false),
+      m_bInfoWindowHasBeenClosed(false)
 {
     ui->setupUi(this);
     setFocusPolicy(Qt::StrongFocus);
-    m_infoWidget=new InfoWidget();
+    m_infoWidget = new InfoWidget();
     // m_hotkey = new QHotkey(QKeySequence("Ctrl+Shift+A"), true, this);
     // if (!m_hotkey->isRegistered())
     // {
@@ -142,6 +144,7 @@ void Widget::handleVolumeDown()
 
 void Widget::setSignalsConnections()
 {
+    connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
     connect(ui->pauseButton, SIGNAL(clicked()), this, SLOT(handlePauseButton()));
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(handleStopButton()));
@@ -173,26 +176,58 @@ Widget::~Widget()
 {
     // saveSettings();
     delete ui;
-    if (m_infoWidget!=nullptr)    delete m_infoWidget;
+    if (m_infoWidget != nullptr) delete m_infoWidget;
 }
 
 void Widget::changeEvent(QEvent *event)
 {
-   qDebug() << "Window changeEvent";
-   QWidget::changeEvent(event);
-   if (event->type() == QEvent::ActivationChange)
+    //qDebug() << "Window changeEvent";
+    QWidget::changeEvent(event);
+    if (event->type() == QEvent::ActivationChange)
+    {
+        if (isActiveWindow())
         {
-            if (isActiveWindow())
+            //qDebug() << "Window gained focus";
+            if (m_infoWidget != nullptr && m_bShowInfo)
             {
-                 qDebug() << "Window gained focus";
-                 if (m_infoWidget!=nullptr)
-                 {
-                     //m_infoWidget->showNormal();
-                     m_infoWidget->raise();
-                     //m_infoWidget->activateWindow();
-                 }
+                if (m_bInfoWindowHasBeenMinimized)
+                {
+                    m_bInfoWindowHasBeenMinimized = false;
+                    m_bInfoWindowHasBeenClosed=false;
+                    m_infoWidget->show ();
+                }
+                //m_infoWidget->showNormal();
+                //m_infoWidget->show ();
+                m_infoWidget->raise();
+                //m_infoWidget->activateWindow();
             }
+        }
     }
+    else if (event->type() == QEvent::WindowStateChange)
+    {
+        if (isMinimized())
+        {
+            if (m_infoWidget != nullptr && m_bShowInfo)
+            {
+                // qDebug() << "MainWindow was minimized";
+                if (m_infoWidget->isVisible ())
+                {
+                    m_infoWidget->hide ();
+                    m_bInfoWindowHasBeenMinimized = true;
+                }
+            }
+        }
+        else
+        {
+            // qDebug() << "MainWindow state changed (restored/maximized)";
+        }
+    }
+}
+
+void Widget::infoWindowClosed()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    m_bInfoWindowHasBeenClosed=true;
 }
 
 void Widget::closeEvent(QCloseEvent *event)
@@ -319,14 +354,13 @@ void Widget::resizeEvent(QResizeEvent *event)
 void Widget::focusInEvent(QFocusEvent *event)
 {
     qDebug() << "Il widget '" << objectName() << "' HA OTTENUTO IL FOCUS!";
-   if (m_infoWidget!=nullptr)
-   {
-       m_infoWidget->showNormal();
-       m_infoWidget->raise();
-       m_infoWidget->activateWindow();
-   }
-
-     QWidget::focusInEvent(event);
+    if (m_infoWidget != nullptr)
+    {
+        //m_infoWidget->showNormal();
+        m_infoWidget->raise();
+        //m_infoWidget->activateWindow();
+    }
+    QWidget::focusInEvent(event);
 }
 
 void Widget::openGoogleSearch(const QString &text)
@@ -609,20 +643,57 @@ void Widget::handlePlay()
             QString genre = safeString(tag->genre());
             int year = tag->year();
             int trackNum = tag->track();
-            qDebug() << "Title:" << (title.isEmpty() ? "[Unknown]" : title);
-            qDebug() << "Artist:" << (artist.isEmpty() ? "[Unknown]" : artist);
-            qDebug() << "Album:" << (album.isEmpty() ? "[Unknown]" : album);
-            qDebug() << "Year:" << (year == 0 ? "[Unknown]" : QString::number(year));
-            qDebug() << "Track:" << (trackNum == 0 ? "[Unknown]" : QString::number(trackNum));
-            qDebug() << "Genre:" << (genre.isEmpty() ? "[Unknown]" : genre);
+//            qDebug() << "Title:" << (title.isEmpty() ? "[Unknown]" : title);
+//            qDebug() << "Artist:" << (artist.isEmpty() ? "[Unknown]" : artist);
+//            qDebug() << "Album:" << (album.isEmpty() ? "[Unknown]" : album);
+//            qDebug() << "Year:" << (year == 0 ? "[Unknown]" : QString::number(year));
+//            qDebug() << "Track:" << (trackNum == 0 ? "[Unknown]" : QString::number(trackNum));
+//            qDebug() << "Genre:" << (genre.isEmpty() ? "[Unknown]" : genre);
             // Optional: Format string for UI
-            QString info = QString("Artist: %1\nTitle: %2\nAlbum: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
-                title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
-            QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
-            QToolTip::showText(globalPos, info, ui->listWidget);
-if (m_infoWidget==nullptr) m_infoWidget=new InfoWidget();
-            m_infoWidget->setInfo (info);
-            m_infoWidget->show ();
+            // QString info = QString("Artist: %1\nTitle: %2\nAlbum: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
+            // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
+            // QString info = QString("<b>Artist:</b> %1<br><b>Title:</b> %2<br>Album: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
+            // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
+            QString info;
+            info.append ("Artist: ");
+            info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
+            info.append ("\n");
+            info.append ("Title: ");
+            info.append ( title.isEmpty() ? "[Unknown title]" : title);
+            info.append ("\n");
+            info.append ("Album: ");
+            info.append ( album.isEmpty() ? "[Unknown album]" : album);
+            info.append ("\n");
+            info.append ("Track: ");
+            info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
+            info.append ("\n");
+            info.append ("Year: ");
+            info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
+            if (tag->genre ().isEmpty () == false)
+            {
+                info.append ("\n");
+                info.append ("Genre: ");
+                info.append (safeString(tag->genre ()));
+            }
+            if (tag->comment ().isEmpty () == false)
+            {
+                info.append ("\n");
+                info.append ("Comment: ");
+                info.append (safeString(tag->comment ()));
+            }
+            if (m_infoWidget != nullptr) m_infoWidget->setInfo (info);
+            if (m_bShowInfo == false)
+            {
+                QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
+                QToolTip::showText(globalPos, info, ui->listWidget);
+            }
+            else
+            {
+                if (m_infoWidget == nullptr) m_infoWidget = new InfoWidget();
+                m_infoWidget->raise ();
+                // m_infoWidget->setInfo (info);
+                m_infoWidget->show ();
+            }
         }
         else
         {
@@ -732,6 +803,7 @@ void Widget::loadSettings()
     m_sPalette = settings.value("ThemePalette", "Light").toString();
     setTheme ();
     m_bAutoplay = settings.value("AutoPlay", true).toBool ();
+    m_bShowInfo = settings.value("ShowInfo", true).toBool ();
     QString colorName = settings.value("PlayedTextColor", "#000080").toString();
     m_playedTextColor = QColor(colorName);
     // --- Volume ---
@@ -1095,6 +1167,24 @@ void Widget::settingsDialogAccepted()
             }
         }
     }
+    m_bAutoplay = settings.value("AutoPlay", true).toBool ();
+    m_bShowInfo = settings.value("ShowInfo", true).toBool ();
+    if (m_bShowInfo == false)
+    {
+        if (m_infoWidget != nullptr) m_infoWidget->hide ();
+    }
+    else
+    {
+        if (m_bInfoWindowHasBeenClosed == false)
+        {
+            m_bInfoWindowHasBeenMinimized = false;
+            m_infoWidget->show ();
+            //m_infoWidget->showNormal();
+            //m_infoWidget->show ();
+            m_infoWidget->raise();
+        }
+    }
+    //m_infoWidget->setStyle (this->style ());
 }
 
 void Widget::handleModeButton()

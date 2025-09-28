@@ -16,7 +16,7 @@ public:
     ~InfoWidget();
 void setInfo(QString);
 private slots:
-void on_pushButtonClose_clicked();
+//void on_pushButtonClose_clicked();
 void updateSize(const QSizeF &newSize);
 
 private:
@@ -26,6 +26,11 @@ private:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
  void moveEvent(QMoveEvent *event) override;
+void changeEvent(QEvent *event) override;
+  void closeEvent(QCloseEvent *event) override;
+signals:
+void windowClosed();
+
 };
 
 #endif // INFOWIDGET_H
