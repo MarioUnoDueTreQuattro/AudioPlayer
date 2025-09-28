@@ -74,6 +74,7 @@ Widget::Widget(QWidget *parent)
     ui->listWidget -> setAlternatingRowColors(true);
     setSignalsConnections();
     setKeyboardShortcuts();
+    //ui->listWidget->hide ();
 }
 
 void Widget::setKeyboardShortcuts()
@@ -613,12 +614,6 @@ void Widget::handleStopButton()
 
 void Widget::handlePlay()
 {
-    m_player->play();
-    QString sPlaying = currentTrackName ();
-    m_playedList.append (sPlaying);
-    this->setWindowTitle ("AudioPlayer - " + sPlaying);
-    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
-    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
     QUrl mediaUrl;
     // If you are using a playlist:
     if (m_player->playlist())
@@ -627,22 +622,23 @@ void Widget::handlePlay()
         mediaUrl = m_player->media().canonicalUrl();
     QString localFile = mediaUrl.toLocalFile();
     qDebug() << "Current media file:" << localFile;
+     if (m_infoWidget != nullptr) m_infoWidget->setFile (localFile);
     if (!localFile.isEmpty())
     {
-        TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
-        if (!f.isNull() && f.tag())
-        {
-            TagLib::Tag *tag = f.tag();
-            auto safeString = [](const TagLib::String &str) -> QString
-            {
-                return QString::fromUtf8(str.toCString(true));
-            };
-            QString title = safeString(tag->title());
-            QString artist = safeString(tag->artist());
-            QString album = safeString(tag->album());
-            QString genre = safeString(tag->genre());
-            int year = tag->year();
-            int trackNum = tag->track();
+//        TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
+//        if (!f.isNull() && f.tag())
+//        {
+//            TagLib::Tag *tag = f.tag();
+//            auto safeString = [](const TagLib::String &str) -> QString
+//            {
+//                return QString::fromUtf8(str.toCString(true));
+//            };
+//            QString title = safeString(tag->title());
+//            QString artist = safeString(tag->artist());
+//            QString album = safeString(tag->album());
+//            QString genre = safeString(tag->genre());
+//            int year = tag->year();
+//            int trackNum = tag->track();
 //            qDebug() << "Title:" << (title.isEmpty() ? "[Unknown]" : title);
 //            qDebug() << "Artist:" << (artist.isEmpty() ? "[Unknown]" : artist);
 //            qDebug() << "Album:" << (album.isEmpty() ? "[Unknown]" : album);
@@ -654,34 +650,35 @@ void Widget::handlePlay()
             // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
             // QString info = QString("<b>Artist:</b> %1<br><b>Title:</b> %2<br>Album: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
             // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
-            QString info;
-            info.append ("Artist: ");
-            info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
-            info.append ("\n");
-            info.append ("Title: ");
-            info.append ( title.isEmpty() ? "[Unknown title]" : title);
-            info.append ("\n");
-            info.append ("Album: ");
-            info.append ( album.isEmpty() ? "[Unknown album]" : album);
-            info.append ("\n");
-            info.append ("Track: ");
-            info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
-            info.append ("\n");
-            info.append ("Year: ");
-            info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
-            if (tag->genre ().isEmpty () == false)
-            {
-                info.append ("\n");
-                info.append ("Genre: ");
-                info.append (safeString(tag->genre ()));
-            }
-            if (tag->comment ().isEmpty () == false)
-            {
-                info.append ("\n");
-                info.append ("Comment: ");
-                info.append (safeString(tag->comment ()));
-            }
-            if (m_infoWidget != nullptr) m_infoWidget->setInfo (info);
+            QString info="";
+//            info.append ("Artist: ");
+//            info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
+//            info.append ("\n");
+//            info.append ("Title: ");
+//            info.append ( title.isEmpty() ? "[Unknown title]" : title);
+//            info.append ("\n");
+//            info.append ("Album: ");
+//            info.append ( album.isEmpty() ? "[Unknown album]" : album);
+//            info.append ("\n");
+//            info.append ("Track: ");
+//            info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
+//            info.append ("\n");
+//            info.append ("Year: ");
+//            info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
+//            if (tag->genre ().isEmpty () == false)
+//            {
+//                info.append ("\n");
+//                info.append ("Genre: ");
+//                info.append (safeString(tag->genre ()));
+//            }
+//            if (tag->comment ().isEmpty () == false)
+//            {
+//                info.append ("\n");
+//                info.append ("Comment: ");
+//                info.append (safeString(tag->comment ()));
+//            }
+            //if (m_infoWidget != nullptr) m_infoWidget->setInfo (info);
+          if (m_infoWidget != nullptr) info=m_infoWidget->getInfo ();
             if (m_bShowInfo == false)
             {
                 QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
@@ -694,16 +691,22 @@ void Widget::handlePlay()
                 // m_infoWidget->setInfo (info);
                 m_infoWidget->show ();
             }
-        }
-        else
-        {
-            qDebug() << "Failed to read metadata!";
-        }
+        //}
+//        else
+//        {
+//            qDebug() << "Failed to read metadata!";
+//        }
     }
     else
     {
         qDebug() << "File path is empty!";
     }
+    m_player->play();
+    QString sPlaying = currentTrackName ();
+    m_playedList.append (sPlaying);
+    this->setWindowTitle ("AudioPlayer - " + sPlaying);
+    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
+    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
 }
 
 void Widget::handleItemDoubleClicked()
