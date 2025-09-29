@@ -87,7 +87,9 @@ void InfoWidget::setFile(const QString &localFile)
     if (!localFile.isEmpty())
     {
         // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
-        m_FileRef = new TagLib::FileRef(TagLib::FileName(localFile.toUtf8().constData()));
+        std::wstring wpath = localFile.toStdWString();
+        m_FileRef = new TagLib::FileRef(TagLib::FileName(wpath.c_str()));
+        // m_FileRef = new TagLib::FileRef(TagLib::FileName(localFile.toUtf8().constData()));
         if (!m_FileRef->isNull() && m_FileRef->tag())
         {
             TagLib::Tag *tag = m_FileRef->tag();
