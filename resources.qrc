@@ -20,5 +20,7 @@
         <file>img/icons8-once-48.png</file>
         <file>img/icons8-google-48.png</file>
         <file>img/icons8-play-32.ico</file>
+        <file>img/icons8-list_keep1-48.png</file>
+        <file>img/icons8-list_delete1-48.png</file>
     </qresource>
 </RCC>

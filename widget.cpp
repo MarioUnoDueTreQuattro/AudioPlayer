@@ -878,6 +878,7 @@ void Widget::loadSettings()
         if (m_bAutoplay)
         {
             handlePlay ();
+            handleDurationChanged (m_player->duration ());
         }
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
@@ -1385,7 +1386,8 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     saveAction->setIcon(QIcon(":/img/img/icons8-folder-save-48.png"));
     loadAction->setIcon(QIcon(":/img/img/icons8-folder-load-48.png"));
     clearAction->setIcon(QIcon(":/img/img/icons8-clear-48.png"));
-    removeSelectedAction->setIcon(QIcon(":/img/img/icons8-delete-48.png"));
+    clearExceptSelectedAction->setIcon(QIcon(":/img/img/icons8-list_keep1-48.png"));
+    removeSelectedAction->setIcon(QIcon(":/img/img/icons8-list_delete1-48.png"));
     QAction *selectedAction = contextMenu.exec(ui->listWidget->mapToGlobal(pos));
     if (selectedAction == saveAction)
     {
