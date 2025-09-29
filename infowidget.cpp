@@ -115,20 +115,40 @@ void InfoWidget::setFile(const QString &localFile)
             // QString info = QString("<b>Artist:</b> %1<br><b>Title:</b> %2<br>Album: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
             // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
             QString info;
-            info.append ("Artist: ");
-            info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
-            info.append ("\n");
-            info.append ("Title: ");
-            info.append ( title.isEmpty() ? "[Unknown title]" : title);
-            info.append ("\n");
-            info.append ("Album: ");
-            info.append ( album.isEmpty() ? "[Unknown album]" : album);
-            info.append ("\n");
-            info.append ("Track: ");
-            info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
-            info.append ("\n");
-            info.append ("Year: ");
-            info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
+            if (artist.isEmpty () == false)
+            {
+                info.append ("Artist: ");
+                info.append (artist);
+            }
+            //info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
+            if (title.isEmpty () == false)
+            {
+                info.append ("\n");
+                info.append ("Title: ");
+                info.append (title);
+            }
+            // info.append ( title.isEmpty() ? "[Unknown title]" : title);
+            if (album.isEmpty () == false)
+            {
+                info.append ("\n");
+                info.append ("Album: ");
+                info.append (album);
+            }
+            // info.append ( album.isEmpty() ? "[Unknown album]" : album);
+            if (trackNum != 0)
+            {
+                info.append ("\n");
+                info.append ("Track: ");
+                info.append (QString::number(trackNum));
+            }
+            // info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
+            if (year != 0)
+            {
+                info.append ("\n");
+                info.append ("Year: ");
+                info.append (QString::number(year));
+            }
+            // info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
             if (tag->genre ().isEmpty () == false)
             {
                 info.append ("\n");
@@ -171,43 +191,65 @@ void InfoWidget::setFile(const QString &localFile)
             TagLib::MPEG::File *mpegFile = dynamic_cast<TagLib::MPEG::File *>(m_FileRef->file());
             if (mpegFile)
             {
+                TagLib::MPEG::Properties *prop = mpegFile->audioProperties ();
                 qDebug() << "Formato: MPEG (MP3)";
                 info.append ("\n");
                 info.append ("Channel mode: ");
-                TagLib::MPEG::Header::ChannelMode chanMode = mpegFile->audioProperties ()->channelMode ();
+                //TagLib::MPEG::Header::ChannelMode chanMode = mpegFile->audioProperties ()->channelMode ();
+                int chanMode=prop->channelMode ();
                 switch (chanMode)
                 {
                 case 0:
                     info.append ("Stereo");
                     break;
                 case 1:
-                    info.append ("JointStereo");
+                    info.append ("Joint stereo");
                     break;
                 case 2:
-                    info.append ("DualChannel (Dual Mono)");
+                    info.append ("Dual channel (Dual mono)");
                     break;
                 case 3:
-                    info.append ("SingleChannel (Mono)");
+                    info.append ("Single channel (Mono)");
                     break;
                 default:
                     break;
                 }
                 info.append ("\n");
-                info.append ("Format: MPEG Layer 3 (MP3) ");
-                TagLib::MPEG::Header::Version vers = mpegFile->audioProperties ()->version ();
+                info.append ("Format: MPEG");
+                // int layer=prop->layer ();
+                int layer = prop->layer ();
+                switch (layer)
+                {
+                case 0:
+                    info.append(" Layer 0");
+                    break;
+                case 1:
+                    info.append(" Layer 1");
+                    break;
+                case 2:
+                    info.append(" Layer 2 (MP2)");
+                    break;
+                case 3:
+                    info.append(" Layer 3 (MP3)");
+                    break;
+                default:
+                    break;
+                }
+                // TagLib::MPEG::Header::Version vers = mpegFile->audioProperties ()->version ();
+                int vers = prop->version ();
                 switch (vers)
                 {
                 case 0:
-                    info.append("Version 1");
+                    info.append(" Version 1");
                     break;
                 case 1:
-                    info.append("Version 2");
+                    info.append(" Version 2");
                     break;
                 case 2:
-                    info.append("Version 2.5");
+                    info.append(" Version 2.5");
                     break;
                 case 3:
-                    info.append("Version 4");
+                    info.append(" Version 4");
                     break;
                 default:
                     break;

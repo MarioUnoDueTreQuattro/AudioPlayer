@@ -509,7 +509,7 @@ void Widget::addFileToPlaylist(const QString &filePath)
     if (!fi.exists())
         return;
     QString ext = fi.suffix().toLower();
-    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus" && ext != "flac" && ext != "ogg")
+    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus" && ext != "flac" && ext != "ogg" && ext != "mp2")
         return;
     // Avoid duplicate entries
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
@@ -575,7 +575,7 @@ void Widget::dropEvent(QDropEvent *event)
             if (fi.isDir())
             {
                 QDirIterator it(fi.absoluteFilePath(),
-                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus" << "*.flac" << "*.ogg",
+                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus" << "*.flac" << "*.ogg" << "*.mp2",
                     QDir::Files,
                     QDirIterator::Subdirectories);
                 while (it.hasNext())
