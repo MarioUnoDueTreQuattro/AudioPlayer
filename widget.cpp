@@ -726,6 +726,11 @@ void Widget::handleItemDoubleClicked()
     if (idx >= 0 && idx < m_playlist->mediaCount())
     {
         m_playlist->setCurrentIndex(idx);
+        if (idx = m_playlist->currentIndex ())
+        {
+            m_player->stop ();
+            handlePlay ();
+        }
         // if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
         // handlePlay();
     }
