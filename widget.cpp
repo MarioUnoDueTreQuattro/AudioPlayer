@@ -1290,7 +1290,9 @@ void Widget::handleLoadPlaylist()
             this, tr("Load Playlist"), m_lastDialogPlaylistPath, tr("Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
+    QApplication::setOverrideCursor(Qt::WaitCursor);
     loadPlaylistFile(fileName);
+    QApplication::restoreOverrideCursor();
     // if you want to immediately select/play the last track, you can:
     if (m_playlist->mediaCount() > 0)
     {
@@ -1312,7 +1314,9 @@ void Widget::handleSavePlaylist()
             this, tr("Save Playlist"), m_lastDialogPlaylistPath, tr("M3U Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
+    QApplication::setOverrideCursor(Qt::WaitCursor);
     savePlaylistFile(fileName);
+    QApplication::restoreOverrideCursor();
 }
 
 void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
