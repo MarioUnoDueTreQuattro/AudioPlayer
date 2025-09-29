@@ -179,7 +179,11 @@ Widget::~Widget()
 {
     // saveSettings();
     delete ui;
-    if (m_infoWidget != nullptr) delete m_infoWidget;
+    if (m_infoWidget != nullptr)
+    {
+        delete m_infoWidget;
+        m_infoWidget = nullptr;
+    }
 }
 
 void Widget::changeEvent(QEvent *event)
@@ -695,7 +699,8 @@ void Widget::handlePlay()
         // info.append (safeString(tag->comment ()));
         // }
         //if (m_infoWidget != nullptr) m_infoWidget->setInfo (info);
-        if (m_infoWidget != nullptr) info = m_infoWidget->getInfo ();
+        // if (m_infoWidget != nullptr)
+        info = m_infoWidget->getInfo ();
         if (m_bShowInfo == false)
         {
             QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
