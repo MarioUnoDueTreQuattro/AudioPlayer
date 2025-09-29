@@ -311,10 +311,19 @@ void InfoWidget::setFile(const QString &localFile)
                     info.append ("\n");
                     info.append ("Bits: ");
                     info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
+                    int iFormat = wavFile->audioProperties ()->format ();
                     // Se il cast ha successo, è un file WAV.
                     qDebug() << "Il file è un formato WAV (RIFF) riconosciuto da TagLib!";
                     info.append ("\n");
-                    info.append ("Format: WAV (RIFF)");
+                    info.append ("Format: ");
+                    if (iFormat == 1) info.append ("PCM");
+                    else if (iFormat == 0) info.append ("Unknown format (0)");
+                    else if (iFormat == 2) info.append ("Compressed ADPCM");
+                    else if (iFormat == 3) info.append ("IEEE float");
+                    else if (iFormat == 6) info.append ("A-law");
+                    else if (iFormat == 7) info.append ("µ-law");
+                    else info.append ("Unknown fomat");
+                    info.append (" WAV (RIFF)");
                     bFomatFound = true;
                 }
             }
