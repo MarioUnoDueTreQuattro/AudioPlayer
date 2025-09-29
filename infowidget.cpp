@@ -359,14 +359,15 @@ void InfoWidget::setFile(const QString &localFile)
             //                // m_infoWidget->setInfo (info);
             // m_infoWidget->show ();
             // }
+            m_FileRef->file ()->clear ();
+            delete m_FileRef;
+            m_FileRef = nullptr;
         }
         else
         {
             qDebug() << "Failed to read metadata!";
+            setInfo ("Failed to read metadata!");
         }
-        m_FileRef->file ()->clear ();
-        delete m_FileRef;
-        m_FileRef = nullptr;
     }
     else
     {
