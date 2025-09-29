@@ -29,6 +29,7 @@
 #include <QDirIterator>
 #include <QToolTip>
 #include <QDesktopServices>
+#include <QTimer>
 //#include <fileref.h>
 //#include <tag.h>
 
@@ -614,7 +615,7 @@ void Widget::handleStopButton()
 
 void Widget::handlePlay()
 {
-    m_player->stop ();
+   // m_player->stop ();
     m_player->play();
     QString sPlaying = currentTrackName ();
     m_playedList.append (sPlaying);
@@ -629,6 +630,9 @@ void Widget::handlePlay()
         mediaUrl = m_player->media().canonicalUrl();
     QString localFile = mediaUrl.toLocalFile();
     qDebug() << "Current media file:" << localFile;
+    QEventLoop loop;
+    QTimer::singleShot(100, &loop, &QEventLoop::quit);
+    loop.exec(); // Blocks for 500 ms, but keeps UI responsive
      if (m_infoWidget != nullptr) m_infoWidget->setFile (localFile);
     if (!localFile.isEmpty())
     {
@@ -716,8 +720,8 @@ void Widget::handleItemDoubleClicked()
     if (idx >= 0 && idx < m_playlist->mediaCount())
     {
         m_playlist->setCurrentIndex(idx);
-        if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
-        handlePlay();
+//        if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
+//        handlePlay();
     }
 }
 

@@ -223,7 +223,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (mp4File)
                 {
                     // Se il cast ha successo, è un file MP4/M4A.
-                    qDebug() << "Il file è un MP4 (M4A) riconosciuto da TagLib!";
+                    qDebug() << "Il file è un MP4 (M4A)";
                     // Qui puoi continuare a lavorare con 'mp4File' per accedere
                     // a proprietà specifiche MP4 come i tag 'covr' (immagine)
                     info.append ("\n");
@@ -238,7 +238,7 @@ void InfoWidget::setFile(const QString &localFile)
                     if (flacFile)
                     {
                         // Se il cast ha successo, è un file FLAC.
-                        qDebug() << "Il file è un formato FLAC riconosciuto da TagLib!";
+                        qDebug() << "Il file è un formato FLAC";
                         // Qui puoi continuare a lavorare con 'flacFile' per accedere
                         // a proprietà specifiche del FLAC se necessario.
                         info.append ("\n");
@@ -253,7 +253,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (opusFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg Opus riconosciuto da TagLib!";
+                    qDebug() << "Il file è un formato Ogg Opus";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     info.append ("\n");
@@ -267,7 +267,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (oggFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg Vorbis riconosciuto da TagLib!";
+                    qDebug() << "Il file è un formato Ogg Vorbis";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     info.append ("\n");
@@ -281,7 +281,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (oggFlacFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg FLAC riconosciuto da TagLib!";
+                    qDebug() << "Il file è un formato Ogg FLAC";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     info.append ("\n");
@@ -295,7 +295,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (speexFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg Speex riconosciuto da TagLib!";
+                    qDebug() << "Il file è un formato Ogg Speex";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     info.append ("\n");
@@ -313,7 +313,7 @@ void InfoWidget::setFile(const QString &localFile)
                     info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
                     int iFormat = wavFile->audioProperties ()->format ();
                     // Se il cast ha successo, è un file WAV.
-                    qDebug() << "Il file è un formato WAV (RIFF) riconosciuto da TagLib!";
+                    qDebug() << "Il file è un formato WAV (RIFF)";
                     info.append ("\n");
                     info.append ("Format: ");
                     if (iFormat == 1) info.append ("PCM");
@@ -326,6 +326,18 @@ void InfoWidget::setFile(const QString &localFile)
                     info.append (" WAV (RIFF)");
                     bFomatFound = true;
                 }
+            }
+            QFile file(localFile);
+            if (file.exists())
+            {
+                qint64 size = file.size();
+                info.append ("\n");
+                info.append ("File size: ");
+                info.append (formatFileSize (size));
+            }
+            else
+            {
+                qDebug() << "File does not exist.";
             }
             m_Info = info;
             setInfo (info);
@@ -366,6 +378,20 @@ void InfoWidget::setFile(const QString &localFile)
 //{
 // this->close ();
 //}
+
+QString InfoWidget::formatFileSize(qint64 bytes)
+{
+    const double KB = 1024.0;
+    const double MB = KB * 1024.0;
+    if (bytes < MB)
+    {
+        return QString::number(bytes / KB, 'f', 2) + " KB";
+    }
+    else
+    {
+        return QString::number(bytes / MB, 'f', 2) + " MB";
+    }
+}
 
 void InfoWidget::mousePressEvent(QMouseEvent *event)
 {

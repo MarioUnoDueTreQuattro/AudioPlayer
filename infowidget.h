@@ -23,6 +23,7 @@ public:
 private slots:
     //void on_pushButtonClose_clicked();
     void updateSize(const QSizeF &newSize);
+    QString formatFileSize(qint64 bytes);
 private:
     Ui::InfoWidget *ui;
     void loadSettings();
