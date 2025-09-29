@@ -188,13 +188,14 @@ Widget::~Widget()
 
 void Widget::changeEvent(QEvent *event)
 {
-    //qDebug() << "Window changeEvent";
+    // qDebug() << "Window changeEvent";
     QWidget::changeEvent(event);
     if (event->type() == QEvent::ActivationChange)
     {
+        // qDebug() << "Window ActivationChange";
         if (isActiveWindow())
         {
-            //qDebug() << "Window gained focus";
+            // qDebug() << "Window gained focus";
             if (m_infoWidget != nullptr && m_bShowInfo)
             {
                 if (m_bInfoWindowHasBeenMinimized)
@@ -212,6 +213,7 @@ void Widget::changeEvent(QEvent *event)
     }
     else if (event->type() == QEvent::WindowStateChange)
     {
+        // qDebug() << "Window WindowStateChange";
         if (isMinimized())
         {
             if (m_infoWidget != nullptr && m_bShowInfo)
@@ -365,7 +367,7 @@ void Widget::resizeEvent(QResizeEvent *event)
 
 void Widget::focusInEvent(QFocusEvent *event)
 {
-    qDebug() << "Il widget '" << objectName() << "' HA OTTENUTO IL FOCUS!";
+    //qDebug() << "Il widget '" << objectName() << "' HA OTTENUTO IL FOCUS!";
     if (m_infoWidget != nullptr)
     {
         //m_infoWidget->showNormal();

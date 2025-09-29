@@ -115,51 +115,64 @@ void InfoWidget::setFile(const QString &localFile)
             // QString info = QString("<b>Artist:</b> %1<br><b>Title:</b> %2<br>Album: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
             // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
             QString info;
+            struct Field
+            {
+                QString label;
+                QString value;
+            };
+            QList<Field> fields;
             if (artist.isEmpty () == false)
             {
-                info.append ("Artist: ");
-                info.append (artist);
+                fields.append({"Artist: ", artist});
+                // info.append ("Artist: ");
+                // info.append (artist);
             }
             //info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
             if (title.isEmpty () == false)
             {
-                info.append ("\n");
-                info.append ("Title: ");
-                info.append (title);
+                fields.append({"Title: ", title});
+                // info.append ("\n");
+                // info.append ("Title: ");
+                // info.append (title);
             }
             // info.append ( title.isEmpty() ? "[Unknown title]" : title);
             if (album.isEmpty () == false)
             {
-                info.append ("\n");
-                info.append ("Album: ");
-                info.append (album);
+                fields.append({"Album: ", album});
+                // info.append ("\n");
+                // info.append ("Album: ");
+                // info.append (album);
             }
             // info.append ( album.isEmpty() ? "[Unknown album]" : album);
             if (trackNum != 0)
             {
-                info.append ("\n");
-                info.append ("Track: ");
-                info.append (QString::number(trackNum));
+                fields.append({"Track: ", QString::number(trackNum)});
+                // info.append ("\n");
+                // info.append ("Track: ");
+                // info.append (QString::number(trackNum));
             }
             // info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
             if (year != 0)
             {
-                info.append ("\n");
-                info.append ("Year: ");
-                info.append (QString::number(year));
+                fields.append({"Year: ", QString::number(year)});
+                // info.append ("\n");
+                // info.append ("Year: ");
+                // info.append (QString::number(year));
             }
             // info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
             if (tag->genre ().isEmpty () == false)
             {
-                info.append ("\n");
-                info.append ("Genre: ");
-                info.append (safeString(tag->genre ()));
+                fields.append({"Genre: ", safeString(tag->genre ())});
+                // info.append ("\n");
+                // info.append ("Genre: ");
+                // info.append (safeString(tag->genre ()));
             }
             if (tag->comment ().isEmpty () == false)
             {
-                info.append ("\n");
-                info.append ("Comment: ");
-                info.append (safeString(tag->comment ()));
+                fields.append({"Comment: ", safeString( tag->comment ())});
+                // info.append ("\n");
+                // info.append ("Comment: ");
+                // info.append (safeString(tag->comment ()));
             }
             if (m_FileRef->isNull() || !m_FileRef->audioProperties())
             {
@@ -173,64 +186,78 @@ void InfoWidget::setFile(const QString &localFile)
             int sampleRate = properties->sampleRate();
             int channels = properties->channels();
             // 4. Stampa i dettagli
-            info.append ("\n");
-            info.append ("Lenght: ");
-            info.append (formatTime (lengthSeconds));
+            fields.append({"Lenght: ", formatTime (lengthSeconds)});
+            // info.append ("\n");
+            // info.append ("Lenght: ");
+            // info.append (formatTime (lengthSeconds));
             // info.append (QString::number (lengthSeconds));
             // info.append (" seconds");
-            info.append ("\n");
-            info.append ("Bitrate (kbit/s): ");
-            info.append (QString::number (bitrate));
-            info.append ("\n");
-            info.append ("Sample Rate (Hz): ");
-            info.append (QString::number (sampleRate));
-            info.append ("\n");
-            info.append ("Channels: ");
-            info.append (QString::number (channels));
+            fields.append({"Bitrate (kbit/s): ", QString::number (bitrate)});
+            // info.append ("\n");
+            // info.append ("Bitrate (kbit/s): ");
+            // info.append (QString::number (bitrate));
+            fields.append({"Sample Rate (Hz): ", QString::number (sampleRate)});
+            // info.append ("\n");
+            // info.append ("Sample Rate (Hz): ");
+            // info.append (QString::number (sampleRate));
+            fields.append({"Channels: ", QString::number (channels)});
+            // info.append ("\n");
+            // info.append ("Channels: ");
+            // info.append (QString::number (channels));
             //delete properties;
             TagLib::MPEG::File *mpegFile = dynamic_cast<TagLib::MPEG::File *>(m_FileRef->file());
             if (mpegFile)
             {
                 TagLib::MPEG::Properties *prop = mpegFile->audioProperties ();
                 qDebug() << "Formato: MPEG (MP3)";
-                info.append ("\n");
-                info.append ("Channel mode: ");
+                // info.append ("\n");
+                // info.append ("Channel mode: ");
                 //TagLib::MPEG::Header::ChannelMode chanMode = mpegFile->audioProperties ()->channelMode ();
-                int chanMode=prop->channelMode ();
+                int chanMode = prop->channelMode ();
                 switch (chanMode)
                 {
                 case 0:
-                    info.append ("Stereo");
+                    fields.append(Field{"Channel mode: ", "Stereo"});
+                    // info.append ("Stereo");
                     break;
                 case 1:
-                    info.append ("Joint stereo");
+                    fields.append(Field{"Channel mode: ", "Joint stereo"});
+                    // info.append ("Joint stereo");
                     break;
                 case 2:
-                    info.append ("Dual channel (Dual mono)");
+                    fields.append(Field{"Channel mode: ", "Dual channel (Dual mono)"});
+                    // info.append ("Dual channel (Dual mono)");
                     break;
                 case 3:
-                    info.append ("Single channel (Mono)");
+                    fields.append(Field{"Channel mode: ", "Single channel (Mono)"});
+                    // info.append ("Single channel (Mono)");
                     break;
                 default:
                     break;
                 }
-                info.append ("\n");
-                info.append ("Format: MPEG");
+                QString sLayer = "";
+                QString sVersion = "";
+                // info.append ("\n");
+                // info.append ("Format: MPEG");
                 // int layer=prop->layer ();
                 int layer = prop->layer ();
                 switch (layer)
                 {
                 case 0:
-                    info.append(" Layer 0");
+                    // info.append(" Layer 0");
+                    sLayer = " Layer 0";
                     break;
                 case 1:
-                    info.append(" Layer 1");
+                    // info.append(" Layer 1");
+                    sLayer = " Layer 1";
                     break;
                 case 2:
-                    info.append(" Layer 2 (MP2)");
+                    // info.append(" Layer 2 (MP2)");
+                    sLayer = " Layer 2";
                     break;
                 case 3:
-                    info.append(" Layer 3 (MP3)");
+                    // info.append(" Layer 3 (MP3)");
+                    sLayer = " Layer 3";
                     break;
                 default:
                     break;
@@ -240,20 +267,25 @@ void InfoWidget::setFile(const QString &localFile)
                 switch (vers)
                 {
                 case 0:
-                    info.append(" Version 1");
+                    // info.append(" Version 1");
+                    sVersion = " Version 1";
                     break;
                 case 1:
-                    info.append(" Version 2");
+                    // info.append(" Version 2");
+                    sVersion = " Version 2";
                     break;
                 case 2:
-                    info.append(" Version 2.5");
+                    // info.append(" Version 2.5");
+                    sVersion = " Version 2.5";
                     break;
                 case 3:
-                    info.append(" Version 4");
+                    // info.append(" Version 4");
+                    sVersion = " Version 4";
                     break;
                 default:
                     break;
                 }
+                fields.append(Field{"Format: MPEG", sLayer + sVersion});
                 // info.append (mpegFile->audioProperties ()->version ());
                 // Puoi ottenere anche più dettagli specifici qui, come il bit per campione
                 // (properties->bitsPerSample() non è sempre affidabile in TagLib,
@@ -270,8 +302,9 @@ void InfoWidget::setFile(const QString &localFile)
                     qDebug() << "Il file è un MP4 (M4A)";
                     // Qui puoi continuare a lavorare con 'mp4File' per accedere
                     // a proprietà specifiche MP4 come i tag 'covr' (immagine)
-                    info.append ("\n");
-                    info.append ("Format: MP4 (AAC, ALAC, M4A...) ");
+                    // info.append ("\n");
+                    // info.append ("Format: MP4 (AAC, ALAC, M4A...) ");
+                    fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
                     bFomatFound = true;
                 }
             }
@@ -281,12 +314,14 @@ void InfoWidget::setFile(const QString &localFile)
                 {
                     if (flacFile)
                     {
+                        fields.append(Field{"Bits: ", QString::number (flacFile->audioProperties ()->bitsPerSample ())});
                         // Se il cast ha successo, è un file FLAC.
                         qDebug() << "Il file è un formato FLAC";
                         // Qui puoi continuare a lavorare con 'flacFile' per accedere
                         // a proprietà specifiche del FLAC se necessario.
-                        info.append ("\n");
-                        info.append ("Format: FLAC");
+                        // info.append ("\n");
+                        // info.append ("Format: FLAC");
+                        fields.append(Field{"Format: ", "FLAC"});
                         bFomatFound = true;
                     }
                 }
@@ -300,8 +335,9 @@ void InfoWidget::setFile(const QString &localFile)
                     qDebug() << "Il file è un formato Ogg Opus";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
-                    info.append ("\n");
-                    info.append ("Format: Ogg Opus");
+                    // info.append ("\n");
+                    // info.append ("Format: Ogg Opus");
+                    fields.append(Field{"Format: ", "Ogg Opus"});
                     bFomatFound = true;
                 }
             }
@@ -314,8 +350,9 @@ void InfoWidget::setFile(const QString &localFile)
                     qDebug() << "Il file è un formato Ogg Vorbis";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
-                    info.append ("\n");
-                    info.append ("Format: Ogg Vorbis");
+                    // info.append ("\n");
+                    // info.append ("Format: Ogg Vorbis");
+                    fields.append(Field{"Format: ", "Ogg Vorbis"});
                     bFomatFound = true;
                 }
             }
@@ -328,8 +365,9 @@ void InfoWidget::setFile(const QString &localFile)
                     qDebug() << "Il file è un formato Ogg FLAC";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
-                    info.append ("\n");
-                    info.append ("Format: Ogg FLAC");
+                    // info.append ("\n");
+                    // info.append ("Format: Ogg FLAC");
+                    fields.append(Field{"Format: ", "Ogg FLAC"});
                     bFomatFound = true;
                 }
             }
@@ -342,8 +380,9 @@ void InfoWidget::setFile(const QString &localFile)
                     qDebug() << "Il file è un formato Ogg Speex";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
-                    info.append ("\n");
-                    info.append ("Format: Ogg Speex");
+                    // info.append ("\n");
+                    // info.append ("Format: Ogg Speex");
+                    fields.append(Field{"Format: ", "Ogg Speex"});
                     bFomatFound = true;
                 }
             }
@@ -352,22 +391,30 @@ void InfoWidget::setFile(const QString &localFile)
                 TagLib::RIFF::WAV::File *wavFile = dynamic_cast<TagLib::RIFF::WAV::File *>(m_FileRef->file());
                 if (wavFile)
                 {
-                    info.append ("\n");
-                    info.append ("Bits: ");
-                    info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
+                    // info.append ("\n");
+                    // info.append ("Bits: ");
+                    // info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
+                    fields.append(Field{"Bits: ", QString::number (wavFile->audioProperties ()->bitsPerSample())});
                     int iFormat = wavFile->audioProperties ()->format ();
                     // Se il cast ha successo, è un file WAV.
                     qDebug() << "Il file è un formato WAV (RIFF)";
-                    info.append ("\n");
-                    info.append ("Format: ");
-                    if (iFormat == 1) info.append ("PCM");
-                    else if (iFormat == 0) info.append ("Unknown format (0)");
-                    else if (iFormat == 2) info.append ("Compressed ADPCM");
-                    else if (iFormat == 3) info.append ("IEEE float");
-                    else if (iFormat == 6) info.append ("A-law");
-                    else if (iFormat == 7) info.append ("µ-law");
-                    else info.append ("Unknown fomat");
-                    info.append (" WAV (RIFF)");
+//                    info.append ("\n");
+//                    info.append ("Format: ");
+                    // if (iFormat == 1) info.append ("PCM");
+                    // else if (iFormat == 0) info.append ("Unknown format (0)");
+                    // else if (iFormat == 2) info.append ("Compressed ADPCM");
+                    // else if (iFormat == 3) info.append ("IEEE float");
+                    // else if (iFormat == 6) info.append ("A-law");
+                    // else if (iFormat == 7) info.append ("µ-law");
+                    // else info.append ("Unknown fomat");
+                    // info.append (" WAV (RIFF)");
+                    if (iFormat == 1) fields.append(Field{"Format: ", "PCM WAV (RIFF)"});
+                    else if (iFormat == 0) fields.append(Field{"Format: ", "Unknown format (0) WAV (RIFF)"});
+                    else if (iFormat == 2) fields.append(Field{"Format: ", "Compressed ADPCM WAV (RIFF)"});
+                    else if (iFormat == 3) fields.append(Field{"Format: ", "IEEE float WAV (RIFF)"});
+                    else if (iFormat == 6) fields.append(Field{"Format: ", "A-law WAV (RIFF)"});
+                    else if (iFormat == 7) fields.append(Field{"Format: ", "µ-law WAV (RIFF)"});
+                    else  fields.append(Field{"Format: ", "Unknown format WAV (RIFF)"});
                     bFomatFound = true;
                 }
             }
@@ -375,13 +422,21 @@ void InfoWidget::setFile(const QString &localFile)
             if (file.exists())
             {
                 qint64 size = file.size();
-                info.append ("\n");
-                info.append ("File size: ");
-                info.append (formatFileSize (size));
+                // info.append ("\n");
+                // info.append ("File size: ");
+                // info.append (formatFileSize (size));
+                fields.append(Field{"File size: ", formatFileSize (size)});
             }
             else
             {
                 qDebug() << "File does not exist.";
+            }
+            // Append all valid fields separated by newlines
+            for (int i = 0; i < fields.size(); ++i)
+            {
+                if (i > 0) info.append("\n");
+                info.append(fields[i].label);
+                info.append(fields[i].value);
             }
             m_Info = info;
             setInfo (info);
