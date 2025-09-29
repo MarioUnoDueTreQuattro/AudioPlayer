@@ -147,6 +147,7 @@ void Widget::handleVolumeDown()
 void Widget::setSignalsConnections()
 {
     connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
+    connect(m_infoWidget, SIGNAL(focusReceived()), this, SLOT(infoWindowFocusReceived()));
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
     connect(ui->pauseButton, SIGNAL(clicked()), this, SLOT(handlePauseButton()));
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(handleStopButton()));
@@ -195,7 +196,7 @@ void Widget::changeEvent(QEvent *event)
                 if (m_bInfoWindowHasBeenMinimized)
                 {
                     m_bInfoWindowHasBeenMinimized = false;
-                    m_bInfoWindowHasBeenClosed=false;
+                    m_bInfoWindowHasBeenClosed = false;
                     m_infoWidget->show ();
                 }
                 //m_infoWidget->showNormal();
@@ -226,10 +227,15 @@ void Widget::changeEvent(QEvent *event)
     }
 }
 
+void Widget::infoWindowFocusReceived()
+{
+    this->raise ();
+}
+
 void Widget::infoWindowClosed()
 {
     qDebug() << __PRETTY_FUNCTION__;
-    m_bInfoWindowHasBeenClosed=true;
+    m_bInfoWindowHasBeenClosed = true;
 }
 
 void Widget::closeEvent(QCloseEvent *event)
@@ -499,7 +505,7 @@ void Widget::addFileToPlaylist(const QString &filePath)
     if (!fi.exists())
         return;
     QString ext = fi.suffix().toLower();
-    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus" && ext != "flac")
+    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus" && ext != "flac" && ext != "ogg")
         return;
     // Avoid duplicate entries
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
@@ -565,7 +571,7 @@ void Widget::dropEvent(QDropEvent *event)
             if (fi.isDir())
             {
                 QDirIterator it(fi.absoluteFilePath(),
-                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus" << "*.flac",
+                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus" << "*.flac" << "*.ogg",
                     QDir::Files,
                     QDirIterator::Subdirectories);
                 while (it.hasNext())
@@ -615,7 +621,7 @@ void Widget::handleStopButton()
 
 void Widget::handlePlay()
 {
-   // m_player->stop ();
+    // m_player->stop ();
     m_player->play();
     QString sPlaying = currentTrackName ();
     m_playedList.append (sPlaying);
@@ -633,80 +639,80 @@ void Widget::handlePlay()
     QEventLoop loop;
     QTimer::singleShot(100, &loop, &QEventLoop::quit);
     loop.exec(); // Blocks for 500 ms, but keeps UI responsive
-     if (m_infoWidget != nullptr) m_infoWidget->setFile (localFile);
+    if (m_infoWidget != nullptr) m_infoWidget->setFile (localFile);
     if (!localFile.isEmpty())
     {
-//        TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
-//        if (!f.isNull() && f.tag())
-//        {
-//            TagLib::Tag *tag = f.tag();
-//            auto safeString = [](const TagLib::String &str) -> QString
-//            {
-//                return QString::fromUtf8(str.toCString(true));
-//            };
-//            QString title = safeString(tag->title());
-//            QString artist = safeString(tag->artist());
-//            QString album = safeString(tag->album());
-//            QString genre = safeString(tag->genre());
-//            int year = tag->year();
-//            int trackNum = tag->track();
-//            qDebug() << "Title:" << (title.isEmpty() ? "[Unknown]" : title);
-//            qDebug() << "Artist:" << (artist.isEmpty() ? "[Unknown]" : artist);
-//            qDebug() << "Album:" << (album.isEmpty() ? "[Unknown]" : album);
-//            qDebug() << "Year:" << (year == 0 ? "[Unknown]" : QString::number(year));
-//            qDebug() << "Track:" << (trackNum == 0 ? "[Unknown]" : QString::number(trackNum));
-//            qDebug() << "Genre:" << (genre.isEmpty() ? "[Unknown]" : genre);
-            // Optional: Format string for UI
-            // QString info = QString("Artist: %1\nTitle: %2\nAlbum: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
-            // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
-            // QString info = QString("<b>Artist:</b> %1<br><b>Title:</b> %2<br>Album: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
-            // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
-            QString info="";
-//            info.append ("Artist: ");
-//            info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
-//            info.append ("\n");
-//            info.append ("Title: ");
-//            info.append ( title.isEmpty() ? "[Unknown title]" : title);
-//            info.append ("\n");
-//            info.append ("Album: ");
-//            info.append ( album.isEmpty() ? "[Unknown album]" : album);
-//            info.append ("\n");
-//            info.append ("Track: ");
-//            info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
-//            info.append ("\n");
-//            info.append ("Year: ");
-//            info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
-//            if (tag->genre ().isEmpty () == false)
-//            {
-//                info.append ("\n");
-//                info.append ("Genre: ");
-//                info.append (safeString(tag->genre ()));
-//            }
-//            if (tag->comment ().isEmpty () == false)
-//            {
-//                info.append ("\n");
-//                info.append ("Comment: ");
-//                info.append (safeString(tag->comment ()));
-//            }
-            //if (m_infoWidget != nullptr) m_infoWidget->setInfo (info);
-          if (m_infoWidget != nullptr) info=m_infoWidget->getInfo ();
-            if (m_bShowInfo == false)
-            {
-                QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
-                QToolTip::showText(globalPos, info, ui->listWidget);
-            }
-            else
-            {
-                if (m_infoWidget == nullptr) m_infoWidget = new InfoWidget();
-                m_infoWidget->raise ();
-                // m_infoWidget->setInfo (info);
-                m_infoWidget->show ();
-            }
+        // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
+        // if (!f.isNull() && f.tag())
+        // {
+        // TagLib::Tag *tag = f.tag();
+        // auto safeString = [](const TagLib::String &str) -> QString
+        // {
+        // return QString::fromUtf8(str.toCString(true));
+        // };
+        // QString title = safeString(tag->title());
+        // QString artist = safeString(tag->artist());
+        // QString album = safeString(tag->album());
+        // QString genre = safeString(tag->genre());
+        // int year = tag->year();
+        // int trackNum = tag->track();
+        // qDebug() << "Title:" << (title.isEmpty() ? "[Unknown]" : title);
+        // qDebug() << "Artist:" << (artist.isEmpty() ? "[Unknown]" : artist);
+        // qDebug() << "Album:" << (album.isEmpty() ? "[Unknown]" : album);
+        // qDebug() << "Year:" << (year == 0 ? "[Unknown]" : QString::number(year));
+        // qDebug() << "Track:" << (trackNum == 0 ? "[Unknown]" : QString::number(trackNum));
+        // qDebug() << "Genre:" << (genre.isEmpty() ? "[Unknown]" : genre);
+        // Optional: Format string for UI
+        // QString info = QString("Artist: %1\nTitle: %2\nAlbum: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
+        // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
+        // QString info = QString("<b>Artist:</b> %1<br><b>Title:</b> %2<br>Album: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
+        // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
+        QString info = "";
+        // info.append ("Artist: ");
+        // info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
+        // info.append ("\n");
+        // info.append ("Title: ");
+        // info.append ( title.isEmpty() ? "[Unknown title]" : title);
+        // info.append ("\n");
+        // info.append ("Album: ");
+        // info.append ( album.isEmpty() ? "[Unknown album]" : album);
+        // info.append ("\n");
+        // info.append ("Track: ");
+        // info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
+        // info.append ("\n");
+        // info.append ("Year: ");
+        // info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
+        // if (tag->genre ().isEmpty () == false)
+        // {
+        // info.append ("\n");
+        // info.append ("Genre: ");
+        // info.append (safeString(tag->genre ()));
+        // }
+        // if (tag->comment ().isEmpty () == false)
+        // {
+        // info.append ("\n");
+        // info.append ("Comment: ");
+        // info.append (safeString(tag->comment ()));
+        // }
+        //if (m_infoWidget != nullptr) m_infoWidget->setInfo (info);
+        if (m_infoWidget != nullptr) info = m_infoWidget->getInfo ();
+        if (m_bShowInfo == false)
+        {
+            QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
+            QToolTip::showText(globalPos, info, ui->listWidget);
+        }
+        else
+        {
+            if (m_infoWidget == nullptr) m_infoWidget = new InfoWidget();
+            m_infoWidget->raise ();
+            // m_infoWidget->setInfo (info);
+            m_infoWidget->show ();
+        }
         //}
-//        else
-//        {
-//            qDebug() << "Failed to read metadata!";
-//        }
+        // else
+        // {
+        // qDebug() << "Failed to read metadata!";
+        // }
     }
     else
     {
@@ -720,8 +726,8 @@ void Widget::handleItemDoubleClicked()
     if (idx >= 0 && idx < m_playlist->mediaCount())
     {
         m_playlist->setCurrentIndex(idx);
-//        if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
-//        handlePlay();
+        // if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
+        // handlePlay();
     }
 }
 
@@ -1199,7 +1205,6 @@ void Widget::settingsDialogAccepted()
             //m_infoWidget->show ();
             m_infoWidget->raise();
         }
-
     }
     //m_infoWidget->setStyle (this->style ());
 }

@@ -31,11 +31,12 @@ protected:
     void dropEvent(QDropEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-void focusInEvent(QFocusEvent *event) override;
-void changeEvent(QEvent *event) override;
+    void focusInEvent(QFocusEvent *event) override;
+    void changeEvent(QEvent *event) override;
 private slots:
-   void infoWindowClosed();
-   void openGoogleSearch(const QString &text);
+    void infoWindowFocusReceived();
+    void infoWindowClosed();
+    void openGoogleSearch(const QString &text);
     void switchVolume();
     void handleVolumeUp();
     void handleVolumeDown();
@@ -73,8 +74,8 @@ private slots:
     void showVolumeSliderContextMenu(const QPoint &pos);
     void handleRemoveSelected();
 private:
-   QHotkey *m_hotkey;
-   void handlePlay();
+    QHotkey *m_hotkey;
+    void handlePlay();
     void setKeyboardShortcuts();
     void setSignalsConnections();
     SystemVolumeController *m_systemVolumeController;

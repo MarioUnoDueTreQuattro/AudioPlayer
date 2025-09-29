@@ -429,6 +429,13 @@ void InfoWidget::changeEvent(QEvent *event)
         palette.setColor(QPalette::Base, palette.color(QPalette::Window));
         ui->textEditInfo->setPalette (palette);
     }
+    else if (event->type() == QEvent::ActivationChange)
+    {
+        if (isActiveWindow())
+        {
+            emit focusReceived ();
+        }
+    }
     // 2. Chiama l'implementazione della classe base
     QWidget::changeEvent(event);
 }

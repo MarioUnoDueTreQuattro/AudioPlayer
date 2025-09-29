@@ -38,7 +38,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 signals:
     void windowClosed();
-
+    void focusReceived();
 };
 
 #endif // INFOWIDGET_H
