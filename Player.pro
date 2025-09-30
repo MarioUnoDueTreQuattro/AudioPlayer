@@ -12,6 +12,7 @@ TEMPLATE = app
 SOURCES += \
     3rdparty/qhotkey/QHotkey/qhotkey.cpp \
     3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
+    audiocover.cpp \
     clickableslider.cpp \
     infowidget.cpp \
     main.cpp \
@@ -23,6 +24,7 @@ SOURCES += \
 HEADERS += \
     3rdparty/qhotkey/QHotkey/qhotkey.h \
     3rdparty/qhotkey/QHotkey/qhotkey_p.h \
+    audiocover.h \
     clickableslider.h \
     infowidget.h \
     settings.h \
@@ -75,5 +77,5 @@ DEFINES += TAGLIB_DLL
 #SOURCES += \
 #    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.cpp \
 #    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_win.cpp
-    VERSION = 1.0.0.2
+    VERSION = 1.0.0.3
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

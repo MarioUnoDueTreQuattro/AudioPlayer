@@ -10,17 +10,8 @@
 #include <QSettings>
 #include <QPalette>
 #include <QIcon>
-#include <mpegfile.h>
-#include <mpegproperties.h>
-#include <mp4file.h>
-#include <flacfile.h>
-#include <opusfile.h>
-#include <oggfile.h>
-#include <oggflacfile.h>
-#include <vorbisfile.h>
-#include <speexfile.h>
-#include <wavfile.h>
-#include <wavproperties.h>
+#include "audiocover.h"
+#include <QDir>
 
 InfoWidget::InfoWidget(QWidget *parent) :
     QWidget(parent),
@@ -66,8 +57,23 @@ void InfoWidget::updateSize(const QSizeF &newSize)
     int totalHeight = contentHeight + 2 * ui->textEditInfo->frameWidth();;
     int totalWidth = contentWidth;// + 2 * ui->textEditInfo->frameWidth();
     // Imposta la dimensione fissa (sia altezza che larghezza)
-    ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-    setFixedSize(totalWidth, totalHeight);
+    if (m_pix.isNull () == false)
+    {
+        //qDebug() << "m_pix.isNull () == false";
+        ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+        ui->labelPix->move (0, totalHeight);
+        ui->labelPix->setFixedSize (totalWidth, totalWidth);
+        ui->labelPix->show();
+        setFixedSize(totalWidth, totalHeight + totalWidth);
+    }
+    else
+    {
+        //qDebug() << "m_pix.isNull () == true";
+        ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+        ui->labelPix->hide ();
+        //ui->labelPix->setFixedSize (0,0);
+        setFixedSize(totalWidth, totalHeight);
+    }
 }
 
 void InfoWidget::setInfo(QString sInfo)
@@ -82,12 +88,15 @@ QString InfoWidget::getInfo()
 
 void InfoWidget::setFile(const QString &localFile)
 {
+    QString nativePath = QDir::toNativeSeparators(localFile);
     bool bFomatFound = false;
     m_Info = "Info is empty.";
+    m_pix = QPixmap(); //empty
     if (!localFile.isEmpty())
     {
         // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
         std::wstring wpath = localFile.toStdWString();
+        qDebug() << "wpath->" << wpath;
         m_FileRef = new TagLib::FileRef(TagLib::FileName(wpath.c_str()));
         // m_FileRef = new TagLib::FileRef(TagLib::FileName(localFile.toUtf8().constData()));
         if (!m_FileRef->isNull() && m_FileRef->tag())
@@ -292,6 +301,7 @@ void InfoWidget::setFile(const QString &localFile)
                 // specialmente per MP3)
                 // delete mpegFile;
                 bFomatFound = true;
+                m_pix = extractMP3Cover (mpegFile);
             }
             if (!bFomatFound)
             {
@@ -306,6 +316,7 @@ void InfoWidget::setFile(const QString &localFile)
                     // info.append ("Format: MP4 (AAC, ALAC, M4A...) ");
                     fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
                     bFomatFound = true;
+                    m_pix = extractMP4Cover (mp4File);
                 }
             }
             if (!bFomatFound)
@@ -323,6 +334,7 @@ void InfoWidget::setFile(const QString &localFile)
                         // info.append ("Format: FLAC");
                         fields.append(Field{"Format: ", "FLAC"});
                         bFomatFound = true;
+                        m_pix = extractFLACCover (flacFile);
                     }
                 }
             }
@@ -398,8 +410,8 @@ void InfoWidget::setFile(const QString &localFile)
                     int iFormat = wavFile->audioProperties ()->format ();
                     // Se il cast ha successo, è un file WAV.
                     qDebug() << "Il file è un formato WAV (RIFF)";
-//                    info.append ("\n");
-//                    info.append ("Format: ");
+                    // info.append ("\n");
+                    // info.append ("Format: ");
                     // if (iFormat == 1) info.append ("PCM");
                     // else if (iFormat == 0) info.append ("Unknown format (0)");
                     // else if (iFormat == 2) info.append ("Compressed ADPCM");
@@ -414,7 +426,7 @@ void InfoWidget::setFile(const QString &localFile)
                     else if (iFormat == 3) fields.append(Field{"Format: ", "IEEE float WAV (RIFF)"});
                     else if (iFormat == 6) fields.append(Field{"Format: ", "A-law WAV (RIFF)"});
                     else if (iFormat == 7) fields.append(Field{"Format: ", "µ-law WAV (RIFF)"});
-                    else  fields.append(Field{"Format: ", "Unknown format WAV (RIFF)"});
+                    else fields.append(Field{"Format: ", "Unknown format WAV (RIFF)"});
                     bFomatFound = true;
                 }
             }
@@ -438,6 +450,9 @@ void InfoWidget::setFile(const QString &localFile)
                 info.append(fields[i].label);
                 info.append(fields[i].value);
             }
+            m_FileRef->file ()->clear ();
+            delete m_FileRef;
+            m_FileRef = nullptr;
             m_Info = info;
             setInfo (info);
             // qDebug() << "--- Dettagli Audio ---";
@@ -458,9 +473,23 @@ void InfoWidget::setFile(const QString &localFile)
             //                // m_infoWidget->setInfo (info);
             // m_infoWidget->show ();
             // }
-            m_FileRef->file ()->clear ();
-            delete m_FileRef;
-            m_FileRef = nullptr;
+            // AudioCover coverHelper;
+            // m_pix = coverHelper.extractCover (nativePath);
+            if (!m_pix.isNull())
+            {
+                // QPixmap scaledCover = cover.scaled(
+                // ui->coverLabel->size(),          // QLabel size
+                // Qt::KeepAspectRatio,             // maintain aspect ratio
+                // Qt::SmoothTransformation         // smooth scaling
+                // );
+                // ui->labelPix->show ();
+                ui->labelPix->setPixmap(m_pix.scaled(ui->labelPix->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            }
+            else
+            {
+                // ui->labelPix->setText("No cover found");
+                // ui->labelPix->hide ();
+            }
         }
         else
         {
@@ -478,6 +507,100 @@ void InfoWidget::setFile(const QString &localFile)
 //{
 // this->close ();
 //}
+
+QPixmap InfoWidget::extractFLACCover(TagLib::FLAC::File *file)
+{
+    // TagLib::FLAC::File file(filePath.toStdString().c_str());
+    // if (!file.isValid()) return QPixmap();
+    // const TagLib::List<TagLib::FLAC::Picture *> &pics = file.pictureList();
+    // if (pics.isEmpty()) return QPixmap();
+    // TagLib::FLAC::Picture *pic = pics.front();
+    // QByteArray data(pic->data().data(), pic->data().size());
+    // QPixmap pix;
+    // pix.loadFromData(data);
+    // return pix;
+    //TagLib::FLAC::File file(filePath.toStdString().c_str());
+    if (!file->isValid()) return QPixmap();  // early return if invalid
+    auto pics = file->pictureList();
+    if (pics.isEmpty()) return QPixmap();  // no pictures
+    const TagLib::FLAC::Picture *pic = pics.front();
+    const TagLib::ByteVector &bv = pic->data();
+    QPixmap pix;
+    pix.loadFromData(reinterpret_cast<const uchar*>(bv.data()), bv.size());
+    return pix;
+}
+
+QPixmap InfoWidget::extractMP4Cover(TagLib::MP4::File *file)
+{
+    // qDebug() << __PRETTY_FUNCTION__;
+    //        // TagLib::FileRef f(TagLib::FileName(filePath.toUtf8().constData()));
+    //        // qDebug() << "f is null:" << f.isNull () << "->" << filePath;
+    //        // TagLib::MP4::File *file = dynamic_cast<TagLib::MP4::File *>(f.file());
+    //        // TagLib::MP4::File file(filePath.toStdString().c_str());
+    // TagLib::MP4::File file(filePath.toUtf8 ().constData ());
+    // qDebug() << "Valid:" << file.isValid() << "->" << filePath;
+    // if (!file.isValid()) return QPixmap();
+    // TagLib::MP4::Tag *tag = file.tag();
+    // if (!tag)
+    // {
+    // qDebug() << "!tag";
+    // return QPixmap();
+    // }
+    // const TagLib::MP4::ItemMap &items = tag->itemMap();
+    // if (!items.contains("covr"))
+    // {
+    // qDebug() << "!items.contains(\"covr\")";
+    // return QPixmap();
+    // }
+    // qDebug() << "Has tag:" << (tag != nullptr);
+    // qDebug() << "Contains covr:" << tag->itemMap().contains("covr");
+    // TagLib::MP4::CoverArtList coverList = items["covr"].toCoverArtList();
+    // if (coverList.isEmpty()) return QPixmap();
+    // const TagLib::MP4::CoverArt &cover = coverList.front();
+    // QByteArray data(cover.data().data(), cover.data().size());
+    // QPixmap pix;
+    // pix.loadFromData(data);
+    // return pix;
+    //TagLib::MP4::File file(filePath.toUtf8().constData());
+    if (!file->isValid()) return QPixmap();  // early return if invalid
+    TagLib::MP4::Tag *tag = file->tag();
+    if (!tag) return QPixmap();  // no tag
+    const auto &items = tag->itemMap();
+    if (!items.contains("covr")) return QPixmap();  // no cover art
+    auto coverList = items["covr"].toCoverArtList();
+    if (coverList.isEmpty()) return QPixmap();  // empty list
+    const TagLib::MP4::CoverArt &cover = coverList.front();
+    const TagLib::ByteVector &bv = cover.data();
+    QPixmap pix;
+    pix.loadFromData(reinterpret_cast<const uchar*>(bv.data()), bv.size());
+    return pix;
+}
+
+QPixmap InfoWidget::extractMP3Cover( TagLib::MPEG::File *mp3File)
+{
+    //TagLib::MPEG::File mp3File(filePath.toStdString().c_str());
+    // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
+    // TagLib::FileRef file(TagLib::FileName(filePath.toUtf8 ().constData ()));
+    //TagLib::FileName file(filePath.toUtf8 ().constData ());
+    // QPixmap pixmap;
+    // TagLib::MPEG::File *mp3File = dynamic_cast<TagLib::MPEG::File*>(file.file ());
+    if ( !mp3File->isValid())
+        return QPixmap();
+    TagLib::ID3v2::Tag *tag = mp3File->ID3v2Tag();
+    if (!tag)
+        return QPixmap();
+    const auto pictures = tag->complexProperties("PICTURE");
+    for (const auto &propMap : pictures)
+    {
+        if (!propMap.contains("data")) continue;
+        const TagLib::ByteVector &bv = propMap["data"].toByteVector();
+        QPixmap pix;
+        if (pix.loadFromData(reinterpret_cast<const uchar * >(bv.data()), bv.size()))
+            return pix;  // return first valid cover
+    }
+    //qDebug() << "AudioCover: No MP3 cover found.";
+    return QPixmap();  // empty if no cover
+}
 
 QString InfoWidget::formatFileSize(qint64 bytes)
 {

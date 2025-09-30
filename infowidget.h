@@ -4,6 +4,17 @@
 #include <QWidget>
 #include <fileref.h>
 #include <tag.h>
+#include <mpegfile.h>
+#include <mpegproperties.h>
+#include <mp4file.h>
+#include <flacfile.h>
+#include <opusfile.h>
+#include <oggfile.h>
+#include <oggflacfile.h>
+#include <vorbisfile.h>
+#include <speexfile.h>
+#include <wavfile.h>
+#include <wavproperties.h>
 
 namespace Ui
 {
@@ -31,6 +42,11 @@ private:
     QString formatTime(int totalSeconds);
     TagLib::FileRef *m_FileRef;
     QString m_Info;
+    // bool m_bHasPicture;
+    QPixmap m_pix;
+    QPixmap extractMP3Cover(TagLib::MPEG::File *mp3File);
+    QPixmap extractMP4Cover(TagLib::MP4::File *file);
+    QPixmap extractFLACCover(TagLib::FLAC::File *file);
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void moveEvent(QMoveEvent *event) override;
