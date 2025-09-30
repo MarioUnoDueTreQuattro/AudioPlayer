@@ -30,6 +30,9 @@
 #include <QToolTip>
 #include <QDesktopServices>
 #include <QTimer>
+#include <QProcess>
+#include <windows.h>
+#include <shlobj.h>
 //#include <fileref.h>
 //#include <tag.h>
 
@@ -1395,6 +1398,7 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
     contextMenu.addSeparator();
     QAction* searchAction = contextMenu.addAction(tr("Search on Google"));
+    QAction* selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
     searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
     contextMenu.addSeparator();
     QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
@@ -1435,6 +1439,27 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
         QFileInfo info(sTrackWithoutExtension);
         sTrackWithoutExtension = info.completeBaseName();
         openGoogleSearch (sTrackWithoutExtension);
+    }
+    else if (selectedAction == selectInExplorerAction)
+    {
+        // QString sTrackName =  currentTrackName ();
+        QUrl mediaUrl;
+        // If you are using a playlist:
+        if (m_player->playlist())
+        {
+            int selectedRow = ui->listWidget->currentRow();
+            if (selectedRow < 0 || selectedRow >= m_playlist->mediaCount())
+                return;
+            mediaUrl = m_playlist->media(selectedRow).canonicalUrl();
+        }
+        else
+        {
+            qDebug() << __PRETTY_FUNCTION__ << "Not using a playlist";
+            mediaUrl = m_player->media().canonicalUrl();
+        }
+        QString localFile = mediaUrl.toLocalFile();
+        // openFolderAndSelectFileInExplorer (localFile);
+        openFolderAndSelectFileEx (localFile);
     }
 }
 
@@ -1780,4 +1805,164 @@ void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyNam
         m_player->play(); // Resume playback
     }
     onSystemVolumeChanged(m_systemVolumeController->volume());
+}
+
+void Widget::openFolderAndSelectFileInExplorer(const QString &filePath)
+{
+    // Use Windows Explorer to open and select the file
+    QStringList args;
+    args << "/select," ;
+    args << QDir::toNativeSeparators(filePath);
+    QProcess::startDetached("explorer.exe", args);
+    //QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(filePath));
+}
+
+void Widget::openFolderAndSelectFile(const QString &filePath)
+{
+    //    // Use Windows Explorer to open and select the file
+    // QStringList args;
+    //    // args << "/select," ;
+    // args << QDir::toNativeSeparators(filePath);
+    //    // QProcess::startDetached("explorer.exe", args);
+    // QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(filePath));
+    // LPCWSTR path = (LPCWSTR)filePath.utf16();
+    // PIDLIST_ABSOLUTE pidl;
+    // if (SUCCEEDED(SHParseDisplayName(path, nullptr, &pidl, 0, nullptr)))
+    // {
+    //        // Select the item in its folder
+    // SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
+    // CoTaskMemFree(pidl);
+    // }
+    // Convert QString to UTF-16 (LPCWSTR)
+    QFileInfo fi(filePath);
+    if (!fi.exists())
+    {
+        qDebug() << "File does not exist:" << filePath;
+        return;
+    }
+    QString targetFilePath = fi.absoluteFilePath();
+    // Resolve file symlink if it exists
+    if (fi.isSymLink())
+    {
+        qDebug() << "File is symlink";
+        QString realFile = fi.symLinkTarget();
+        if (!realFile.isEmpty())
+        {
+            targetFilePath = realFile;
+        }
+        else
+        {
+            qDebug() << "Failed to resolve file symlink:" << filePath;
+            return;
+        }
+    }
+    // Resolve folder symlink if it exists
+    QFileInfo folderInfo(QFileInfo(targetFilePath).absolutePath());
+    QString folderPath = folderInfo.absoluteFilePath();
+    if (folderInfo.isSymLink())
+    {
+        qDebug() << "Folder is symlink";
+        QString realFolder = folderInfo.symLinkTarget();
+        if (!realFolder.isEmpty())
+        {
+            folderPath = realFolder;
+        }
+        else
+        {
+            qDebug() << "Failed to resolve folder symlink:" << folderInfo.absoluteFilePath();
+            return;
+        }
+    }
+    // Combine resolved folder and file name
+    QString nativePath = QDir::toNativeSeparators(folderPath + "\\" + QFileInfo(targetFilePath).fileName());
+    qDebug() << "Resolved path=" << nativePath;
+    LPCWSTR path = reinterpret_cast<LPCWSTR>(nativePath.utf16());
+    PIDLIST_ABSOLUTE pidl = nullptr;
+    HRESULT hr = SHParseDisplayName(path, nullptr, &pidl, 0, nullptr);
+    if (SUCCEEDED(hr) && pidl != nullptr)
+    {
+        hr = SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
+        if (FAILED(hr))
+        {
+            qDebug() << "Failed to open folder and select item:" << nativePath;
+        }
+        CoTaskMemFree(pidl);
+    }
+    else
+    {
+        qDebug() << "Failed to parse path:" << nativePath;
+    }
+}
+
+/*
+ * Opens the folder containing the given file in the user's default file manager
+ * and selects the file.
+ *
+ * Features:
+ * - Works with Explorer, Directory Opus, and other shell-integrated file managers.
+ * - Resolves symlinks for both the file and its containing folder.
+ * - If the file or folder cannot be resolved, still opens the folder.
+ * - Safe for Windows 7 32-bit and Qt5.
+ */
+void Widget::openFolderAndSelectFileEx(const QString &filePath)
+{
+    QFileInfo fi(filePath);
+    if (!fi.exists())
+    {
+        qDebug() << "File does not exist:" << filePath;
+        return;
+    }
+    // Step 1: Resolve file symlink if it exists
+    QString targetFilePath = fi.absoluteFilePath();
+    if (fi.isSymLink())
+    {
+        QString realFile = fi.symLinkTarget();
+        if (!realFile.isEmpty())
+        {
+            targetFilePath = realFile;
+        }
+        else
+        {
+            qDebug() << "File is a broken symlink:" << filePath;
+            targetFilePath = fi.absoluteFilePath(); // fallback: select the symlink itself
+        }
+    }
+    // Step 2: Resolve folder symlink if it exists
+    QFileInfo folderInfo(QFileInfo(targetFilePath).absolutePath());
+    QString folderPath = folderInfo.absoluteFilePath();
+    if (folderInfo.isSymLink())
+    {
+        QString realFolder = folderInfo.symLinkTarget();
+        if (!realFolder.isEmpty())
+        {
+            folderPath = realFolder;
+        }
+        else
+        {
+            qDebug() << "Folder is a broken symlink:" << folderInfo.absoluteFilePath();
+            folderPath = folderInfo.absoluteFilePath(); // fallback: open the symlink folder
+        }
+    }
+    // Step 3: Combine resolved folder path and file name
+    QString nativePath = QDir::toNativeSeparators(folderPath + "\\" + QFileInfo(targetFilePath).fileName());
+    LPCWSTR path = reinterpret_cast<LPCWSTR>(nativePath.utf16());
+    // Step 4: Try using the Windows Shell API to select the file
+    PIDLIST_ABSOLUTE pidl = nullptr;
+    HRESULT hr = SHParseDisplayName(path, nullptr, &pidl, 0, nullptr);
+    if (SUCCEEDED(hr) && pidl != nullptr)
+    {
+        hr = SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
+        if (FAILED(hr))
+        {
+            qDebug() << "Shell API failed, falling back to opening folder:" << nativePath;
+            QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(folderPath));
+        }
+        CoTaskMemFree(pidl);
+    }
+    else
+    {
+        // Step 5: Shell API failed (e.g., path contains special characters), fallback
+        qDebug() << "Failed to parse path with Shell API, opening folder:" << nativePath;
+        QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(folderPath));
+    }
 }
