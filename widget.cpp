@@ -1398,8 +1398,9 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
     contextMenu.addSeparator();
     QAction* searchAction = contextMenu.addAction(tr("Search on Google"));
-    QAction* selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
     searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
+    QAction* selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
+    selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
     contextMenu.addSeparator();
     QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
     QAction *saveAction = contextMenu.addAction(tr("Save playlist"));

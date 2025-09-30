@@ -28,7 +28,7 @@ InfoWidget::InfoWidget(QWidget *parent) :
     m_Info("")
 {
     ui->setupUi(this);
-    setWindowIcon (QIcon(":/img/img/icons8-play-32.ico"));
+    setWindowIcon (QIcon(":/img/img/icons8-play-32.png"));
     setWindowFlags(Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
     loadSettings();
     QPalette palette = ui->textEditInfo->palette();
