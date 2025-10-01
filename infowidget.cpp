@@ -127,7 +127,7 @@ void InfoWidget::setFile(const QString &localFile)
     {
         // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
         std::wstring wpath = localFile.toStdWString();
-        qDebug() << "wpath->" << wpath;
+        //qDebug() << "wpath->" << wpath;
         m_FileRef = new TagLib::FileRef(TagLib::FileName(wpath.c_str()));
         // m_FileRef = new TagLib::FileRef(TagLib::FileName(localFile.toUtf8().constData()));
         if (!m_FileRef->isNull() && m_FileRef->tag())
@@ -249,7 +249,7 @@ void InfoWidget::setFile(const QString &localFile)
             if (mpegFile)
             {
                 TagLib::MPEG::Properties *prop = mpegFile->audioProperties ();
-                qDebug() << "Formato: MPEG (MP3)";
+                qDebug() << "MPEG (MP3)";
                 // info.append ("\n");
                 // info.append ("Channel mode: ");
                 //TagLib::MPEG::Header::ChannelMode chanMode = mpegFile->audioProperties ()->channelMode ();
@@ -340,7 +340,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (mp4File)
                 {
                     // Se il cast ha successo, è un file MP4/M4A.
-                    qDebug() << "Il file è un MP4 (M4A)";
+                    qDebug() << "MP4 (M4A)";
                     // Qui puoi continuare a lavorare con 'mp4File' per accedere
                     // a proprietà specifiche MP4 come i tag 'covr' (immagine)
                     // info.append ("\n");
@@ -376,9 +376,9 @@ void InfoWidget::setFile(const QString &localFile)
                 {
                     if (flacFile)
                     {
+                        qDebug() << "FLAC";
                         fields.append(Field{"Bits: ", QString::number (flacFile->audioProperties ()->bitsPerSample ())});
                         // Se il cast ha successo, è un file FLAC.
-                        qDebug() << "Il file è un formato FLAC";
                         // Qui puoi continuare a lavorare con 'flacFile' per accedere
                         // a proprietà specifiche del FLAC se necessario.
                         // info.append ("\n");
@@ -395,7 +395,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (opusFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg Opus";
+                    qDebug() << "Ogg Opus";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -410,7 +410,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (oggFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg Vorbis";
+                    qDebug() << "Ogg Vorbis";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -425,7 +425,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (oggFlacFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg FLAC";
+                    qDebug() << "Ogg FLAC";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -440,7 +440,7 @@ void InfoWidget::setFile(const QString &localFile)
                 if (speexFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Il file è un formato Ogg Speex";
+                    qDebug() << "Ogg Speex";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -454,13 +454,13 @@ void InfoWidget::setFile(const QString &localFile)
                 TagLib::RIFF::WAV::File *wavFile = dynamic_cast<TagLib::RIFF::WAV::File *>(m_FileRef->file());
                 if (wavFile)
                 {
+                    qDebug() << "WAV (RIFF)";
                     // info.append ("\n");
                     // info.append ("Bits: ");
                     // info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
                     fields.append(Field{"Bits: ", QString::number (wavFile->audioProperties ()->bitsPerSample())});
                     int iFormat = wavFile->audioProperties ()->format ();
                     // Se il cast ha successo, è un file WAV.
-                    qDebug() << "Il file è un formato WAV (RIFF)";
                     // info.append ("\n");
                     // info.append ("Format: ");
                     // if (iFormat == 1) info.append ("PCM");

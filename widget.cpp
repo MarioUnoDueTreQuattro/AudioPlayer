@@ -430,7 +430,7 @@ QString Widget::currentTrackName()
     {
         QFileInfo fileInfo(mediaUrl.toLocalFile());
         sCurrent = fileInfo.fileName();
-        qDebug() << "Now playing:" << sCurrent; // just file name
+        //qDebug() << "Now playing:" << sCurrent; // just file name
     }
     else
     {
@@ -735,12 +735,12 @@ void Widget::handleItemDoubleClicked()
     int idx = ui->listWidget->currentRow();
     if (idx >= 0 && idx < m_playlist->mediaCount())
     {
-        m_playlist->setCurrentIndex(idx);
-        if (idx = m_playlist->currentIndex ())
+        if (idx == m_playlist->currentIndex ())
         {
             m_player->stop ();
             handlePlay ();
         }
+        m_playlist->setCurrentIndex(idx);
         // if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
         // handlePlay();
     }
@@ -785,6 +785,7 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     if (index >= 0 && index < iListWidgetCount)
     {
         ui->listWidget->setCurrentRow(index);
+        //ui->listWidget->scrollToItem(ui->listWidget->item(index), QAbstractItemView::PositionAtCenter);
         if (m_player->state() == QMediaPlayer::PlayingState || m_bAutoplay)
         {
             handlePlay ();
@@ -892,6 +893,7 @@ void Widget::loadSettings()
     if (m_playlist->mediaCount() > 0)
         if (m_bAutoplay)
         {
+            m_player->setVolume(m_lastVolume);
             handlePlay ();
             handleDurationChanged (m_player->duration ());
         }
@@ -1392,8 +1394,8 @@ void Widget::savePlaylistFile(const QString &path)
 void Widget::showPlaylistContextMenu(const QPoint &pos)
 {
     QMenu contextMenu(this);
-    QAction *scrollToPlayingAction = contextMenu.addAction(tr("Scroll to currently playing"));
-    scrollToPlayingAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
+    QAction *scrollToCurrentAction = contextMenu.addAction(tr("Scroll to current"));
+    scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
     contextMenu.addSeparator();
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
@@ -1432,7 +1434,7 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     {
         clearPlaylist(false); // ask confirmation
     }
-    else if (selectedAction == scrollToPlayingAction)
+    else if (selectedAction == scrollToCurrentAction)
     {
         scrollToCurrentTrack ();
     }
