@@ -346,10 +346,11 @@ void InfoWidget::setFile(const QString &localFile)
                     // info.append ("\n");
                     // info.append ("Format: MP4 (AAC, ALAC, M4A...) ");
                     //TagLib::MP4::Properties *prop=mp4File->properties ();
-//                    TagLib::PropertyMap prop=mp4File->properties ();
-//                    int iCodec=prop.codec ();
-                    int iCodec=mp4File->audioProperties ()->codec ();
-                    switch (iCodec) {
+                    // TagLib::PropertyMap prop=mp4File->properties ();
+                    // int iCodec=prop.codec ();
+                    int iCodec = mp4File->audioProperties ()->codec ();
+                    switch (iCodec)
+                    {
                     case 0:
                         fields.append(Field{"Format: ", "MP4 (Unknown codec)"});
                         break;
@@ -357,7 +358,9 @@ void InfoWidget::setFile(const QString &localFile)
                         fields.append(Field{"Format: ", "MP4 (AAC codec)"});
                         break;
                     case 2:
-                        fields.append(Field{"Format: ", "MP4 (ALAC codec)"});
+                        // ALAC can be 16 or 24 bits
+                        fields.append(Field{"Bits: ", QString::number (mp4File->audioProperties ()->bitsPerSample ())});
+                        fields.append(Field{"Format: ", "MP4 (ALAC lossless codec)"});
                         break;
                     default:
                         fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
