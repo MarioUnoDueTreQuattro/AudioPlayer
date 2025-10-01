@@ -128,8 +128,14 @@ void Settings::saveSettings()
     settings.setValue ("Theme", m_sTheme);
     settings.setValue ("ThemePalette", m_sPalette);
     settings.setValue("PlayedTextColor", m_playedTextColor.name());
-    settings.setValue("AutoPlay",ui->checkBoxAutoPlay->isChecked ());
-    settings.setValue("ShowInfo",ui->checkBoxInfo->isChecked ());
+    settings.setValue("AutoPlay", ui->checkBoxAutoPlay->isChecked ());
+    settings.setValue("ShowInfo", ui->checkBoxInfo->isChecked ());
+    QString sPosition;
+    if (ui->radioButtonPixAbove->isChecked ()) sPosition = "Above";
+    else if (ui->radioButtonPixBelow->isChecked ()) sPosition = "Below";
+    else if (ui->radioButtonPixRight->isChecked ()) sPosition = "Right";
+    else if (ui->radioButtonPixLeft->isChecked ()) sPosition = "Left";
+    settings.setValue("PictuePositionInIfo", sPosition);
     settings.sync();
 }
 
@@ -144,11 +150,16 @@ void Settings::loadSettings()
     palette.setColor(QPalette::Button, m_playedTextColor);
     ui->pushButtonPlayedTextColor->setAutoFillBackground(true);
     ui->pushButtonPlayedTextColor->setPalette(palette);
-    bool bAutoplay= settings.value("AutoPlay", true).toBool ();
+    bool bAutoplay = settings.value("AutoPlay", true).toBool ();
     ui->checkBoxAutoPlay->setChecked (bAutoplay);
-    bool bShowInfo= settings.value("ShowInfo", true).toBool ();
+    bool bShowInfo = settings.value("ShowInfo", true).toBool ();
     ui->checkBoxInfo->setChecked (bShowInfo);
-
+    //ui->groupBoxInfo->setEnabled (bShowInfo);
+    m_sPictuePositionInIfo = settings.value("PictuePositionInIfo", "Right").toString();
+    if (m_sPictuePositionInIfo == "Above") ui->radioButtonPixAbove->setChecked (true);
+    else if (m_sPictuePositionInIfo == "Below") ui->radioButtonPixBelow->setChecked (true);
+    else if (m_sPictuePositionInIfo == "Right") ui->radioButtonPixRight->setChecked (true);
+    else if (m_sPictuePositionInIfo == "Left") ui->radioButtonPixLeft->setChecked (true);
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()
@@ -157,7 +168,7 @@ void Settings::on_pushButtonPlayedTextColor_clicked()
     QColor chosenColor = QColorDialog::getColor(m_playedTextColor, this, "Select a color");
     if (chosenColor.isValid())
     {
-        m_playedTextColor=chosenColor;
+        m_playedTextColor = chosenColor;
         QPalette palette = ui->pushButtonPlayedTextColor->palette();
         palette.setColor(QPalette::Button, m_playedTextColor);
         ui->pushButtonPlayedTextColor->setAutoFillBackground(true);
@@ -169,30 +180,26 @@ void Settings::on_pushButtonPlayedTextColor_clicked()
 void Settings::on_buttonBox_clicked(QAbstractButton *button)
 {
     QDialogButtonBox *buttonBox = qobject_cast<QDialogButtonBox *>(sender());
-          if (!buttonBox) return;
-
-          QDialogButtonBox::ButtonRole role = buttonBox->buttonRole(button);
-          switch (role)
-                 {
-                 case QDialogButtonBox::ApplyRole:
-                     qDebug() << "Apply clicked -> apply changes without closing";
-                     //applySettings();
-                     on_Settings_accepted();
-                      emit applyClicked();   // <-- EMIT CUSTOM SIGNAL
-              break;
-
-//                 case QDialogButtonBox::AcceptRole:
-//                     qDebug() << "OK clicked -> apply + close";
-//                     applySettings();
-//                     accept();
-//                     break;
-
-//                 case QDialogButtonBox::RejectRole:
-//                     qDebug() << "Cancel clicked -> discard + close";
-//                     reject();
-//                     break;
-
-                 default:
-                     break;
-                 }
+    if (!buttonBox) return;
+    QDialogButtonBox::ButtonRole role = buttonBox->buttonRole(button);
+    switch (role)
+    {
+    case QDialogButtonBox::ApplyRole:
+        qDebug() << "Apply clicked -> apply changes without closing";
+        //applySettings();
+        on_Settings_accepted();
+        emit applyClicked();   // <-- EMIT CUSTOM SIGNAL
+        break;
+    // case QDialogButtonBox::AcceptRole:
+    // qDebug() << "OK clicked -> apply + close";
+    // applySettings();
+    // accept();
+    // break;
+    // case QDialogButtonBox::RejectRole:
+    // qDebug() << "Cancel clicked -> discard + close";
+    // reject();
+    // break;
+    default:
+        break;
+    }
 }

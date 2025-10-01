@@ -31,6 +31,9 @@ public:
     void setInfo(QString);
     QString getInfo();
     void setFile(const QString &);
+    QString getPictuePosition() const;
+    void setPictuePosition(const QString &sPictuePosition);
+
 private slots:
     //void on_pushButtonClose_clicked();
     void updateSize(const QSizeF &newSize);
@@ -42,6 +45,7 @@ private:
     QString formatTime(int totalSeconds);
     TagLib::FileRef *m_FileRef;
     QString m_Info;
+    QString m_sPictuePosition;
     // bool m_bHasPicture;
     QPixmap m_pix;
     QPixmap extractMP3Cover(TagLib::MPEG::File *mp3File);

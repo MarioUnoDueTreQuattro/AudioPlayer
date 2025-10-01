@@ -56,23 +56,54 @@ void InfoWidget::updateSize(const QSizeF &newSize)
     // Aggiungi margini, bordi e scroll bar (anche se disabilitati, a volte l'overhead resta)
     int totalHeight = contentHeight + 2 * ui->textEditInfo->frameWidth();;
     int totalWidth = contentWidth;// + 2 * ui->textEditInfo->frameWidth();
-    // Imposta la dimensione fissa (sia altezza che larghezza)
-    if (m_pix.isNull () == false)
+    // Picture position
+    if (m_pix.isNull () == true)
     {
-        //qDebug() << "m_pix.isNull () == false";
         ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-        ui->labelPix->move (0, totalHeight);
-        ui->labelPix->setFixedSize (totalWidth, totalWidth);
-        ui->labelPix->show();
-        setFixedSize(totalWidth, totalHeight + totalWidth);
-    }
-    else
-    {
-        //qDebug() << "m_pix.isNull () == true";
-        ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+        ui->textEditInfo->move (0, 0);
         ui->labelPix->hide ();
         //ui->labelPix->setFixedSize (0,0);
         setFixedSize(totalWidth, totalHeight);
+    }
+    else
+    {
+        if (m_sPictuePosition == "Below")
+        {
+            ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+            ui->textEditInfo->move (0, 0);
+            ui->labelPix->move (0, totalHeight);
+            ui->labelPix->setFixedSize (totalWidth, totalWidth);
+            ui->labelPix->show();
+            setFixedSize(totalWidth, totalHeight + totalWidth);
+        }
+        else if (m_sPictuePosition == "Above")
+        {
+            ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+            ui->textEditInfo->move (0, totalWidth);
+            ui->labelPix->move (0, 0);
+            ui->labelPix->setFixedSize (totalWidth, totalWidth);
+            ui->labelPix->show();
+            setFixedSize(totalWidth, totalHeight + totalWidth);
+        }
+        else if (m_sPictuePosition == "Right")
+        {
+            ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+            ui->textEditInfo->move (0, 0);
+            ui->labelPix->move (totalWidth, 0);
+            ui->labelPix->setFixedSize (totalHeight, totalHeight);
+            ui->labelPix->show();
+            setFixedSize(totalWidth + totalHeight, totalHeight);
+        }
+        else if (m_sPictuePosition == "Left")
+        {
+            ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+            ui->textEditInfo->move (totalHeight, 0);
+            ui->labelPix->move (0, 0);
+            ui->labelPix->setFixedSize (totalHeight, totalHeight);
+            ui->labelPix->show();
+            setFixedSize(totalWidth + totalHeight, totalHeight);
+        }
+        ui->labelPix->setPixmap(m_pix.scaled(ui->labelPix->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
 }
 
@@ -483,7 +514,7 @@ void InfoWidget::setFile(const QString &localFile)
                 // Qt::SmoothTransformation         // smooth scaling
                 // );
                 // ui->labelPix->show ();
-                ui->labelPix->setPixmap(m_pix.scaled(ui->labelPix->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                //ui->labelPix->setPixmap(m_pix.scaled(ui->labelPix->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
             }
             else
             {
@@ -704,6 +735,7 @@ void InfoWidget::loadSettings()
         // La posizione di default (100, 100) verrà usata se la chiave non esiste
         move(QPoint(100, 100));
     }
+    m_sPictuePosition = settings.value("PictuePositionInIfo", "Right").toString();
 }
 
 QString InfoWidget::formatTime(int totalSeconds)
@@ -722,4 +754,15 @@ QString InfoWidget::formatTime(int totalSeconds)
     QString secondsStr = QString::number(seconds).rightJustified(2, '0');
     // 5. Combina il risultato nel formato finale
     return minutesStr + ":" + secondsStr;
+}
+
+QString InfoWidget::getPictuePosition() const
+{
+    return m_sPictuePosition;
+}
+
+void InfoWidget::setPictuePosition(const QString &sPictuePosition)
+{
+    m_sPictuePosition = sPictuePosition;
+    updateSize (ui->textEditInfo->document ()->size ());
 }

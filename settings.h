@@ -27,6 +27,7 @@ private:
     QString m_sTheme;
     QString m_sPalette;
     QColor m_playedTextColor;
+    QString m_sPictuePositionInIfo;
     void saveSettings();
     void loadSettings();
 signals:

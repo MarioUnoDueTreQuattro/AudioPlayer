@@ -1199,6 +1199,8 @@ void Widget::settingsDialogAccepted()
     }
     m_bAutoplay = settings.value("AutoPlay", true).toBool ();
     m_bShowInfo = settings.value("ShowInfo", true).toBool ();
+    QString pixPosition=settings.value("PictuePositionInIfo", "Right").toString();
+     if (m_infoWidget != nullptr) m_infoWidget->setPictuePosition (pixPosition);
     if (m_bShowInfo == false)
     {
         if (m_infoWidget != nullptr) m_infoWidget->hide ();
