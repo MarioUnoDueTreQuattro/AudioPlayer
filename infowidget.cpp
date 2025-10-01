@@ -345,7 +345,24 @@ void InfoWidget::setFile(const QString &localFile)
                     // a proprietà specifiche MP4 come i tag 'covr' (immagine)
                     // info.append ("\n");
                     // info.append ("Format: MP4 (AAC, ALAC, M4A...) ");
-                    fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
+                    //TagLib::MP4::Properties *prop=mp4File->properties ();
+//                    TagLib::PropertyMap prop=mp4File->properties ();
+//                    int iCodec=prop.codec ();
+                    int iCodec=mp4File->audioProperties ()->codec ();
+                    switch (iCodec) {
+                    case 0:
+                        fields.append(Field{"Format: ", "MP4 (Unknown codec)"});
+                        break;
+                    case 1:
+                        fields.append(Field{"Format: ", "MP4 (AAC codec)"});
+                        break;
+                    case 2:
+                        fields.append(Field{"Format: ", "MP4 (ALAC codec)"});
+                        break;
+                    default:
+                        fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
+                        break;
+                    }
                     bFomatFound = true;
                     m_pix = extractMP4Cover (mp4File);
                 }

@@ -7,6 +7,8 @@
 #include <mpegfile.h>
 #include <mpegproperties.h>
 #include <mp4file.h>
+//#include <mp4properties.h>
+//#include <tpropertymap.h>
 #include <flacfile.h>
 #include <opusfile.h>
 #include <oggfile.h>
