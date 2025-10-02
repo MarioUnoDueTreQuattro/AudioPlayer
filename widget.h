@@ -87,6 +87,7 @@ private:
     bool m_bInfoWindowHasBeenMinimized;
     bool m_bInfoWindowHasBeenClosed;
     bool m_bSystemVolumeSlider;
+    QSet<QString> m_playlistPaths;
     QList<QString> m_playedList;
     QColor m_playedTextColor;
     QString m_sTheme;

@@ -509,7 +509,7 @@ void InfoWidget::setFile(const QString &localFile)
                 int originalHeight = originalSize.height();
                 m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
                 //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
-                fields.append(Field{"Picture: ", m_sPixSize + " pixels"});
+                fields.append(Field{"Cover size: ", m_sPixSize + " pixels"});
             }
 
             QFile file(localFile);

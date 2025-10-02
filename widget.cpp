@@ -31,6 +31,7 @@
 #include <QDesktopServices>
 #include <QTimer>
 #include <QProcess>
+#include <QElapsedTimer>
 #include <windows.h>
 #include <shlobj.h>
 //#include <fileref.h>
@@ -513,18 +514,40 @@ void Widget::addFileToPlaylist(const QString &filePath)
     QFileInfo fi(filePath);
     if (!fi.exists())
         return;
-    QString ext = fi.suffix().toLower();
-    if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus" && ext != "flac" && ext != "ogg" && ext != "mp2")
+    // if (!QFile::exists(filePath))
+    // return;
+    // QString ext = fi.suffix().toLower();
+    // if (ext != "wav" && ext != "mp3" && ext != "m4a" && ext != "aac" && ext != "opus" && ext != "flac" && ext != "ogg" && ext != "mp2")
+    // return;
+    //QString ext = QFileInfo(filePath).suffix().toLower();
+    static const QSet<QString> allowedExt =
+    {
+        "wav", "mp3", "m4a", "aac", "opus", "flac", "ogg", "mp2"
+    };
+    // const QFileInfo fi(filePath);
+    const QString ext = fi.suffix().toLower();
+    if (!allowedExt.contains(ext))
         return;
     // Avoid duplicate entries
-    for (int i = 0; i < m_playlist->mediaCount(); ++i)
-    {
-        if (m_playlist->media(i).canonicalUrl() == QUrl::fromLocalFile(fi.absoluteFilePath()))
-            return;
-    }
-    m_playlist->addMedia(QUrl::fromLocalFile(fi.absoluteFilePath()));
+    const QString absPath = QDir::cleanPath(fi.absoluteFilePath());
+    // QString absPath = QDir::cleanPath(QFileInfo(filePath).absoluteFilePath());
+    // for (int i = 0; i < m_playlist->mediaCount(); ++i)
+    // {
+    if (m_playlistPaths.contains(absPath))
+        return;
+    // if (m_playlist->media(i).canonicalUrl() == QUrl::fromLocalFile(fi.absoluteFilePath()))
+    // return;
+    // }
+    // m_playlist->addMedia(QUrl::fromLocalFile(fi.absoluteFilePath()));
+    // ui->listWidget->addItem(fi.fileName());
+    //QUrl url = QUrl::fromLocalFile(absPath);
+    // const QUrl url = QUrl::fromLocalFile(absPath);
+    // m_playlist->addMedia(url);
+    m_playlist->addMedia(QUrl::fromLocalFile(absPath));
+    //ui->listWidget->addItem(QFileInfo(absPath).fileName());
     ui->listWidget->addItem(fi.fileName());
-    saveSettings();
+    m_playlistPaths.insert(absPath);
+    //saveSettings();
 }
 
 // ---------- Drag & Drop Support ----------
@@ -820,6 +843,7 @@ void Widget::clearPlaylist(bool silent /* = false */)
     }
     m_player->stop();
     m_playlist->clear();
+    m_playlistPaths.clear();
     ui->listWidget->clear();
     // Reset last track info
     m_lastTrackIndex = -1;
@@ -853,7 +877,10 @@ void Widget::loadSettings()
     if (!playlistFiles.isEmpty())
     {
         // Restore from saved playlist files (fallback)
+//        QElapsedTimer timer;
+//        timer.start(); // Il timer inizia a contare
         m_playlist->clear();
+        m_playlistPaths.clear();
         ui->listWidget->clear();
         for (const QString &file : playlistFiles)
             addFileToPlaylist(file);
@@ -866,6 +893,9 @@ void Widget::loadSettings()
             if (m_lastTrackPosition > 0)
                 m_player->setPosition(m_lastTrackPosition);
         }
+//        qint64 tempoTrascorso_ms = timer.elapsed();
+//        double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
+//        qDebug() << "Tempo impiegato dalla funzione:" << tempoTrascorso_s << "secondi";
     }
     // --- Playback mode ---
     int modeValue = settings.value("playbackMode", (int)QMediaPlaylist::Sequential).toInt();
@@ -1348,6 +1378,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
         return;
     QTextStream in(&file);
     m_playlist->clear();
+    m_playlistPaths.clear();
     ui->listWidget->clear();
     ui->listWidget->viewport()->update();
     while (!in.atEnd())
@@ -1376,8 +1407,9 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
         updateModeButtonIcon();
     }
-    QSettings settings;
-    settings.setValue("m_lastDialogPlaylistPath", filePath);
+    // QSettings settings;
+    // settings.setValue("m_lastDialogPlaylistPath", filePath);
+    saveSettings ();
 }
 
 void Widget::savePlaylistFile(const QString &path)
@@ -1579,6 +1611,9 @@ void Widget::clearExceptSelected()
                 m_shuffleHistory[j]--; // shift down
         }
         delete ui->listWidget->takeItem(i);
+        QUrl url = m_playlist->media(i).canonicalUrl();
+        if (url.isLocalFile())
+            m_playlistPaths.remove(url.toLocalFile());
         m_playlist->removeMedia(i);
     }
     // Keep the selected track
@@ -1626,6 +1661,9 @@ void Widget::handleRemoveSelected()
                 m_shuffleHistory[i]--; // shift down indices
         }
         delete ui->listWidget->takeItem(row);
+        QUrl url = m_playlist->media(row).canonicalUrl();
+        if (url.isLocalFile())
+            m_playlistPaths.remove(url.toLocalFile());
         m_playlist->removeMedia(row);
     }
     if (m_playlist->mediaCount() == 0)
