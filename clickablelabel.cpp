@@ -27,11 +27,14 @@ void ClickableLabel::setManagedTooltip(const QString &value)
 void ClickableLabel::enterEvent(QEvent *event)
 {
     Q_UNUSED(event);
-    // Manually show tooltip at the cursor position
-    // QPoint globalPos = QCursor::pos();
-    QPoint globalPos = mapToGlobal(QPoint(0, this->height ()));
-    //QToolTip::showText(globalPos, this->toolTip (), this, QRect (50, 50, 100, 100), 2000);
-    QToolTip::showText(globalPos, sManagedTooltip, this);
+    if (!sManagedTooltip.isEmpty ())
+    {
+        // Manually show tooltip at the cursor position
+        // QPoint globalPos = QCursor::pos();
+        QPoint globalPos = mapToGlobal(QPoint(0, this->height ()));
+        //QToolTip::showText(globalPos, this->toolTip (), this, QRect (50, 50, 100, 100), 2000);
+        QToolTip::showText(globalPos, sManagedTooltip, this);
+    }
     QLabel::enterEvent(event);
     // Start timer when mouse enters
     m_timer->start();

@@ -55,9 +55,9 @@ void InfoWidget::updateSize(const QSizeF &newSize)
     QSize originalSize = m_pix.size();
     int originalWidth = originalSize.width();
     int originalHeight = originalSize.height();
-    m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
-    //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
-    ui->labelPix->setManagedTooltip ("Original size: " + m_sPixSize + " pixels");
+//    m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
+//    //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
+//    ui->labelPix->setManagedTooltip ("Original size: " + m_sPixSize + " pixels");
     //ui->labelPix->setToolTip (tooltipText);
     if (m_bScalePixOriginalSizeMax)
     {
@@ -502,6 +502,16 @@ void InfoWidget::setFile(const QString &localFile)
                     bFomatFound = true;
                 }
             }
+            if (!m_pix.isNull())
+            {
+                QSize originalSize = m_pix.size();
+                int originalWidth = originalSize.width();
+                int originalHeight = originalSize.height();
+                m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
+                //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
+                fields.append(Field{"Picture: ", m_sPixSize + " pixels"});
+            }
+
             QFile file(localFile);
             if (file.exists())
             {
