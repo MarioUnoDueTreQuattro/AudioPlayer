@@ -103,6 +103,21 @@ void Settings::on_Settings_accepted()
             darkPalette.setColor(QPalette::BrightText, Qt::red);
             darkPalette.setColor(QPalette::Highlight, QColor(173, 216, 230));
             darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+            QColor disabledWindowText(120, 120, 120);
+            QColor disabledText(100, 100, 100);
+            QColor disabledButtonText(130, 130, 130);
+            darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, disabledWindowText);
+            darkPalette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
+            darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledButtonText);
+           // darkPalette.setColor(QPalette::Active, QPalette::WindowText, QColor(255,215,0));
+//            darkPalette.setColor(QPalette::Inactive, QPalette::ButtonText,  QColor(255,215,0));
+            //darkPalette.setColor(QPalette::Active, QPalette::ButtonText,  QColor(255,215,0));
+            //darkPalette.setColor(QPalette::Disabled, QPalette::Base, QColor(25, 25, 25)); // optional - darker input background
+            // darkPalette.setColor(QPalette::Disabled, QPalette::Button, QColor(45, 45, 45)); // optional - duller buttons
+            // QColor disabledColor(140, 140, 140);
+            // darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, disabledColor);
+            // darkPalette.setColor(QPalette::Disabled, QPalette::Text, disabledColor);
+            // darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledColor);
             QApplication::setPalette(darkPalette);
         }
         else
@@ -135,7 +150,11 @@ void Settings::saveSettings()
     else if (ui->radioButtonPixBelow->isChecked ()) sPosition = "Below";
     else if (ui->radioButtonPixRight->isChecked ()) sPosition = "Right";
     else if (ui->radioButtonPixLeft->isChecked ()) sPosition = "Left";
-    settings.setValue("PictuePositionInIfo", sPosition);
+    settings.setValue("PictuePositionInInfo", sPosition);
+    settings.setValue("PictueScaleOriginalSize", ui->checkBoxScaleOriginalSize->isChecked ());
+    settings.setValue("PictueScaleSize", ui->spinBoxPixSize->value());
+    settings.setValue("PictueScaleOriginalSizeMaxEnabled", ui->checkBoxScaleOriginalSizeMax->isChecked ());
+    settings.setValue("PictueScaleOriginalSizeMax", ui->spinBoxScaleOriginalSizeMax->value());
     settings.sync();
 }
 
@@ -155,11 +174,41 @@ void Settings::loadSettings()
     bool bShowInfo = settings.value("ShowInfo", true).toBool ();
     ui->checkBoxInfo->setChecked (bShowInfo);
     //ui->groupBoxInfo->setEnabled (bShowInfo);
-    m_sPictuePositionInIfo = settings.value("PictuePositionInIfo", "Right").toString();
-    if (m_sPictuePositionInIfo == "Above") ui->radioButtonPixAbove->setChecked (true);
-    else if (m_sPictuePositionInIfo == "Below") ui->radioButtonPixBelow->setChecked (true);
-    else if (m_sPictuePositionInIfo == "Right") ui->radioButtonPixRight->setChecked (true);
-    else if (m_sPictuePositionInIfo == "Left") ui->radioButtonPixLeft->setChecked (true);
+    m_sPictuePositionInInfo = settings.value("PictuePositionInInfo", "Right").toString();
+    if (m_sPictuePositionInInfo == "Above") ui->radioButtonPixAbove->setChecked (true);
+    else if (m_sPictuePositionInInfo == "Below") ui->radioButtonPixBelow->setChecked (true);
+    else if (m_sPictuePositionInInfo == "Right") ui->radioButtonPixRight->setChecked (true);
+    else if (m_sPictuePositionInInfo == "Left") ui->radioButtonPixLeft->setChecked (true);
+    bool bScaleOriginalSizeMax = settings.value("PictueScaleOriginalSizeMaxEnabled", true).toBool ();
+    ui->checkBoxScaleOriginalSizeMax->setChecked (bScaleOriginalSizeMax);
+    if (!bScaleOriginalSizeMax)
+        ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
+    else
+        ui->spinBoxScaleOriginalSizeMax->setEnabled (true);
+    bool bScaleOriginalSize = settings.value("PictueScaleOriginalSize", true).toBool ();
+    ui->checkBoxScaleOriginalSize->setChecked (bScaleOriginalSize);
+    if (!bScaleOriginalSize)
+    {
+        ui->spinBoxPixSize->setEnabled (true);
+        ui->labelPixSize->setEnabled (true);
+        if (!bScaleOriginalSizeMax) ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
+        else
+            ui->spinBoxScaleOriginalSizeMax->setEnabled (true);
+        ui->checkBoxScaleOriginalSizeMax->setEnabled (false);
+    }
+    else
+    {
+        ui->spinBoxPixSize->setEnabled (false);
+        ui->labelPixSize->setEnabled (false);
+        if (!bScaleOriginalSizeMax) ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
+        else
+            ui->spinBoxScaleOriginalSizeMax->setEnabled (true);
+        ui->checkBoxScaleOriginalSizeMax->setEnabled (true);
+    }
+    int iPixSize = settings.value("PictueScaleSize", 300).toInt ();
+    ui->spinBoxPixSize->setValue (iPixSize);
+    int iScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMax", 600).toInt ();
+    ui->spinBoxScaleOriginalSizeMax->setValue (iScalePixOriginalSizeMax);
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()
@@ -201,5 +250,37 @@ void Settings::on_buttonBox_clicked(QAbstractButton *button)
     // break;
     default:
         break;
+    }
+}
+
+void Settings::on_checkBoxScaleOriginalSize_stateChanged(int checkState)
+{
+    // ui->spinBoxPixSize->setStyleSheet("QSpinBox:disabled { background-color: #e0e0e0; color: #a0a0a0; }");
+    // ui->labelPixSize->setStyleSheet("QLabel:disabled { color: #a0a0a0; }");
+    if (checkState == 0)
+    {
+        ui->spinBoxPixSize->setEnabled (true);
+        ui->labelPixSize->setEnabled (true);
+        ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
+        ui->checkBoxScaleOriginalSizeMax->setEnabled (false);
+    }
+    else
+    {
+        ui->spinBoxPixSize->setEnabled (false);
+        ui->labelPixSize->setEnabled (false);
+        ui->checkBoxScaleOriginalSizeMax->setEnabled (true);
+        if (ui->checkBoxScaleOriginalSizeMax->isChecked ()) ui->spinBoxScaleOriginalSizeMax->setEnabled (true); else ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
+    }
+}
+
+void Settings::on_checkBoxScaleOriginalSizeMax_stateChanged(int checkState)
+{
+    if (checkState == 0)
+    {
+        ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
+    }
+    else
+    {
+        ui->spinBoxScaleOriginalSizeMax->setEnabled (true);
     }
 }

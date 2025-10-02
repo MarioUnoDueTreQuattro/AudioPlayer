@@ -12,11 +12,13 @@
 #include <QIcon>
 #include "audiocover.h"
 #include <QDir>
+#include "clickablelabel.h"
 
 InfoWidget::InfoWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::InfoWidget),
-    m_Info("")
+    m_Info(""),
+    m_bPixIsBig(false)
 {
     ui->setupUi(this);
     setWindowIcon (QIcon(":/img/img/icons8-play-32.png"));
@@ -38,8 +40,9 @@ InfoWidget::InfoWidget(QWidget *parent) :
     ui->textEditInfo-> setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     QTextDocument *doc = ui->textEditInfo->document ();
     QAbstractTextDocumentLayout *docLayout = doc->documentLayout ();
-    connect( docLayout, &QAbstractTextDocumentLayout::documentSizeChanged,
-        this, updateSize);
+    connect( docLayout, &QAbstractTextDocumentLayout::documentSizeChanged, this, updateSize);
+    connect( ui->labelPix, &ClickableLabel::clicked, this, pixClicked);
+     ui->labelPix->setMouseTracking (true);
 }
 
 InfoWidget::~InfoWidget()
@@ -49,6 +52,24 @@ InfoWidget::~InfoWidget()
 
 void InfoWidget::updateSize(const QSizeF &newSize)
 {
+    QSize originalSize = m_pix.size();
+    int originalWidth = originalSize.width();
+    int originalHeight = originalSize.height();
+    m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
+    //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
+    ui->labelPix->setManagedTooltip ("Original size: " + m_sPixSize + " pixels");
+    //ui->labelPix->setToolTip (tooltipText);
+    if (m_bScalePixOriginalSizeMax)
+    {
+        if (originalWidth > m_iScalePixOriginalSizeMax) originalWidth = m_iScalePixOriginalSizeMax;
+        if (originalHeight > m_iScalePixOriginalSizeMax) originalHeight = m_iScalePixOriginalSizeMax;
+    }
+    if (m_bPixIsBig)
+    {
+        redrawBigPix();
+        return;
+    }
+    //m_bPixIsBig = false;
     // Calcola l'altezza come prima
     int contentHeight = newSize.height();
     // Calcola la larghezza ideale (la riga più lunga)
@@ -667,6 +688,87 @@ QString InfoWidget::formatFileSize(qint64 bytes)
     }
 }
 
+void InfoWidget::pixClicked()
+{
+    //qDebug() << __PRETTY_FUNCTION__;
+    if (m_bPixIsBig)
+    {
+        m_bPixIsBig = false;
+        updateSize (ui->textEditInfo->document ()->size ());
+    }
+    else
+    {
+        m_bPixIsBig = true;
+        redrawBigPix ();
+        // QSize originalSize = m_pix.size();
+        // int originalWidth = originalSize.width();
+        // int originalHeight = originalSize.height();
+        // if (m_bScalePixOriginalSizeMax)
+        // {
+        // if (originalWidth > m_iScalePixOriginalSizeMax) originalWidth = m_iScalePixOriginalSizeMax;
+        // if (originalHeight > m_iScalePixOriginalSizeMax) originalHeight = m_iScalePixOriginalSizeMax;
+        // }
+        // int contentHeight;
+        // int contentWidth ;
+        // if (m_bScalePixOriginalSize)
+        // {
+        // contentHeight = originalHeight;
+        // contentWidth = originalWidth;
+        // }
+        // else
+        // {
+        // contentHeight = m_iPixSize;
+        // contentWidth = m_iPixSize;
+        // }
+        //        // Aggiungi margini, bordi e scroll bar (anche se disabilitati, a volte l'overhead resta)
+        // int totalHeight = contentHeight + 2 * ui->textEditInfo->frameWidth();;
+        // int totalWidth = contentWidth;// + 2 * ui->textEditInfo->frameWidth();
+        //        // Picture position
+        // ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+        // ui->textEditInfo->move (0, 0);
+        // ui->labelPix->move (0, 0);
+        // ui->labelPix->setFixedSize (contentHeight, contentHeight);
+        // ui->labelPix->show();
+        // setFixedSize(contentHeight, contentHeight);
+        // ui->labelPix->setPixmap(m_pix.scaled(ui->labelPix->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+}
+
+void InfoWidget::redrawBigPix()
+{
+    QSize originalSize = m_pix.size();
+    int originalWidth = originalSize.width();
+    int originalHeight = originalSize.height();
+    if (m_bScalePixOriginalSizeMax)
+    {
+        if (originalWidth > m_iScalePixOriginalSizeMax) originalWidth = m_iScalePixOriginalSizeMax;
+        if (originalHeight > m_iScalePixOriginalSizeMax) originalHeight = m_iScalePixOriginalSizeMax;
+    }
+    int contentHeight;
+    int contentWidth ;
+    if (m_bScalePixOriginalSize)
+    {
+        contentHeight = originalHeight;
+        contentWidth = originalWidth;
+    }
+    else
+    {
+        contentHeight = m_iPixSize;
+        contentWidth = m_iPixSize;
+    }
+    // Aggiungi margini, bordi e scroll bar (anche se disabilitati, a volte l'overhead resta)
+    int totalHeight = contentHeight + 2 * ui->textEditInfo->frameWidth();;
+    int totalWidth = contentWidth;// + 2 * ui->textEditInfo->frameWidth();
+    // Picture position
+    ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
+    ui->textEditInfo->move (0, 0);
+    ui->labelPix->move (0, 0);
+    ui->labelPix->setFixedSize (contentHeight, contentHeight);
+    ui->labelPix->show();
+    setFixedSize(contentHeight, contentHeight);
+    ui->labelPix->setPixmap(m_pix.scaled(ui->labelPix->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+}
+
 void InfoWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
@@ -755,7 +857,11 @@ void InfoWidget::loadSettings()
         // La posizione di default (100, 100) verrà usata se la chiave non esiste
         move(QPoint(100, 100));
     }
-    m_sPictuePosition = settings.value("PictuePositionInIfo", "Right").toString();
+    m_sPictuePosition = settings.value("PictuePositionInInfo", "Right").toString();
+    m_bScalePixOriginalSize = settings.value("PictueScaleOriginalSize", true).toBool ();
+    m_iPixSize = settings.value("PictueScaleSize", 300).toInt ();
+    m_iScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMax", 600).toInt ();
+    m_bScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMaxEnabled", true).toBool ();
 }
 
 QString InfoWidget::formatTime(int totalSeconds)
@@ -774,6 +880,36 @@ QString InfoWidget::formatTime(int totalSeconds)
     QString secondsStr = QString::number(seconds).rightJustified(2, '0');
     // 5. Combina il risultato nel formato finale
     return minutesStr + ":" + secondsStr;
+}
+
+void InfoWidget::setScalePixOriginalSizeMax(int iScalePixOriginalSizeMax)
+{
+    m_iScalePixOriginalSizeMax = iScalePixOriginalSizeMax;
+}
+
+void InfoWidget::setScalePixOriginalSizeMaxEnabled(bool bScalePixOriginalSizeMax)
+{
+    m_bScalePixOriginalSizeMax = bScalePixOriginalSizeMax;
+}
+
+int InfoWidget::getPixSize() const
+{
+    return m_iPixSize;
+}
+
+void InfoWidget::setPixSize(int iPixSize)
+{
+    m_iPixSize = iPixSize;
+}
+
+bool InfoWidget::getScalePixOriginalSize() const
+{
+    return m_bScalePixOriginalSize;
+}
+
+void InfoWidget::setScalePixOriginalSize(bool bScalePixOriginalSize)
+{
+    m_bScalePixOriginalSize = bScalePixOriginalSize;
 }
 
 QString InfoWidget::getPictuePosition() const

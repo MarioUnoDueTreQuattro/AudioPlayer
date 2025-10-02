@@ -35,11 +35,18 @@ public:
     void setFile(const QString &);
     QString getPictuePosition() const;
     void setPictuePosition(const QString &sPictuePosition);
-
+    bool getScalePixOriginalSize() const;
+    void setScalePixOriginalSize(bool bScalePixOriginalSize);
+    int getPixSize() const;
+    void setPixSize(int iPixSize);
+    void redrawBigPix();
+    void setScalePixOriginalSizeMaxEnabled(bool bScalePixOriginalSizeMax);
+    void setScalePixOriginalSizeMax(int iScalePixOriginalSizeMax);
 private slots:
     //void on_pushButtonClose_clicked();
     void updateSize(const QSizeF &newSize);
     QString formatFileSize(qint64 bytes);
+    void pixClicked();
 private:
     Ui::InfoWidget *ui;
     void loadSettings();
@@ -48,7 +55,12 @@ private:
     TagLib::FileRef *m_FileRef;
     QString m_Info;
     QString m_sPictuePosition;
-    // bool m_bHasPicture;
+    QString m_sPixSize;
+    bool m_bScalePixOriginalSize;
+    bool m_bScalePixOriginalSizeMax;
+    int m_iScalePixOriginalSizeMax;
+    int m_iPixSize;
+    bool m_bPixIsBig;
     QPixmap m_pix;
     QPixmap extractMP3Cover(TagLib::MPEG::File *mp3File);
     QPixmap extractMP4Cover(TagLib::MP4::File *file);

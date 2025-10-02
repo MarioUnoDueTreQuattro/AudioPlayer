@@ -13,6 +13,7 @@ SOURCES += \
     3rdparty/qhotkey/QHotkey/qhotkey.cpp \
     3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
     audiocover.cpp \
+    clickablelabel.cpp \
     clickableslider.cpp \
     infowidget.cpp \
     main.cpp \
@@ -25,6 +26,7 @@ HEADERS += \
     3rdparty/qhotkey/QHotkey/qhotkey.h \
     3rdparty/qhotkey/QHotkey/qhotkey_p.h \
     audiocover.h \
+    clickablelabel.h \
     clickableslider.h \
     infowidget.h \
     settings.h \

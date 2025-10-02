@@ -22,12 +22,16 @@ private slots:
     void on_Settings_accepted();
     void on_pushButtonPlayedTextColor_clicked();
     void on_buttonBox_clicked(QAbstractButton *button);
+    void on_checkBoxScaleOriginalSize_stateChanged(int arg1);
+
+    void on_checkBoxScaleOriginalSizeMax_stateChanged(int arg1);
+
 private:
     Ui::Settings *ui;
     QString m_sTheme;
     QString m_sPalette;
     QColor m_playedTextColor;
-    QString m_sPictuePositionInIfo;
+    QString m_sPictuePositionInInfo;
     void saveSettings();
     void loadSettings();
 signals:

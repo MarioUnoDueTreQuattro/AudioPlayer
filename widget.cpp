@@ -594,7 +594,9 @@ void Widget::dropEvent(QDropEvent *event)
     }
     if (!files.isEmpty())
     {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
         openFiles(files);
+        QApplication::restoreOverrideCursor();
         //saveSettings(); // update saved playlist after new files are added
     }
 }
@@ -1201,8 +1203,19 @@ void Widget::settingsDialogAccepted()
     }
     m_bAutoplay = settings.value("AutoPlay", true).toBool ();
     m_bShowInfo = settings.value("ShowInfo", true).toBool ();
-    QString pixPosition=settings.value("PictuePositionInIfo", "Right").toString();
-     if (m_infoWidget != nullptr) m_infoWidget->setPictuePosition (pixPosition);
+    QString pixPosition = settings.value("PictuePositionInInfo", "Right").toString();
+    bool bScalePixOriginalSize = settings.value("PictueScaleOriginalSize", true).toBool ();
+    int iPixSize = settings.value("PictueScaleSize", 300).toInt ();
+    int iScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMax", 600).toInt ();
+    bool bScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMaxEnabled", true).toBool ();
+    if (m_infoWidget != nullptr)
+    {
+        m_infoWidget->setScalePixOriginalSizeMaxEnabled (bScalePixOriginalSizeMax);
+        m_infoWidget->setScalePixOriginalSizeMax (iScalePixOriginalSizeMax);
+        m_infoWidget->setScalePixOriginalSize (bScalePixOriginalSize);
+        m_infoWidget->setPixSize (iPixSize);
+        m_infoWidget->setPictuePosition (pixPosition);
+    }
     if (m_bShowInfo == false)
     {
         if (m_infoWidget != nullptr) m_infoWidget->hide ();
@@ -1704,6 +1717,14 @@ void Widget::setTheme()
             darkPalette.setColor(QPalette::BrightText, Qt::red);
             darkPalette.setColor(QPalette::Highlight, QColor(173, 216, 230));
             darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+            QColor disabledWindowText(120, 120, 120);
+            QColor disabledText(100, 100, 100);
+            QColor disabledButtonText(130, 130, 130);
+            darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, disabledWindowText);
+            darkPalette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
+            darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledButtonText);
+            //darkPalette.setColor(QPalette::Disabled, QPalette::Base, QColor(25, 25, 25)); // optional - darker input background
+            //darkPalette.setColor(QPalette::Disabled, QPalette::Button, QColor(45, 45, 45)); // optional - duller buttons
             QApplication::setPalette(darkPalette);
         }
         else
