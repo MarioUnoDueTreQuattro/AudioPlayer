@@ -48,6 +48,9 @@ Settings::Settings(QWidget *parent) :
         }
     }
     ui->comboBoxColor->setCurrentText (m_sPalette);
+    // Adjust the size of the dialog to fit its contents
+       adjustSize();
+
 }
 
 Settings::~Settings()

@@ -560,7 +560,7 @@ void Widget::addFileToPlaylist(const QString &filePath)
     // qDebug() << "Adding media:" << absPath;
     //    // --- Check playlist state ---
     // qDebug() << "Before addMedia: mediaCount =" << m_playlist->mediaCount();
-    // m_playlist->addMedia(QUrl::fromLocalFile(absPath));
+    m_playlist->addMedia(QUrl::fromLocalFile(absPath));
     // qDebug() << "After addMedia: mediaCount =" << m_playlist->mediaCount();
     //ui->listWidget->addItem(QFileInfo(absPath).fileName());
     ui->listWidget->addItem(fi.fileName());
@@ -1507,7 +1507,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     }
     // QSettings settings;
     // settings.setValue("lastDialogPlaylistPath", filePath);
-   if (b_savePlaylist) savePlaylist ();
+    if (b_savePlaylist) savePlaylist ();
     // qint64 tempoTrascorso_ms = timer.elapsed();
     // double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
     // qDebug() << "Tempo impiegato dalla funzione loadPlaylistFile:" << tempoTrascorso_s << "secondi";
