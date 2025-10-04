@@ -839,7 +839,7 @@ void Widget::copyCurrentName()
 
 void Widget::copyCurrentFullPath()
 {
-    QString sCurrentQUrl = m_playlist->currentMedia().canonicalUrl().toLocalFile ();
+    QString sCurrentQUrl = m_playlist->media(ui->listWidget->currentRow ()).canonicalUrl().toLocalFile ();
     if (sCurrentQUrl.isEmpty () == false)
     {
         sCurrentQUrl = QDir::toNativeSeparators (sCurrentQUrl);
