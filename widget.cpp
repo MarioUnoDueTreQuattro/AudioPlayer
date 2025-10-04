@@ -17,6 +17,7 @@
 #include <QRandomGenerator>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QClipboard>
 #include <QFileDialog>
 #include <QMenu>
 #include <QStandardPaths>
@@ -454,7 +455,7 @@ QString Widget::currentTrackName()
     if (index < 0)
     {
         qDebug() << "No current item in playlist";
-        return "No current item in playlist";
+        return "Empty playlist";
     }
     QMediaContent mediaContent = m_playlist->media(index);
     QUrl mediaUrl = mediaContent.canonicalUrl();
@@ -823,6 +824,33 @@ void Widget::handlePlay()
     }
 }
 
+void Widget::copyCurrentName()
+{
+    QListWidgetItem* currentItem = ui->listWidget->currentItem();
+    if (currentItem)
+    {
+        QApplication::clipboard()->setText(currentItem->text());
+    }
+    else
+    {
+        qDebug() << "No item selected for copying.";
+    }
+}
+
+void Widget::copyCurrentFullPath()
+{
+    QString sCurrentQUrl = m_playlist->currentMedia().canonicalUrl().toLocalFile ();
+    if (sCurrentQUrl.isEmpty () == false)
+    {
+        sCurrentQUrl = QDir::toNativeSeparators (sCurrentQUrl);
+        QApplication::clipboard()->setText(sCurrentQUrl);
+    }
+    else
+    {
+        qDebug() << "No item selected for copying.";
+    }
+}
+
 void Widget::handleItemDoubleClicked()
 {
     int idx = ui->listWidget->currentRow();
@@ -925,6 +953,8 @@ void Widget::clearPlaylist(bool silent /* = false */)
     m_shuffleHistory.clear(); // no history needed
     ui->listWidget->clear();
     m_playlistPaths.clear();
+    if (m_infoWidget != nullptr) m_infoWidget->hide ();
+    setWindowTitle ("AudioPlayer");
     // Reset last track info
     m_lastTrackIndex = -1;
     m_lastTrackPosition = 0;
@@ -936,8 +966,7 @@ void Widget::clearPlaylist(bool silent /* = false */)
 
 void Widget::loadSettings()
 {
-    QSettings settings(QApplication::organizationName(),
-        QApplication::applicationName());
+    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     m_sTheme = settings.value("Theme").toString();
     m_sPalette = settings.value("ThemePalette", "Light").toString();
     setTheme ();
@@ -1598,6 +1627,10 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
     QAction* selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
     selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
+    QAction* copyNameAction = contextMenu.addAction(tr("Copy file name"));
+    copyNameAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_file-48.png"));
+    QAction* copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
+    copyFullPathAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_path-48.png"));
     contextMenu.addSeparator();
     QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
     QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
@@ -1610,6 +1643,14 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     if (selectedAction == saveAction)
     {
         handleSavePlaylist();
+    }
+    else if (selectedAction == copyNameAction)
+    {
+        copyCurrentName();
+    }
+    else if (selectedAction == copyFullPathAction)
+    {
+        copyCurrentFullPath();
     }
     else if (selectedAction == loadAction)
     {

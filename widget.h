@@ -83,6 +83,8 @@ private slots:
 private:
     QHotkey *m_hotkey;
     void handlePlay();
+    void copyCurrentName();
+    void copyCurrentFullPath();
     void setKeyboardShortcuts();
     void setSignalsConnections();
     SystemVolumeController *m_systemVolumeController;
@@ -109,7 +111,7 @@ private:
     bool m_isMuted;
     void addFileToPlaylist(const QString &filePath);
     void loadPlaylistFile(const QString &path, bool restoreLastTrack = true, bool savePlaylist = false);
-    void savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath=true);
+    void savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath = true);
     void savePlaylist();
     void loadSettings();                    // <--- NEW
     void saveSettings();

@@ -23,5 +23,7 @@
         <file>img/icons8-list_delete1-48.png</file>
         <file>img/icons8-play-32.png</file>
         <file>img/Folder_audio.png</file>
+        <file>img/icons8-copy-to-clipboard_path-48.png</file>
+        <file>img/icons8-copy-to-clipboard_file-48.png</file>
     </qresource>
 </RCC>
