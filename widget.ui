@@ -10,6 +10,9 @@
     <height>187</height>
    </rect>
   </property>
+  <property name="focusPolicy">
+   <enum>Qt::NoFocus</enum>
+  </property>
   <property name="windowTitle">
    <string>Widget</string>
   </property>
@@ -28,8 +31,14 @@
    </property>
    <item>
     <widget class="QListWidget" name="listWidget">
+     <property name="focusPolicy">
+      <enum>Qt::StrongFocus</enum>
+     </property>
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
      </property>
     </widget>
    </item>
@@ -46,7 +55,7 @@
           </size>
          </property>
          <property name="maximum">
-          <number>0</number>
+          <number>100</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

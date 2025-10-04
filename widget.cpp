@@ -88,8 +88,8 @@ void Widget::setKeyboardShortcuts()
     ui->stopButton->setShortcut(QKeySequence(Qt::Key_S));
     ui->pauseButton->setShortcut(QKeySequence(Qt::Key_P));
     ui->muteButton->setShortcut(QKeySequence(Qt::Key_M));
-    ui->prevButton->setShortcut(QKeySequence(Qt::Key_Left));
-    ui->nextButton->setShortcut(QKeySequence(Qt::Key_Right));
+    ui->prevButton->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left));
+    ui->nextButton->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right));
     // Volume up with '+'
     QAction *volumeUpAction = new QAction(tr("Volume Up"), this);
     volumeUpAction->setShortcut(QKeySequence(Qt::Key_Plus));
@@ -104,6 +104,14 @@ void Widget::setKeyboardShortcuts()
     volumeSwitchAction->setShortcut(QKeySequence(Qt::Key_V));
     connect(volumeSwitchAction, SIGNAL(triggered()), this, SLOT(switchVolume()));
     addAction(volumeSwitchAction);
+    QAction *positionForwardAction = new QAction(tr("Position forward"), this);
+    positionForwardAction->setShortcut(QKeySequence(Qt::Key_Right));
+    connect(positionForwardAction, SIGNAL(triggered()), this, SLOT(handlePositionForward()));
+    addAction(positionForwardAction);
+    QAction *positionBackwardAction = new QAction(tr("Position backward"), this);
+    positionBackwardAction->setShortcut(QKeySequence(Qt::Key_Left));
+    connect(positionBackwardAction, SIGNAL(triggered()), this, SLOT(handlePositionBackward()));
+    addAction(positionBackwardAction);
 }
 
 void Widget::handleVolumeUp()
@@ -148,6 +156,27 @@ void Widget::handleVolumeDown()
     }
 }
 
+void Widget::handlePositionForward()
+{
+    int iMaximum = ui->positionSlider->maximum ();
+    int iDiff = iMaximum / 10;
+    int iCurPos = ui->positionSlider->value ();
+    int pos = qBound(0, iCurPos + iDiff, iMaximum);
+    handleSliderMoved(pos);
+    //qDebug() << double (pos) / double(iMaximum) * 100.0;
+    //ui->positionSlider->setValue (pos);
+}
+
+void Widget::handlePositionBackward()
+{
+    int iMaximum = ui->positionSlider->maximum ();
+    int iDiff = -(iMaximum / 10);
+    int iCurPos = ui->positionSlider->value ();
+    int pos = qBound(0, iCurPos + iDiff, iMaximum);
+    handleSliderMoved(pos);
+    //ui->positionSlider->setValue (pos);
+}
+
 void Widget::setSignalsConnections()
 {
     connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
@@ -163,6 +192,7 @@ void Widget::setSignalsConnections()
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
     connect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChanged(qint64)));
     connect(ui->positionSlider, SIGNAL(sliderMoved(int)), this, SLOT(handleSliderMoved(int)));
+    //connect(ui->positionSlider, SIGNAL(valueChanged(int)), this, SLOT(handleSliderMoved(int)));
     connect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(handleMediaError(QMediaPlayer::Error)));
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(updateLastTrackPosition(qint64)));
     connect(ui->modeButton, SIGNAL(clicked()), this, SLOT(handleModeButton()));
@@ -1152,6 +1182,7 @@ void Widget::handleDurationChanged(qint64 duration)
 {
     // qDebug() << __FUNCTION__;
     ui->positionSlider->setMaximum(static_cast<int>(duration));
+    ui->positionSlider-> setSingleStep (ui->positionSlider->maximum () / 100);
     QTime total(0, 0);
     total = total.addMSecs(static_cast<int>(duration));
     ui->timeLabel->setText("00:00 / " + total.toString("mm:ss"));

@@ -45,6 +45,8 @@ private slots:
     void switchVolume();
     void handleVolumeUp();
     void handleVolumeDown();
+    void handlePositionForward();
+    void handlePositionBackward();
     void onSystemVolumeChanged(float newVolume);
     void onSystemMuteChanged(bool muted);
     void onDefaultDeviceChanged();
