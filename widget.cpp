@@ -250,6 +250,7 @@ void Widget::infoWindowClosed()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
+    savePlaylist ();
     //qDebug() << "closeEvent";
     //this->hide ();
     QSettings settings(QApplication::organizationName(), QApplication::applicationName());
@@ -260,14 +261,14 @@ void Widget::closeEvent(QCloseEvent *event)
     settings.setValue("volume", m_lastVolume);
     //settings.setValue("muted", m_isMuted);
     // Save playlist files
-    QStringList playlistFiles;
-    for (int i = 0; i < m_playlist->mediaCount(); ++i)
-    {
-        QUrl url = m_playlist->media(i).canonicalUrl();
-        if (url.isLocalFile())
-            playlistFiles << url.toLocalFile();
-    }
-    settings.setValue("playlistFiles", playlistFiles);
+    // QStringList playlistFiles;
+    // for (int i = 0; i < m_playlist->mediaCount(); ++i)
+    // {
+    // QUrl url = m_playlist->media(i).canonicalUrl();
+    // if (url.isLocalFile())
+    // playlistFiles << url.toLocalFile();
+    // }
+    // settings.setValue("playlistFiles", playlistFiles);
     // Save last track & position
     settings.setValue("lastTrackIndex", m_playlist->currentIndex());
     settings.setValue("lastTrackPosition", m_player->position());
@@ -443,6 +444,7 @@ QString Widget::currentTrackName()
 
 void Widget::openFiles(const QStringList &filePaths)
 {
+    // qDebug() << __FUNCTION__;
     this->showNormal();
     this->raise();
     this->activateWindow();
@@ -506,7 +508,8 @@ void Widget::openFiles(const QStringList &filePaths)
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
         updateModeButtonIcon();
     }
-    saveSettings();
+    savePlaylist ();
+    //saveSettings();
 }
 
 void Widget::addFileToPlaylist(const QString &filePath)
@@ -543,7 +546,22 @@ void Widget::addFileToPlaylist(const QString &filePath)
     //QUrl url = QUrl::fromLocalFile(absPath);
     // const QUrl url = QUrl::fromLocalFile(absPath);
     // m_playlist->addMedia(url);
-    m_playlist->addMedia(QUrl::fromLocalFile(absPath));
+    // --- Add this check ---
+    // if (!m_playlist)
+    // {
+    // qWarning() << "m_playlist is NULL!";
+    // return;
+    // }
+    // if (!m_player)
+    // {
+    // qWarning() << "m_player is NULL!";
+    // return;
+    // }
+    // qDebug() << "Adding media:" << absPath;
+    //    // --- Check playlist state ---
+    // qDebug() << "Before addMedia: mediaCount =" << m_playlist->mediaCount();
+    // m_playlist->addMedia(QUrl::fromLocalFile(absPath));
+    // qDebug() << "After addMedia: mediaCount =" << m_playlist->mediaCount();
     //ui->listWidget->addItem(QFileInfo(absPath).fileName());
     ui->listWidget->addItem(fi.fileName());
     m_playlistPaths.insert(absPath);
@@ -653,15 +671,35 @@ void Widget::handleStopButton()
     }
 }
 
+void Widget::setInfoWidgetTitle()
+{
+    if (m_infoWidget != nullptr)
+    {
+        QString sWinTitle;
+        sWinTitle.append ("Track ");
+        sWinTitle.append (QString::number (ui->listWidget->currentRow () + 1));
+        sWinTitle.append (" of ");
+        sWinTitle.append (QString::number (ui->listWidget->count ()));
+        // sWinTitle.append (QString::number (m_playlist->mediaCount ()));
+        m_infoWidget->setWindowTitle (sWinTitle);
+    }
+}
+
 void Widget::handlePlay()
 {
+    // qDebug() << __FUNCTION__;
     // m_player->stop ();
     m_player->play();
     QString sPlaying = currentTrackName ();
     m_playedList.append (sPlaying);
     this->setWindowTitle ("AudioPlayer - " + sPlaying);
-    ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
-    ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
+    QListWidgetItem *item = ui->listWidget->currentItem ();
+    if (item)
+    {
+        ui->listWidget->currentItem ()->setTextColor (m_playedTextColor);
+        ui->listWidget->currentItem ()->setIcon (QIcon(":/img/img/icons8-play-48.png"));
+    }
+    setInfoWidgetTitle();
     QUrl mediaUrl;
     // If you are using a playlist:
     if (m_player->playlist())
@@ -773,6 +811,7 @@ void Widget::handleItemDoubleClicked()
 
 void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 {
+    // qDebug() << __FUNCTION__;
     switch (state)
     {
     case QMediaPlayer::PlayingState:
@@ -802,6 +841,7 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
+    // qDebug() << __FUNCTION__;
     int iListWidgetCount = ui->listWidget->count();
     for (int iIdx = 0; iIdx < iListWidgetCount; iIdx++)
     {
@@ -842,13 +882,26 @@ void Widget::clearPlaylist(bool silent /* = false */)
         }
     }
     m_player->stop();
-    m_playlist->clear();
-    m_playlistPaths.clear();
+    // int imediaCount=m_playlist->mediaCount ();
+    // for (int index = 0; index < imediaCount; index++)
+    // {
+    // m_playlist->removeMedia (index);
+    // }
+    //m_playlist->clear();
+    // delete m_playlist;
+    // m_playlist = new QMediaPlaylist(this);
+    // m_player->setPlaylist(m_playlist);
+    m_playlist->clear(); // new empty playlist is safe
+    m_shuffleHistory.clear(); // no history needed
     ui->listWidget->clear();
+    m_playlistPaths.clear();
     // Reset last track info
     m_lastTrackIndex = -1;
     m_lastTrackPosition = 0;
+    savePlaylist ();
     saveSettings(); // Save the updated settings
+    setInfoWidgetTitle();
+    qDebug() << "m_playlist->mediaCount" << m_playlist->mediaCount ();
 }
 
 void Widget::loadSettings()
@@ -873,30 +926,52 @@ void Widget::loadSettings()
     m_lastTrackPosition = settings.value("lastTrackPosition", 0).toLongLong();
     // --- Restore playlist ---
     QString lastPlaylistPath = settings.value("lastPlaylistPath").toString();
-    QStringList playlistFiles = settings.value("playlistFiles").toStringList();
-    if (!playlistFiles.isEmpty())
-    {
-        // Restore from saved playlist files (fallback)
-//        QElapsedTimer timer;
-//        timer.start(); // Il timer inizia a contare
-        m_playlist->clear();
-        m_playlistPaths.clear();
-        ui->listWidget->clear();
-        for (const QString &file : playlistFiles)
-            addFileToPlaylist(file);
-        if (m_playlist->mediaCount() > 0)
-        {
-            int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
-            m_playlist->setCurrentIndex(idx);
-            ui->listWidget->setCurrentRow(idx);
-            ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
-            if (m_lastTrackPosition > 0)
-                m_player->setPosition(m_lastTrackPosition);
-        }
-//        qint64 tempoTrascorso_ms = timer.elapsed();
-//        double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
-//        qDebug() << "Tempo impiegato dalla funzione:" << tempoTrascorso_s << "secondi";
-    }
+    QString filename = QCoreApplication::applicationDirPath();
+    filename.append ("/");
+    filename.append("current_playlist.m3u");
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    // QElapsedTimer timer;
+    // timer.start(); // Il timer inizia a contare
+    loadPlaylistFile (filename, true, false);
+    QApplication::restoreOverrideCursor();
+    //QStringList playlistFiles = settings.value("playlistFiles").toStringList();
+    // if (m_playlist->mediaCount() > 0)
+    // {
+    // ui->listWidget->blockSignals(true);
+    // int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
+    // m_playlist->setCurrentIndex(idx);
+    // ui->listWidget->setCurrentRow(idx);
+    // ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
+    // if (m_lastTrackPosition > 0)
+    // m_player->setPosition(m_lastTrackPosition);
+    // ui->listWidget->blockSignals(false);
+    // }
+    // qint64 tempoTrascorso_ms = timer.elapsed();
+    // double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
+    // qDebug() << "Tempo impiegato dalla funzione loadSettings:" << tempoTrascorso_s << "secondi";
+    // if (!playlistFiles.isEmpty())
+    // {
+    //        // Restore from saved playlist files (fallback)
+    //        // QElapsedTimer timer;
+    //        // timer.start(); // Il timer inizia a contare
+    // m_playlist->clear();
+    // m_playlistPaths.clear();
+    // ui->listWidget->clear();
+    // for (const QString &file : playlistFiles)
+    // addFileToPlaylist(file);
+    // if (m_playlist->mediaCount() > 0)
+    // {
+    // int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
+    // m_playlist->setCurrentIndex(idx);
+    // ui->listWidget->setCurrentRow(idx);
+    // ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
+    // if (m_lastTrackPosition > 0)
+    // m_player->setPosition(m_lastTrackPosition);
+    // }
+    //        // qint64 tempoTrascorso_ms = timer.elapsed();
+    //        // double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
+    //        // qDebug() << "Tempo impiegato dalla funzione:" << tempoTrascorso_s << "secondi";
+    // }
     // --- Playback mode ---
     int modeValue = settings.value("playbackMode", (int)QMediaPlaylist::Sequential).toInt();
     m_playlist->setPlaybackMode(static_cast<QMediaPlaylist::PlaybackMode>(modeValue));
@@ -945,14 +1020,14 @@ void Widget::saveSettings()
     //settings.setValue("volume", m_lastVolume);
     //settings.setValue("muted", m_isMuted); // optional
     // --- Playlist files fallback ---
-    QStringList playlistFiles;
-    for (int i = 0; i < m_playlist->mediaCount(); ++i)
-    {
-        QUrl url = m_playlist->media(i).canonicalUrl();
-        if (url.isLocalFile())
-            playlistFiles << url.toLocalFile();
-    }
-    settings.setValue("playlistFiles", playlistFiles);
+    // QStringList playlistFiles;
+    // for (int i = 0; i < m_playlist->mediaCount(); ++i)
+    // {
+    // QUrl url = m_playlist->media(i).canonicalUrl();
+    // if (url.isLocalFile())
+    // playlistFiles << url.toLocalFile();
+    // }
+    // settings.setValue("playlistFiles", playlistFiles);
     // --- Last playlist path (optional, for user-loaded playlists) ---
     settings.setValue("lastPlaylistPath", m_lastPlaylistPath);
     // --- Last track & position ---
@@ -963,6 +1038,7 @@ void Widget::saveSettings()
     // --- Window geometry ---
     //settings.setValue("windowGeometry", saveGeometry());
     settings.sync();
+    //savePlaylist ();
 }
 
 // ------------------- Slots -------------------
@@ -1074,6 +1150,7 @@ void Widget::updateMuteButtonIcon()
 
 void Widget::handleDurationChanged(qint64 duration)
 {
+    // qDebug() << __FUNCTION__;
     ui->positionSlider->setMaximum(static_cast<int>(duration));
     QTime total(0, 0);
     total = total.addMSecs(static_cast<int>(duration));
@@ -1082,6 +1159,7 @@ void Widget::handleDurationChanged(qint64 duration)
 
 void Widget::handlePositionChanged(qint64 position)
 {
+    // qDebug() << __FUNCTION__;
     if (!ui->positionSlider->isSliderDown())
     {
         ui->positionSlider->setValue(static_cast<int>(position));
@@ -1100,6 +1178,7 @@ void Widget::handleSliderMoved(int position)
 
 void Widget::handleMediaError(QMediaPlayer::Error error)
 {
+    // qDebug() << __FUNCTION__;
     QString errorText;
     switch (error)
     {
@@ -1124,6 +1203,7 @@ void Widget::handleMediaError(QMediaPlayer::Error error)
 
 void Widget::updateLastTrackPosition(qint64 position)
 {
+    // qDebug() << __FUNCTION__;
     m_lastTrackPosition = position;
 }
 
@@ -1333,27 +1413,32 @@ void Widget::updateModeButtonIcon()
 
 void Widget::handleLoadPlaylist()
 {
+    // qDebug() << __FUNCTION__;
     QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     QSettings settings;
-    m_lastDialogPlaylistPath = settings.value("m_lastDialogPlaylistPath", documentsPath).toString ();
+    m_lastDialogPlaylistPath = settings.value("lastDialogPlaylistPath", documentsPath).toString ();
     // QFileInfo fileInfo(m_lastDialogPlaylistPath);
     // QString path = fileInfo.absolutePath(); // or .path()
     QString fileName = QFileDialog::getOpenFileName(
             this, tr("Load Playlist"), m_lastDialogPlaylistPath, tr("Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
+    m_lastPlaylistPath = fileName;
+    m_lastDialogPlaylistPath = fileName;
+    settings.setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    loadPlaylistFile(fileName);
+    loadPlaylistFile(fileName, false, true);
     QApplication::restoreOverrideCursor();
     // if you want to immediately select/play the last track, you can:
     if (m_playlist->mediaCount() > 0)
     {
         if (m_bAutoplay)
         {
-            m_player->play();
             m_playlist->setCurrentIndex(0);
+            m_player->play();
         }
     }
+    //savePlaylist ();
     saveSettings(); // store lastPlaylistPath etc.
 }
 
@@ -1361,26 +1446,34 @@ void Widget::handleSavePlaylist()
 {
     QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     QSettings settings;
-    m_lastDialogPlaylistPath = settings.value("m_lastDialogPlaylistPath", documentsPath).toString ();
+    m_lastDialogPlaylistPath = settings.value("lastDialogPlaylistPath", documentsPath).toString ();
     QString fileName = QFileDialog::getSaveFileName(
             this, tr("Save Playlist"), m_lastDialogPlaylistPath, tr("M3U Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    savePlaylistFile(fileName);
+    savePlaylistFile(fileName, true);
     QApplication::restoreOverrideCursor();
+    m_lastPlaylistPath = fileName;
+    m_lastDialogPlaylistPath = fileName;
 }
 
-void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
+void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bool b_savePlaylist)
 {
+    // qDebug() << __FUNCTION__;
+    if (m_player->state() != QMediaPlayer::StoppedState)
+        m_player->stop();
+    // QElapsedTimer timer;
+    // timer.start(); // Il timer inizia a contare
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
     QTextStream in(&file);
-    m_playlist->clear();
+    m_shuffleHistory.clear(); // no history needed
     m_playlistPaths.clear();
     ui->listWidget->clear();
     ui->listWidget->viewport()->update();
+    if (!m_playlist->isEmpty ()) m_playlist->clear();
     while (!in.atEnd())
     {
         QString line = in.readLine().trimmed();
@@ -1394,12 +1487,17 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
     if (restoreLastTrack && m_playlist->mediaCount() > 0)
     {
         // Restore last track index safely
+        //ui->listWidget->blockSignals(true);
         int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
         m_playlist->setCurrentIndex(idx);
         ui->listWidget->setCurrentRow(idx);
-        ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
+        QListWidgetItem* item = ui->listWidget->item(idx);
+        if (item)
+            ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+        //ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
         if (m_lastTrackPosition > 0)
             m_player->setPosition(m_lastTrackPosition);
+        //ui->listWidget->blockSignals(false);
     }
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
@@ -1408,11 +1506,15 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack )
         updateModeButtonIcon();
     }
     // QSettings settings;
-    // settings.setValue("m_lastDialogPlaylistPath", filePath);
-    saveSettings ();
+    // settings.setValue("lastDialogPlaylistPath", filePath);
+   if (b_savePlaylist) savePlaylist ();
+    // qint64 tempoTrascorso_ms = timer.elapsed();
+    // double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
+    // qDebug() << "Tempo impiegato dalla funzione loadPlaylistFile:" << tempoTrascorso_s << "secondi";
+    setInfoWidgetTitle();
 }
 
-void Widget::savePlaylistFile(const QString &path)
+void Widget::savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath)
 {
     if (path.isEmpty())
         return;
@@ -1430,10 +1532,25 @@ void Widget::savePlaylistFile(const QString &path)
             out << url.toLocalFile() << "\n";
     }
     f.close();
-    m_lastPlaylistPath = path;
-    QSettings settings;
-    settings.setValue("m_lastDialogPlaylistPath", path);
+    if (bSaveDialogPlaylistPath)
+    {
+        m_lastPlaylistPath = path;
+        m_lastDialogPlaylistPath = path;
+        QSettings settings;
+        settings.setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
+    }
     saveSettings(); // persist lastPlaylistPath and playlist if you want immediacy
+}
+
+void Widget::savePlaylist()
+{
+    qDebug() << "savePlaylist";
+    QString filename = QCoreApplication::applicationDirPath();
+    filename.append ("/");
+    filename.append("current_playlist.m3u");
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    savePlaylistFile(filename, false);
+    QApplication::restoreOverrideCursor();
 }
 
 void Widget::showPlaylistContextMenu(const QPoint &pos)
@@ -1629,7 +1746,9 @@ void Widget::clearExceptSelected()
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
         updateModeButtonIcon();
     }
+    savePlaylist ();
     saveSettings();
+    setInfoWidgetTitle();
 }
 
 void Widget::handleRemoveSelected()
@@ -1669,7 +1788,9 @@ void Widget::handleRemoveSelected()
     if (m_playlist->mediaCount() == 0)
     {
         m_player->stop();
+        savePlaylist ();
         saveSettings(); // update saved playlist
+        setInfoWidgetTitle();
         return;
     }
     if (currentRemoved)
@@ -1715,7 +1836,9 @@ void Widget::handleRemoveSelected()
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
         updateModeButtonIcon();
     }
+    savePlaylist ();
     saveSettings(); // persist updated playlistFiles
+    setInfoWidgetTitle();
 }
 
 void Widget::setTheme()
@@ -1784,6 +1907,7 @@ void Widget::setTheme()
 
 void Widget::scrollToCurrentTrack()
 {
+    // qDebug() << __FUNCTION__;
     int currentIndex = m_playlist->currentIndex();
     if (currentIndex >= 0 && currentIndex < ui->listWidget->count())
     {

@@ -22,6 +22,8 @@ class Widget : public QWidget
 public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget();
+    void setInfoWidgetTitle();
+
 public slots:
     void openFiles(const QStringList &filePaths);
 
@@ -104,8 +106,9 @@ private:
     int m_lastVolume;                       // remember last non-mute volume
     bool m_isMuted;
     void addFileToPlaylist(const QString &filePath);
-    void loadPlaylistFile(const QString &path, bool restoreLastTrack = true);
-    void savePlaylistFile(const QString &path);
+    void loadPlaylistFile(const QString &path, bool restoreLastTrack = true, bool savePlaylist = false);
+    void savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath=true);
+    void savePlaylist();
     void loadSettings();                    // <--- NEW
     void saveSettings();
     void updateMuteButtonIcon();
