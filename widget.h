@@ -36,7 +36,8 @@ protected:
     void focusInEvent(QFocusEvent *event) override;
     void changeEvent(QEvent *event) override;
 private slots:
-    void infoWindowFocusReceived();
+    void filterList(const QString &text);
+   void infoWindowFocusReceived();
     void infoWindowClosed();
     void openGoogleSearch(const QString &text);
     void openFolderAndSelectFile(const QString &filePath);
@@ -80,6 +81,8 @@ private slots:
     void showModeButtonContextMenu(const QPoint &pos);
     void showVolumeSliderContextMenu(const QPoint &pos);
     void handleRemoveSelected();
+    void on_pushButtonResetFilter_clicked();
+
 private:
     QHotkey *m_hotkey;
     int findTrackIndex(const QString &filePath);

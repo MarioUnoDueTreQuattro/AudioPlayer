@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>350</width>
-    <height>187</height>
+    <width>256</width>
+    <height>205</height>
    </rect>
   </property>
   <property name="focusPolicy">
@@ -17,18 +17,6 @@
    <string>Widget</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
-   <property name="leftMargin">
-    <number>4</number>
-   </property>
-   <property name="topMargin">
-    <number>4</number>
-   </property>
-   <property name="rightMargin">
-    <number>4</number>
-   </property>
-   <property name="bottomMargin">
-    <number>4</number>
-   </property>
    <item>
     <widget class="QListWidget" name="listWidget">
      <property name="focusPolicy">
@@ -41,6 +29,41 @@
       <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
      </property>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutFilter">
+     <item>
+      <widget class="QLabel" name="labelFilter">
+       <property name="text">
+        <string>Filter:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="EscAwareLineEdit" name="lineEditFilter">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonResetFilter">
+       <property name="toolTip">
+        <string>Close filter</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/img/img/icons8-delete-48.png</normaloff>:/img/img/icons8-delete-48.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -295,6 +318,11 @@
    <class>ClickableSlider</class>
    <extends>QSlider</extends>
    <header>clickableslider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>EscAwareLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>escawarelineedit.h</header>
   </customwidget>
  </customwidgets>
  <resources>

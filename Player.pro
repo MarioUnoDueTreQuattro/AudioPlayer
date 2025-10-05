@@ -15,6 +15,7 @@ SOURCES += \
     audiocover.cpp \
     clickablelabel.cpp \
     clickableslider.cpp \
+    escawarelineedit.cpp \
     infowidget.cpp \
     main.cpp \
     settings.cpp \
@@ -28,6 +29,7 @@ HEADERS += \
     audiocover.h \
     clickablelabel.h \
     clickableslider.h \
+    escawarelineedit.h \
     infowidget.h \
     settings.h \
     singleinstance.h \

@@ -53,6 +53,10 @@ Widget::Widget(QWidget *parent)
       m_bInfoWindowHasBeenClosed(false)
 {
     ui->setupUi(this);
+    ui->labelFilter->setVisible (false);
+    ui->lineEditFilter->setVisible (false);
+    ui->pushButtonResetFilter->setVisible (false);
+    ui->lineEditFilter->setText ("");
     setFocusPolicy(Qt::StrongFocus);
     m_infoWidget = new InfoWidget();
     // m_hotkey = new QHotkey(QKeySequence("Ctrl+Shift+A"), true, this);
@@ -180,6 +184,7 @@ void Widget::handlePositionBackward()
 
 void Widget::setSignalsConnections()
 {
+    connect(ui->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(filterList(QString))); connect(ui->lineEditFilter, &EscAwareLineEdit::escapePressed, this, &Widget::on_pushButtonResetFilter_clicked);
     connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
     connect(m_infoWidget, SIGNAL(focusReceived()), this, SLOT(infoWindowFocusReceived()));
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
@@ -499,8 +504,8 @@ void Widget::openFiles(const QStringList &filePaths)
     // m_player->setPosition(m_lastTrackPosition);
     // }
     // }
-   int firstNewIndex = m_playlist->mediaCount(); // track where new files start
-    m_lastTrackIndex=firstNewIndex;
+    int firstNewIndex = m_playlist->mediaCount(); // track where new files start
+    m_lastTrackIndex = firstNewIndex;
     for (const QString &path : filePaths)
     {
         addFileToPlaylist(path);
@@ -1536,6 +1541,7 @@ void Widget::handleLoadPlaylist()
             this, tr("Load Playlist"), m_lastDialogPlaylistPath, tr("Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
+    on_pushButtonResetFilter_clicked();
     m_lastPlaylistPath = fileName;
     m_lastDialogPlaylistPath = fileName;
     settings.setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
@@ -1676,6 +1682,8 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QMenu contextMenu(this);
     QAction *scrollToCurrentAction = contextMenu.addAction(tr("Scroll to current"));
     scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
+    QAction *filterAction = contextMenu.addAction(tr("Filter"));
+    filterAction->setIcon(QIcon(":/img/img/icons8-filter-48.png"));
     contextMenu.addSeparator();
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
@@ -1701,6 +1709,14 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     if (selectedAction == saveAction)
     {
         handleSavePlaylist();
+    }
+    else if (selectedAction == filterAction)
+    {
+        ui->labelFilter->setVisible (true);
+        ui->lineEditFilter->setVisible (true);
+        ui->pushButtonResetFilter->setVisible (true);
+        ui->lineEditFilter->setText ("");
+        ui->lineEditFilter->setFocus ();
     }
     else if (selectedAction == copyNameAction)
     {
@@ -1757,6 +1773,18 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
         QString localFile = mediaUrl.toLocalFile();
         // openFolderAndSelectFileInExplorer (localFile);
         openFolderAndSelectFileEx (localFile);
+    }
+}
+
+void Widget::filterList(const QString &text)
+{
+    // QString text="All";
+    for (int i = 0; i < ui->listWidget->count(); ++i)
+    {
+        QListWidgetItem *item = ui->listWidget->item(i);
+        bool match = item->text().contains(text, Qt::CaseInsensitive);
+        // Hide items that do not match the filter text
+        item->setHidden(!match);
     }
 }
 
@@ -2282,5 +2310,19 @@ void Widget::openFolderAndSelectFileEx(const QString &filePath)
         // Step 5: Shell API failed (e.g., path contains special characters), fallback
         qDebug() << "Failed to parse path with Shell API, opening folder:" << nativePath;
         QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(folderPath));
+    }
+}
+
+void Widget::on_pushButtonResetFilter_clicked()
+{
+    ui->labelFilter->setVisible (false);
+    ui->lineEditFilter->setVisible (false);
+    ui->pushButtonResetFilter->setVisible (false);
+    ui->lineEditFilter->setText ("");
+    QListWidgetItem *item = ui->listWidget->item (m_playlist->currentIndex ());
+    if (item)
+    {
+        ui->listWidget->setCurrentItem (item);
+        ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
     }
 }
