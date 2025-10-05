@@ -82,6 +82,7 @@ private slots:
     void handleRemoveSelected();
 private:
     QHotkey *m_hotkey;
+    int findTrackIndex(const QString &filePath);
     void handlePlay();
     void copyCurrentName();
     void copyCurrentFullPath();

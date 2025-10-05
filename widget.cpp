@@ -519,7 +519,7 @@ void Widget::openFiles(const QStringList &filePaths)
             trackToPlay = m_lastTrackIndex;
         }
     }
-    if (m_playlist->mediaCount() > 0)
+    if (m_playlist->mediaCount() > 0 && m_lastTrackIndex==-1)
     {
         m_playlist->setCurrentIndex(trackToPlay);
         if (m_bAutoplay)
@@ -541,6 +541,26 @@ void Widget::openFiles(const QStringList &filePaths)
     }
     savePlaylist ();
     //saveSettings();
+}
+
+int Widget::findTrackIndex( const QString &filePath)
+{
+
+    //qDebug() <<"filePath= "<<filePath;
+    if (filePath.isEmpty())
+        return -1; // file doesn't exist
+    QString sFoundName;
+    for (int i = 0; i < m_playlist->mediaCount(); ++i)
+    {
+        QMediaContent content = m_playlist->media(i);
+        QUrl url = content.canonicalUrl(); // use canonicalUrl for file path
+        QFileInfo file(url.toLocalFile());
+        sFoundName = file.completeBaseName ();
+        //qDebug() <<"sFoundName= "<<sFoundName;
+        if (sFoundName == filePath)
+            return i;
+    }
+    return -1; // not found
 }
 
 void Widget::addFileToPlaylist(const QString &filePath)
@@ -567,8 +587,31 @@ void Widget::addFileToPlaylist(const QString &filePath)
     // QString absPath = QDir::cleanPath(QFileInfo(filePath).absoluteFilePath());
     // for (int i = 0; i < m_playlist->mediaCount(); ++i)
     // {
+    int iFoundIdx = -1;
     if (m_playlistPaths.contains(absPath))
+    {
+        m_lastTrackIndex = 0;
+        m_lastTrackPosition = 0;
+        QFileInfo info(fi.absoluteFilePath());
+        QString sSearch=info.completeBaseName ();
+        //qDebug() <<"sSearch= "<<sSearch;
+        iFoundIdx = findTrackIndex(sSearch);
+        if (iFoundIdx != -1)
+        {
+            m_lastTrackIndex = iFoundIdx;
+            m_playlist->setCurrentIndex (m_lastTrackIndex);
+            //ui->listWidget->setCurrentRow (m_lastTrackIndex);
+            QListWidgetItem *item=ui->listWidget->item (m_lastTrackIndex);
+            if (item)
+            {
+                ui->listWidget->setCurrentItem (item);
+                ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+            }
+            //handlePlay ();
+            return;
+        }
         return;
+    }
     // if (m_playlist->media(i).canonicalUrl() == QUrl::fromLocalFile(fi.absoluteFilePath()))
     // return;
     // }
@@ -719,7 +762,8 @@ void Widget::setInfoWidgetTitle()
 void Widget::handlePlay()
 {
     // qDebug() << __FUNCTION__;
-    // m_player->stop ();
+    //m_player->stop ();
+    playSilence (100);
     m_player->play();
     QString sPlaying = currentTrackName ();
     m_playedList.append (sPlaying);
@@ -739,9 +783,9 @@ void Widget::handlePlay()
         mediaUrl = m_player->media().canonicalUrl();
     QString localFile = mediaUrl.toLocalFile();
     qDebug() << "Current media file:" << localFile;
-    QEventLoop loop;
-    QTimer::singleShot(100, &loop, &QEventLoop::quit);
-    loop.exec(); // Blocks for 500 ms, but keeps UI responsive
+    // QEventLoop loop;
+    // QTimer::singleShot(100, &loop, &QEventLoop::quit);
+    // loop.exec(); // Blocks for 500 ms, but keeps UI responsive
     if (m_infoWidget != nullptr) m_infoWidget->setFile (localFile);
     if (!localFile.isEmpty())
     {
