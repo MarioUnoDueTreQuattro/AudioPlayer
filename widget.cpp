@@ -499,20 +499,20 @@ void Widget::openFiles(const QStringList &filePaths)
     // m_player->setPosition(m_lastTrackPosition);
     // }
     // }
-    int firstNewIndex = m_playlist->mediaCount(); // track where new files start
+   int firstNewIndex = m_playlist->mediaCount(); // track where new files start
+    m_lastTrackIndex=firstNewIndex;
     for (const QString &path : filePaths)
     {
         addFileToPlaylist(path);
     }
     m_playlist->setCurrentIndex (m_lastTrackIndex);
     //ui->listWidget->setCurrentRow (m_lastTrackIndex);
-    QListWidgetItem *item=ui->listWidget->item (m_lastTrackIndex);
+    QListWidgetItem *item = ui->listWidget->item (m_lastTrackIndex);
     if (item)
     {
         ui->listWidget->setCurrentItem (item);
         ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
     }
-
     int trackToPlay = 0;
     if (!filePaths.isEmpty())
     {
@@ -528,7 +528,7 @@ void Widget::openFiles(const QStringList &filePaths)
             trackToPlay = m_lastTrackIndex;
         }
     }
-    if (m_playlist->mediaCount() > 0 && m_lastTrackIndex==-1)
+    if (m_playlist->mediaCount() > 0 && m_lastTrackIndex == -1)
     {
         m_playlist->setCurrentIndex(trackToPlay);
         if (m_bAutoplay)
@@ -554,7 +554,6 @@ void Widget::openFiles(const QStringList &filePaths)
 
 int Widget::findTrackIndex( const QString &filePath)
 {
-
     //qDebug() <<"filePath= "<<filePath;
     if (filePath.isEmpty())
         return -1; // file doesn't exist
@@ -602,20 +601,20 @@ void Widget::addFileToPlaylist(const QString &filePath)
         m_lastTrackIndex = 0;
         m_lastTrackPosition = 0;
         QFileInfo info(fi.absoluteFilePath());
-        QString sSearch=info.completeBaseName ();
+        QString sSearch = info.completeBaseName ();
         //qDebug() <<"sSearch= "<<sSearch;
         iFoundIdx = findTrackIndex(sSearch);
         if (iFoundIdx != -1)
         {
             m_lastTrackIndex = iFoundIdx;
-//            m_playlist->setCurrentIndex (m_lastTrackIndex);
-//            //ui->listWidget->setCurrentRow (m_lastTrackIndex);
-//            QListWidgetItem *item=ui->listWidget->item (m_lastTrackIndex);
-//            if (item)
-//            {
-//                ui->listWidget->setCurrentItem (item);
-//                ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
-//            }
+            // m_playlist->setCurrentIndex (m_lastTrackIndex);
+            //            //ui->listWidget->setCurrentRow (m_lastTrackIndex);
+            // QListWidgetItem *item=ui->listWidget->item (m_lastTrackIndex);
+            // if (item)
+            // {
+            // ui->listWidget->setCurrentItem (item);
+            // ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+            // }
             //handlePlay ();
             return;
         }
@@ -777,6 +776,7 @@ void Widget::handlePlay()
     QString sPlaying = currentTrackName ();
     m_playedList.append (sPlaying);
     this->setWindowTitle ("AudioPlayer - " + sPlaying);
+    ui->listWidget->setCurrentRow (m_playlist->currentIndex ());
     QListWidgetItem *item = ui->listWidget->currentItem ();
     if (item)
     {
@@ -1616,7 +1616,6 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     {
         m_lastTrackIndex = -1;
         m_lastTrackPosition = 0;
-
     }
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
