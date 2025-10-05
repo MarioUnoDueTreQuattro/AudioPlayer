@@ -64,7 +64,7 @@ void InfoWidget::updateSize(const QSizeF &newSize)
         if (originalWidth > m_iScalePixOriginalSizeMax) originalWidth = m_iScalePixOriginalSizeMax;
         if (originalHeight > m_iScalePixOriginalSizeMax) originalHeight = m_iScalePixOriginalSizeMax;
     }
-    if (m_bPixIsBig)
+    if (m_bPixIsBig && !m_pix.isNull ())
     {
         redrawBigPix();
         return;
