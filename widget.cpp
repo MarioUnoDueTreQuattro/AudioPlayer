@@ -504,6 +504,15 @@ void Widget::openFiles(const QStringList &filePaths)
     {
         addFileToPlaylist(path);
     }
+    m_playlist->setCurrentIndex (m_lastTrackIndex);
+    //ui->listWidget->setCurrentRow (m_lastTrackIndex);
+    QListWidgetItem *item=ui->listWidget->item (m_lastTrackIndex);
+    if (item)
+    {
+        ui->listWidget->setCurrentItem (item);
+        ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+    }
+
     int trackToPlay = 0;
     if (!filePaths.isEmpty())
     {
@@ -599,14 +608,14 @@ void Widget::addFileToPlaylist(const QString &filePath)
         if (iFoundIdx != -1)
         {
             m_lastTrackIndex = iFoundIdx;
-            m_playlist->setCurrentIndex (m_lastTrackIndex);
-            //ui->listWidget->setCurrentRow (m_lastTrackIndex);
-            QListWidgetItem *item=ui->listWidget->item (m_lastTrackIndex);
-            if (item)
-            {
-                ui->listWidget->setCurrentItem (item);
-                ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
-            }
+//            m_playlist->setCurrentIndex (m_lastTrackIndex);
+//            //ui->listWidget->setCurrentRow (m_lastTrackIndex);
+//            QListWidgetItem *item=ui->listWidget->item (m_lastTrackIndex);
+//            if (item)
+//            {
+//                ui->listWidget->setCurrentItem (item);
+//                ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+//            }
             //handlePlay ();
             return;
         }
@@ -1602,6 +1611,12 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
         if (m_lastTrackPosition > 0)
             m_player->setPosition(m_lastTrackPosition);
         //ui->listWidget->blockSignals(false);
+    }
+    else
+    {
+        m_lastTrackIndex = -1;
+        m_lastTrackPosition = 0;
+
     }
     if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
     {
