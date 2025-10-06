@@ -47,6 +47,7 @@ InfoWidget::InfoWidget(QWidget *parent) :
 
 InfoWidget::~InfoWidget()
 {
+    qDebug()<<__PRETTY_FUNCTION__;
     delete ui;
 }
 

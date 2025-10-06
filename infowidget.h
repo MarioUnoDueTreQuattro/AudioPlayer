@@ -29,7 +29,7 @@ class InfoWidget : public QWidget
 
 public:
     explicit InfoWidget(QWidget *parent = nullptr);
-    ~InfoWidget();
+    ~InfoWidget() override;
     void setInfo(QString);
     QString getInfo();
     void setFile(const QString &);

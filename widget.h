@@ -8,6 +8,7 @@
 #include <QListWidgetItem>
 #include <QStack>
 #include "systemvolumecontroller.h"
+#include "audiofader.h"
 #include <3rdparty/qhotkey/QHotkey/QHotkey>
 #include "infowidget.h"
 
@@ -21,7 +22,7 @@ class Widget : public QWidget
 
 public:
     explicit Widget(QWidget *parent = nullptr);
-    ~Widget();
+    ~Widget() override;
     void setInfoWidgetTitle();
 public slots:
     void openFiles(const QStringList &filePaths);
@@ -93,6 +94,7 @@ private:
     void copyCurrentFullPath();
     void setKeyboardShortcuts();
     void setSignalsConnections();
+    AudioFader *musicFader;
     SystemVolumeController *m_systemVolumeController;
     bool m_bAutoplay;
     bool m_bShowInfo;

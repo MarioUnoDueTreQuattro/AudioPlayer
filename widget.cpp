@@ -60,6 +60,7 @@ Widget::Widget(QWidget *parent)
     ui->lineEditFilter->setText ("");
     setFocusPolicy(Qt::StrongFocus);
     m_infoWidget = new InfoWidget();
+    musicFader = new AudioFader(m_player, this);
     // m_hotkey = new QHotkey(QKeySequence("Ctrl+Shift+A"), true, this);
     // if (!m_hotkey->isRegistered())
     // {
@@ -80,8 +81,8 @@ Widget::Widget(QWidget *parent)
     m_player->setPlaylist(m_playlist);
     loadSettings();  // Load volume/mute state before connecting slider
     // Apply loaded volume
-    m_player->setVolume(m_lastVolume);
     ui->volumeSlider->setValue(m_lastVolume);
+    m_player->setVolume(0);
     ui->listWidget -> setAlternatingRowColors(true);
     setSignalsConnections();
     setKeyboardShortcuts();
@@ -220,7 +221,11 @@ void Widget::setSignalsConnections()
 
 Widget::~Widget()
 {
+    qDebug()<<__PRETTY_FUNCTION__;
     // saveSettings();
+    //    musicFader->finishFade ();
+    //    delete musicFader;
+    //    musicFader=nullptr;
     delete ui;
     if (m_infoWidget != nullptr)
     {
@@ -289,6 +294,9 @@ void Widget::infoWindowClosed()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
+    musicFader->stopFadeImmediately ();
+    //    delete musicFader;
+    //    musicFader=nullptr;
     savePlaylist ();
     //qDebug() << "closeEvent";
     //this->hide ();
@@ -792,7 +800,10 @@ void Widget::handlePlay()
 {
     // qDebug() << __FUNCTION__;
     //m_player->stop ();
-    playSilence (100);
+    //playSilence (100);
+    //m_player->setVolume (0);
+    //m_player->setVolume (ui->volumeSlider->value ());
+    musicFader->fadeIn(ui->volumeSlider->value (), 500);
     m_player->play();
     QString sPlaying = currentTrackName ();
     m_playedList.append (sPlaying);
@@ -992,6 +1003,8 @@ void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
         break;
     case QMediaPlayer::LoadedMedia:
         qDebug() << "Stato: Media caricato e pronto per la riproduzione.";
+        //m_player->setVolume (0);
+        //musicFader->fadeIn(ui->volumeSlider->value (), 5000);
         break;
     case QMediaPlayer::BufferingMedia:
         qDebug() << "Stato: Buffering in corso (es. streaming).";
@@ -1012,7 +1025,8 @@ void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
     case QMediaPlayer::UnknownMediaStatus:
     default:
         qDebug() << "Stato: Sconosciuto.";
-        break;
+                //musicFader->fadeIn(ui->volumeSlider->value (), 5000);
+break;
     }
 }
 
