@@ -1790,10 +1790,12 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QMenu contextMenu(this);
     QAction *scrollToCurrentAction = contextMenu.addAction(tr("Scroll to current"));
     scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
-    QAction *filterAction = contextMenu.addAction(tr("Filter"));
-    filterAction->setIcon(QIcon(":/img/img/icons8-filter-48.png"));
     QAction *forgetPlayedAction = contextMenu.addAction(tr("Forget played"));
     forgetPlayedAction->setIcon(QIcon(":/img/img/icons8-reload-48.png"));
+    QString sText="Forget played (" + QString::number (m_playedList.count ()) + " of " + QString::number (ui->listWidget->count ()) + ")";
+    forgetPlayedAction->setText (sText);
+    QAction *filterAction = contextMenu.addAction(tr("Filter"));
+    filterAction->setIcon(QIcon(":/img/img/icons8-filter-48.png"));
     contextMenu.addSeparator();
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
