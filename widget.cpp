@@ -1478,7 +1478,9 @@ void Widget::on_prevButton_clicked()
         {
             int lastIndex = m_shuffleHistory.pop(); // go back to last played track
             m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+            m_bUserRequestedPlayback=true;
             m_playlist->setCurrentIndex(lastIndex);
+            m_bUserRequestedPlayback=false;
             m_playlist->setPlaybackMode(currentMode);
         }
     }
