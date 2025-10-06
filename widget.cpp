@@ -50,7 +50,8 @@ Widget::Widget(QWidget *parent)
       m_lastVolume(50),
       m_isMuted(false),
       m_bInfoWindowHasBeenMinimized(false),
-      m_bInfoWindowHasBeenClosed(false)
+      m_bInfoWindowHasBeenClosed(false),
+      m_bUserRequestedPlayback(false)
 {
     ui->setupUi(this);
     ui->labelFilter->setVisible (false);
@@ -213,6 +214,8 @@ void Widget::setSignalsConnections()
     // this, SLOT(onDefaultDeviceChanged()));
     connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged(QString, QString)),
         this, SLOT(onDeviceChanged(QString, QString)));
+    connect(m_player, &QMediaPlayer::mediaStatusChanged,
+        this, &Widget::handleMediaStatusChanged);
 }
 
 Widget::~Widget()
@@ -576,6 +579,17 @@ int Widget::findTrackIndex( const QString &filePath)
     return -1; // not found
 }
 
+void Widget::forgetPlayed()
+{
+    int iTotalItems = ui->listWidget->count();
+    for (int iIdx = 0; iIdx < iTotalItems; iIdx++)
+    {
+        QListWidgetItem *item = ui->listWidget->item(iIdx);
+        item->setForeground(QBrush());
+    }
+    m_playedList.clear ();
+}
+
 void Widget::addFileToPlaylist(const QString &filePath)
 {
     QFileInfo fi(filePath);
@@ -733,6 +747,7 @@ void Widget::dropEvent(QDropEvent *event)
 
 void Widget::handlePlayButton()
 {
+    m_bUserRequestedPlayback=true;
     int selectedRow = ui->listWidget->currentRow();
     if (selectedRow >= 0 && selectedRow < m_playlist->mediaCount())
     {
@@ -740,7 +755,8 @@ void Widget::handlePlayButton()
         m_playlist->setCurrentIndex(selectedRow);
     }
     if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
-    handlePlay ();
+            handlePlay ();
+            m_bUserRequestedPlayback=false;
 }
 
 void Widget::handlePauseButton()
@@ -796,7 +812,7 @@ void Widget::handlePlay()
     else
         mediaUrl = m_player->media().canonicalUrl();
     QString localFile = mediaUrl.toLocalFile();
-    qDebug() << "Current media file:" << localFile;
+    qDebug() << __FUNCTION__ << "Line:" << __LINE__ << "Current file:" << localFile;
     // QEventLoop loop;
     // QTimer::singleShot(100, &loop, &QEventLoop::quit);
     // loop.exec(); // Blocks for 500 ms, but keeps UI responsive
@@ -911,37 +927,43 @@ void Widget::copyCurrentFullPath()
 
 void Widget::handleItemDoubleClicked()
 {
+    m_bUserRequestedPlayback=true;
     int idx = ui->listWidget->currentRow();
-    if (idx >= 0 && idx < m_playlist->mediaCount())
+   if (idx >= 0 && idx < m_playlist->mediaCount())
     {
         if (idx == m_playlist->currentIndex ())
         {
             m_player->stop ();
             handlePlay ();
+
         }
         m_playlist->setCurrentIndex(idx);
         // if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
         // handlePlay();
     }
+   m_bUserRequestedPlayback=false;
 }
 
 void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 {
-    // qDebug() << __FUNCTION__;
+    qDebug() << __FUNCTION__ << "Line:" << __LINE__;
     switch (state)
     {
     case QMediaPlayer::PlayingState:
+        qDebug() << "PlayingState";
         //ui->playButton->setText("▶ Play");
         ui->playButton->setEnabled(true);
         ui->stopButton->setEnabled(true);
         ui->pauseButton->setEnabled(true);
         break;
     case QMediaPlayer::PausedState:
+        qDebug() << "PausedState";
         // ui->playButton->setText("▶ Resume");
         ui->pauseButton->setEnabled(false);
         ui->stopButton->setEnabled(true);
         break;
     case QMediaPlayer::StoppedState:
+        qDebug() << "StoppedState";
         //ui->playButton->setText("▶ Play");
         ui->pauseButton->setEnabled(false);
         ui->stopButton->setEnabled(false);
@@ -955,9 +977,56 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
     }
 }
 
+void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
+{
+    qDebug() << __FUNCTION__ << "Line:" << __LINE__;
+    switch (status)
+    {
+    case QMediaPlayer::NoMedia:
+        qDebug() << "Stato: Nessun media caricato.";
+        // Ad esempio, disabilita i pulsanti di riproduzione/pausa
+        // m_playButton->setEnabled(false);
+        break;
+    case QMediaPlayer::LoadingMedia:
+        qDebug() << "Stato: Caricamento media in corso...";
+        break;
+    case QMediaPlayer::LoadedMedia:
+        qDebug() << "Stato: Media caricato e pronto per la riproduzione.";
+        break;
+    case QMediaPlayer::BufferingMedia:
+        qDebug() << "Stato: Buffering in corso (es. streaming).";
+        break;
+    case QMediaPlayer::StalledMedia:
+        qDebug() << "Stato: Buffer esaurito. Riproduzione interrotta.";
+        break;
+    case QMediaPlayer::EndOfMedia: // Questo è lo stato cruciale! 🛑
+        qDebug() << "Stato: Il media corrente è TERMINATO.";
+        // La riproduzione continuerà automaticamente se è collegato a QMediaPlaylist
+        // ma questo è il momento per eseguire la pulizia o la notifica dell'utente.
+        break;
+
+   case QMediaPlayer::InvalidMedia:
+        qDebug() << "Stato: Errore. Il media è invalido o non riproducibile.";
+        QMessageBox::critical(this, tr("Errore Media"), tr("Impossibile riprodurre il file."));
+        break;
+    case QMediaPlayer::UnknownMediaStatus:
+    default:
+        qDebug() << "Stato: Sconosciuto.";
+        break;
+    }
+}
+
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
-    // qDebug() << __FUNCTION__;
+    qDebug() << __FUNCTION__ << "Line:" << __LINE__;
+//    if (m_bIsInShuffleMode && m_bUserRequestedPlayback==false && m_bPlaylistFinished)
+//    {
+//        //m_player->stop ();
+//            QMessageBox::information (this,"","All files in the playlist have already been played in shuffle mode.");
+//            m_bPlaylistFinished=false;
+//            //m_playlist->setCurrentIndex (-1);
+//        //return;
+//    }
     int iListWidgetCount = ui->listWidget->count();
     for (int iIdx = 0; iIdx < iListWidgetCount; iIdx++)
     {
@@ -965,6 +1034,36 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     }
     if (index >= 0 && index < iListWidgetCount)
     {
+    int iCount=m_playlist->mediaCount();
+    if (m_playlist->mediaCount() >= 1 && m_bIsInShuffleMode && m_bUserRequestedPlayback==false)
+            {
+                //Check if yet played
+        int iCkeckedCount=0;
+//        if (iCount==m_playedList.count ())
+//                {
+//                    QMessageBox::information (this,"","All files in the playlist have already been played in shuffle mode.");
+////                    return;
+//                }
+                //qDebug()<< "m_playedList.count="<< m_playedList.count ();
+                //qDebug()<< "next:" << m_playlist->currentMedia ().canonicalUrl ().fileName ();
+                qDebug()<< "next:" << m_playlist->media (index).canonicalUrl ().fileName ();
+                QString sNext=m_playlist->media (index).canonicalUrl ().fileName ();
+                for (QString sItem: m_playedList)
+                {
+                    //qDebug() << "Yet played:"<< sItem;
+                    iCkeckedCount++;
+                    if (sItem==sNext)
+                    {
+                        index=index+1;
+                        //qDebug() << "Next index:"<< index;
+                        m_playlist->setCurrentIndex (index);
+                        //handlePlaylistCurrentIndexChanged (index);
+                        return;
+//                        break;
+                    }
+                }
+
+            }
         ui->listWidget->setCurrentRow(index);
         //ui->listWidget->scrollToItem(ui->listWidget->item(index), QAbstractItemView::PositionAtCenter);
         if (m_player->state() == QMediaPlayer::PlayingState || m_bAutoplay)
@@ -974,7 +1073,9 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     }
     else
     {
+//       m_bPlaylistFinished=true;
         // ui->listWidget->clearSelection();
+        if (m_bIsInShuffleMode && index >= iListWidgetCount) QMessageBox::information (this,"","All files in the playlist have already been played in shuffle mode.");
     }
 }
 
@@ -1477,22 +1578,22 @@ void Widget::handleModeButton()
     {
     case QMediaPlaylist::CurrentItemOnce:
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);  // Loop All
-        break;
+  break;
     case QMediaPlaylist::Sequential:
         m_playlist->setPlaybackMode(QMediaPlaylist::Loop);  // Loop All
-        break;
+ break;
     case QMediaPlaylist::Loop:
         m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop);  // Loop One
-        break;
+    break;
     case QMediaPlaylist::CurrentItemInLoop:
         m_playlist->setPlaybackMode(QMediaPlaylist::Random);  // Shuffle
         break;
     case QMediaPlaylist::Random:
         m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemOnce);
-        break;
+ break;
     default:
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
-        break;
+     break;
     }
     updateModeButtonIcon();
     QSettings settings;
@@ -1507,22 +1608,27 @@ void Widget::updateModeButtonIcon()
     case QMediaPlaylist::Sequential:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-right-48.png"));
         ui->modeButton->setToolTip("Sequential");
+        m_bIsInShuffleMode=false;
         break;
     case QMediaPlaylist::Loop:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-loop-48.png"));
         ui->modeButton->setToolTip("Loop all");
+        m_bIsInShuffleMode=false;
         break;
     case QMediaPlaylist::CurrentItemInLoop:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-repeat-one-48.png"));
         ui->modeButton->setToolTip("Loop current");
+        m_bIsInShuffleMode=false;
         break;
     case QMediaPlaylist::CurrentItemOnce:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-once-48.png"));
         ui->modeButton->setToolTip("Play current once");
+        m_bIsInShuffleMode=false;
         break;
     case QMediaPlaylist::Random:
         ui->modeButton->setIcon(QIcon(":/img/img/icons8-random-48.png"));
         ui->modeButton->setToolTip("Shuffle (Random)");
+        m_bIsInShuffleMode=true;
         break;
     default:
         break;
@@ -1684,6 +1790,8 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
     QAction *filterAction = contextMenu.addAction(tr("Filter"));
     filterAction->setIcon(QIcon(":/img/img/icons8-filter-48.png"));
+    QAction *forgetPlayedAction = contextMenu.addAction(tr("Forget played"));
+    forgetPlayedAction->setIcon(QIcon(":/img/img/icons8-reload-48.png"));
     contextMenu.addSeparator();
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
@@ -1709,6 +1817,10 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     if (selectedAction == saveAction)
     {
         handleSavePlaylist();
+    }
+    else if (selectedAction == forgetPlayedAction)
+    {
+        forgetPlayed ();
     }
     else if (selectedAction == filterAction)
     {

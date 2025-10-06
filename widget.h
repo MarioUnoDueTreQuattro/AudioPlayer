@@ -23,10 +23,8 @@ public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget();
     void setInfoWidgetTitle();
-
 public slots:
     void openFiles(const QStringList &filePaths);
-
 protected:
     // Enable drag & drop
     void dragEnterEvent(QDragEnterEvent *event) override;
@@ -37,7 +35,7 @@ protected:
     void changeEvent(QEvent *event) override;
 private slots:
     void filterList(const QString &text);
-   void infoWindowFocusReceived();
+    void infoWindowFocusReceived();
     void infoWindowClosed();
     void openGoogleSearch(const QString &text);
     void openFolderAndSelectFile(const QString &filePath);
@@ -63,6 +61,7 @@ private slots:
     void handleClearPlaylist();
     void handleItemDoubleClicked();
     void handleMediaStateChanged(QMediaPlayer::State state);
+    void handleMediaStatusChanged(QMediaPlayer::MediaStatus status);
     void handlePlaylistCurrentIndexChanged(int index);
     void handleVolumeChanged(int value);
     void handleMuteButton();
@@ -82,10 +81,13 @@ private slots:
     void showVolumeSliderContextMenu(const QPoint &pos);
     void handleRemoveSelected();
     void on_pushButtonResetFilter_clicked();
-
 private:
+//    bool m_bPlaylistFinished;
+    bool m_bIsInShuffleMode;
+    bool m_bUserRequestedPlayback;
     QHotkey *m_hotkey;
     int findTrackIndex(const QString &filePath);
+    void forgetPlayed();
     void handlePlay();
     void copyCurrentName();
     void copyCurrentFullPath();
