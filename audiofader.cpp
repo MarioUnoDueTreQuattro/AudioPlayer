@@ -10,10 +10,12 @@ AudioFader::AudioFader(QMediaPlayer *player, QObject *parent)
       targetVolume(0),
       volumeStep(0),
       totalSteps(0),
-      currentStep(0)
+      currentStep(0)/*,
+      durationTimer(new QElapsedTimer())*/
 {
     // Connect the timer's timeout signal to the updateFade slot
     // This is the classic SIGNAL/SLOT approach
+    fadeTimer->setTimerType(Qt::PreciseTimer);
     connect(fadeTimer, SIGNAL(timeout()), this, SLOT(updateFade()));
 }
 
@@ -29,6 +31,11 @@ AudioFader::~AudioFader()
     }
     QObject::disconnect(fadeTimer, SIGNAL(timeout()), this, SLOT(updateFade()));
     // Since fadeTimer has 'this' as its parent, Qt will delete it automatically.
+//    if (durationTimer)
+//    {
+//        delete durationTimer;
+//        durationTimer = nullptr;
+//    }
     qDebug() << __PRETTY_FUNCTION__;
 }
 
@@ -37,6 +44,7 @@ void AudioFader::fadeIn(int targetVol, int durationMs)
 {
     // Check if the player is valid
     if (!mediaPlayer) return;
+    m_iDuration = durationMs;
     // Set the initial volume to 0 (silent) before starting,
     // in case it's not already.
     mediaPlayer->setVolume(0);
@@ -52,10 +60,58 @@ void AudioFader::fadeOut(int durationMs)
 {
     // Check if the player is valid
     if (!mediaPlayer) return;
+    m_iDuration = durationMs;
     startFade(0, durationMs); // Fade out always targets volume 0
 }
 
 // Common function to initialize and start the fade logic
+// audiofader.cpp
+
+// Common function to initialize and start the fade logic
+// audiofader.cpp - METODO startFade() RAFFORZATO
+
+// Common function to initialize and start the fade logic
+// audiofader.cpp
+
+//void AudioFader::startFade(int targetVol, int durationMs)
+//{
+// if (!mediaPlayer) return;
+
+// if (durationMs <= 0) {
+//        // Instant volume change if duration is zero or less
+// mediaPlayer->setVolume(targetVol);
+// return;
+// }
+
+//    // 1. Initialize variables
+// targetVolume = (float)targetVol;
+
+//    // Inizializza l'accumulatore con il volume ATTUALE del player.
+//    // Questo permette al fade di partire da dove si trova realmente l'audio.
+// accumulatedVolume = (float)mediaPlayer->volume();
+
+//    // 2. Calculation of total steps and step size
+// const int updateIntervalMs = 20; // Good balance for smoothness (50 times/sec)
+
+//    // Calcola il numero totale di step che avverranno
+// float totalStepsFloat = (float)durationMs / (float)updateIntervalMs;
+
+//    // Calcola il range di volume da coprire
+// float volumeRange = targetVolume - accumulatedVolume;
+
+//    // Calcola lo step: Range totale diviso per il numero totale di step
+// volumeStep = volumeRange / totalStepsFloat;
+
+//    // 3. Start the timer
+// fadeTimer->setInterval(updateIntervalMs);
+// fadeTimer->start();
+
+// qDebug() << "Fade started. Initial Acc. Volume:" << accumulatedVolume
+// << "Target:" << targetVol
+// << "Total Steps:" << totalStepsFloat
+// << "Step Size:" << volumeStep;
+//}
+
 void AudioFader::startFade(int targetVol, int durationMs)
 {
     if (durationMs <= 0)
@@ -63,6 +119,8 @@ void AudioFader::startFade(int targetVol, int durationMs)
         mediaPlayer->setVolume(targetVol);
         return;
     }
+    m_iDuration = durationMs;
+    //durationTimer->start();
     // Initialize state variables (now using float)
     // IMPORTANT: Cast to float for precision
     initialVolume = (float)mediaPlayer->volume();
@@ -83,6 +141,48 @@ void AudioFader::startFade(int targetVol, int durationMs)
 }
 
 // SLOT: Called repeatedly by the QTimer
+// audiofader.cpp - Modifica allo SLOT updateFade()
+
+// audiofader.cpp - METODO updateFade()
+
+// audiofader.cpp
+
+//void AudioFader::updateFade()
+//{
+// if (!mediaPlayer) return;
+
+//    // 1. Applica lo step all'accumulatore FLOAT
+// accumulatedVolume += volumeStep;
+
+//    // 2. Converi il volume float in un intero per QMediaPlayer
+//    // Utilizza qRound() per un arrotondamento corretto (es. 0.5 diventa 1)
+// int newVolume = qRound(accumulatedVolume);
+
+//    // 3. Controlla il completamento
+// bool finished = false;
+
+//    // Se stiamo facendo fade IN (step positivo) e abbiamo raggiunto/superato il target
+// if ((volumeStep > 0.0f && accumulatedVolume >= targetVolume) ||
+//        // Se stiamo facendo fade OUT (step negativo) e abbiamo raggiunto/superato il target
+// (volumeStep < 0.0f && accumulatedVolume <= targetVolume))
+// {
+// finished = true;
+// }
+
+//    // 4. Esegui l'azione finale
+// if (finished)
+// {
+//        // Imposta il volume finale esatto e pulisci
+// mediaPlayer->setVolume((int)targetVolume);
+// finishFade();
+// } else {
+//        // Continua il fading: imposta il volume arrotondato.
+// mediaPlayer->setVolume(newVolume);
+// }
+
+// qDebug() << "Fading... Current Volume:" << mediaPlayer->volume();
+//}
+
 void AudioFader::updateFade()
 {
     currentStep++;
@@ -116,7 +216,7 @@ void AudioFader::updateFade()
         // Continue fading
         if (mediaPlayer != nullptr) mediaPlayer->setVolume(newVolume);
     }
-    qDebug() << "Fading... Current Volume:" << mediaPlayer->volume();
+    // qDebug() << "Fading... Current Volume:" << mediaPlayer->volume();
 }
 
 // Stops the timer and performs cleanup tasks after the fade is complete
@@ -126,11 +226,15 @@ void AudioFader::finishFade()
     // delete fadeTimer;
     // fadeTimer=nullptr;
     // Specific action for fade OUT: stop the player when volume reaches 0
-    if (targetVolume == 0)
-    {
-        mediaPlayer->stop();
-    }
-    qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
+    // if (targetVolume == 0)
+    // {
+    // mediaPlayer->stop();
+    // }
+    // --- Misurazione e Output della Durata Totale ---
+//    long long actualDuration = durationTimer->elapsed();
+//    qDebug() << "Target Duration (ms):" << m_iDuration; // Stima della durata target
+//    qDebug() << "Actual Duration (ms):" << actualDuration;
+//    qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
 }
 
 void AudioFader::stopFadeImmediately()
@@ -148,4 +252,11 @@ void AudioFader::stopFadeImmediately()
     // Sebbene non risolva la causa radice, previene riferimenti futuri.
     // Lo facciamo qui perché il genitore è l'unico a chiamare questa funzione prima della chiusura.
     mediaPlayer = nullptr;
+}
+
+void AudioFader::fadeToTarget(int targetVolume, int durationMs)
+{
+    m_iDuration = durationMs;
+    // int iCurVol = mediaPlayer->volume ();
+    startFade (targetVolume, durationMs);
 }

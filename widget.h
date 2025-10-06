@@ -83,7 +83,7 @@ private slots:
     void handleRemoveSelected();
     void on_pushButtonResetFilter_clicked();
 private:
-//    bool m_bPlaylistFinished;
+    // bool m_bPlaylistFinished;
     bool m_bIsInShuffleMode;
     bool m_bUserRequestedPlayback;
     QHotkey *m_hotkey;
@@ -96,6 +96,8 @@ private:
     void setSignalsConnections();
     AudioFader *musicFader;
     SystemVolumeController *m_systemVolumeController;
+    bool m_bVolumeFade;
+    int m_iVolumeFadeTime;
     bool m_bAutoplay;
     bool m_bShowInfo;
     bool m_bInfoWindowHasBeenMinimized;

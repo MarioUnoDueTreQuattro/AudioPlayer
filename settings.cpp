@@ -15,6 +15,7 @@ Settings::Settings(QWidget *parent) :
     ui(new Ui::Settings)
 {
     ui->setupUi(this);
+    setWindowFlags( Qt::MSWindowsFixedSizeDialogHint);
     loadSettings ();
     //QApplication::setStyle(QStyleFactory::create("Windows"));
     // QApplication::setStyle(QStyleFactory::create("WindowsXP"));
@@ -49,8 +50,7 @@ Settings::Settings(QWidget *parent) :
     }
     ui->comboBoxColor->setCurrentText (m_sPalette);
     // Adjust the size of the dialog to fit its contents
-       adjustSize();
-
+    adjustSize();
 }
 
 Settings::~Settings()
@@ -112,8 +112,8 @@ void Settings::on_Settings_accepted()
             darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, disabledWindowText);
             darkPalette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
             darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledButtonText);
-           // darkPalette.setColor(QPalette::Active, QPalette::WindowText, QColor(255,215,0));
-//            darkPalette.setColor(QPalette::Inactive, QPalette::ButtonText,  QColor(255,215,0));
+            // darkPalette.setColor(QPalette::Active, QPalette::WindowText, QColor(255,215,0));
+            // darkPalette.setColor(QPalette::Inactive, QPalette::ButtonText,  QColor(255,215,0));
             //darkPalette.setColor(QPalette::Active, QPalette::ButtonText,  QColor(255,215,0));
             //darkPalette.setColor(QPalette::Disabled, QPalette::Base, QColor(25, 25, 25)); // optional - darker input background
             // darkPalette.setColor(QPalette::Disabled, QPalette::Button, QColor(45, 45, 45)); // optional - duller buttons
@@ -158,6 +158,8 @@ void Settings::saveSettings()
     settings.setValue("PictueScaleSize", ui->spinBoxPixSize->value());
     settings.setValue("PictueScaleOriginalSizeMaxEnabled", ui->checkBoxScaleOriginalSizeMax->isChecked ());
     settings.setValue("PictueScaleOriginalSizeMax", ui->spinBoxScaleOriginalSizeMax->value());
+    settings.setValue("VolumeFade", ui->checkBoxFade->isChecked ());
+    settings.setValue("VolumeFadeTime", ui->spinBoxFade->value());
     settings.sync();
 }
 
@@ -212,6 +214,14 @@ void Settings::loadSettings()
     ui->spinBoxPixSize->setValue (iPixSize);
     int iScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMax", 600).toInt ();
     ui->spinBoxScaleOriginalSizeMax->setValue (iScalePixOriginalSizeMax);
+    bool bFade = settings.value("VolumeFade", true).toBool ();
+    ui->checkBoxFade->setChecked (bFade);
+    if (!bFade)
+        ui->spinBoxFade->setEnabled (false);
+    else
+        ui->spinBoxFade->setEnabled (true);
+    int iFadeTime = settings.value("VolumeFadeTime", 1000).toInt ();
+    ui->spinBoxFade->setValue (iFadeTime);
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()
@@ -285,5 +295,17 @@ void Settings::on_checkBoxScaleOriginalSizeMax_stateChanged(int checkState)
     else
     {
         ui->spinBoxScaleOriginalSizeMax->setEnabled (true);
+    }
+}
+
+void Settings::on_checkBoxFade_stateChanged(int checkState)
+{
+    if (checkState == 0)
+    {
+        ui->spinBoxFade->setEnabled (false);
+    }
+    else
+    {
+        ui->spinBoxFade->setEnabled (true);
     }
 }

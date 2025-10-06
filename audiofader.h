@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QMediaPlayer>
+#include <QElapsedTimer>
 
 class AudioFader : public QObject
 {
@@ -16,17 +17,21 @@ public:
     void fadeIn(int targetVolume, int durationMs);
     void fadeOut(int durationMs);
     void stopFadeImmediately();
+    void fadeToTarget(int targetVolume, int durationMs);
 private slots:
     // Slot connected to the QTimer timeout() signal
     void updateFade();
 private:
     QMediaPlayer *mediaPlayer;
     QTimer *fadeTimer;
+    //QElapsedTimer *durationTimer; // Timer per misurare la durata totale del fade
     float initialVolume;
     float targetVolume;
     float volumeStep;
     int totalSteps;
     int currentStep;
+    int m_iDuration;
+    //float accumulatedVolume;
     // Helper functions
     void startFade(int targetVolume, int durationMs);
     void finishFade();

@@ -26,6 +26,8 @@ private slots:
 
     void on_checkBoxScaleOriginalSizeMax_stateChanged(int arg1);
 
+    void on_checkBoxFade_stateChanged(int arg1);
+
 private:
     Ui::Settings *ui;
     QString m_sTheme;

@@ -82,7 +82,7 @@ Widget::Widget(QWidget *parent)
     loadSettings();  // Load volume/mute state before connecting slider
     // Apply loaded volume
     ui->volumeSlider->setValue(m_lastVolume);
-    m_player->setVolume(0);
+    if (m_bVolumeFade) m_player->setVolume(0);
     ui->listWidget -> setAlternatingRowColors(true);
     setSignalsConnections();
     setKeyboardShortcuts();
@@ -802,8 +802,8 @@ void Widget::handlePlay()
     //m_player->stop ();
     //playSilence (100);
     //m_player->setVolume (0);
-    //m_player->setVolume (ui->volumeSlider->value ());
-    musicFader->fadeIn(ui->volumeSlider->value (), 500);
+    m_player->setVolume (ui->volumeSlider->value ());
+    if (m_player->state() != QMediaPlayer::PausedState && m_bVolumeFade) musicFader->fadeIn(ui->volumeSlider->value (), m_iVolumeFadeTime);
     m_player->play();
     QString sPlaying = currentTrackName ();
     m_playedList.append (sPlaying);
@@ -1140,6 +1140,8 @@ void Widget::clearPlaylist(bool silent /* = false */)
 void Widget::loadSettings()
 {
     QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    m_bVolumeFade= settings.value("VolumeFade", true).toBool ();
+    m_iVolumeFadeTime=  settings.value("VolumeFadeTime", 1000).toInt ();;
     m_sTheme = settings.value("Theme").toString();
     m_sPalette = settings.value("ThemePalette", "Light").toString();
     setTheme ();
@@ -1283,7 +1285,8 @@ void Widget::handleVolumeChanged(int value)
         ui->volumeLabel->setText(QString::number(value) + "%");  // NEW
         if (!m_isMuted)
         {
-            m_player->setVolume(value);
+            if (m_bVolumeFade) musicFader->fadeToTarget (ui->volumeSlider->value (),m_iVolumeFadeTime);
+            else m_player->setVolume(value);
         }
         QSettings settings;
         settings.setValue("volume", m_lastVolume);
@@ -1585,6 +1588,9 @@ void Widget::settingsDialogAccepted()
         }
     }
     //m_infoWidget->setStyle (this->style ());
+    m_bVolumeFade= settings.value("VolumeFade", true).toBool ();
+    m_iVolumeFadeTime=  settings.value("VolumeFadeTime", 1000).toInt ();;
+
 }
 
 void Widget::handleModeButton()
