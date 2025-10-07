@@ -23,11 +23,10 @@ private slots:
     void on_pushButtonPlayedTextColor_clicked();
     void on_buttonBox_clicked(QAbstractButton *button);
     void on_checkBoxScaleOriginalSize_stateChanged(int arg1);
-
     void on_checkBoxScaleOriginalSizeMax_stateChanged(int arg1);
-
     void on_checkBoxFade_stateChanged(int arg1);
-
+protected:
+    void moveEvent(QMoveEvent *event) override;
 private:
     Ui::Settings *ui;
     QString m_sTheme;

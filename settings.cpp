@@ -9,6 +9,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <QColorDialog>
+#include <QDesktopWidget>
 
 Settings::Settings(QWidget *parent) :
     QDialog(parent),
@@ -160,12 +161,28 @@ void Settings::saveSettings()
     settings.setValue("PictueScaleOriginalSizeMax", ui->spinBoxScaleOriginalSizeMax->value());
     settings.setValue("VolumeFade", ui->checkBoxFade->isChecked ());
     settings.setValue("VolumeFadeTime", ui->spinBoxFade->value());
+    settings.setValue("SettingsPosition", pos());
     settings.sync();
 }
 
 void Settings::loadSettings()
 {
+    QRect screenGeometry = QApplication::desktop()->screenGeometry();
+    int pos_x = (screenGeometry.width() - this->width()) / 2;
+    int pos_y = (screenGeometry.height() - this->height()) / 2;
     QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    QPoint savedPos = settings.value("SettingsPosition", QPoint(pos_x, pos_y)).toPoint();
+    QScreen *screen = QGuiApplication::screenAt(savedPos);
+    if (screen)
+    {
+        move(savedPos);
+    }
+    else
+    {
+        // Se la posizione non è valida, centra la finestra
+        // La posizione di default (100, 100) verrà usata se la chiave non esiste
+        move(QPoint(100, 100));
+    }
     m_sTheme = settings.value("Theme").toString();
     m_sPalette = settings.value("ThemePalette", "Light").toString();
     QString colorName = settings.value("PlayedTextColor", "#000080").toString();
@@ -198,7 +215,7 @@ void Settings::loadSettings()
         ui->labelPixSize->setEnabled (true);
         if (!bScaleOriginalSizeMax) ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
         else
-            ui->spinBoxScaleOriginalSizeMax->setEnabled (true);
+            ui->spinBoxScaleOriginalSizeMax->setEnabled (false);
         ui->checkBoxScaleOriginalSizeMax->setEnabled (false);
     }
     else
@@ -309,3 +326,18 @@ void Settings::on_checkBoxFade_stateChanged(int checkState)
         ui->spinBoxFade->setEnabled (true);
     }
 }
+
+void Settings::moveEvent(QMoveEvent *event)
+{
+    QWidget::moveEvent(event);
+    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    settings.setValue("SettingsPosition", pos());
+}
+
+//void Settings::centerWindow()
+//{
+//    QRect screenGeometry = QApplication::desktop()->screenGeometry();
+//    int x = (screenGeometry.width() - this->width()) / 2;
+//    int y = (screenGeometry.height() - this->height()) / 2;
+//    this->move(x, y);
+//}

@@ -234,7 +234,7 @@ void AudioFader::finishFade()
 //    long long actualDuration = durationTimer->elapsed();
 //    qDebug() << "Target Duration (ms):" << m_iDuration; // Stima della durata target
 //    qDebug() << "Actual Duration (ms):" << actualDuration;
-//    qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
+    qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
 }
 
 void AudioFader::stopFadeImmediately()
