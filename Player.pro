@@ -19,6 +19,7 @@ SOURCES += \
     escawarelineedit.cpp \
     infowidget.cpp \
     main.cpp \
+    playlistview.cpp \
     settings.cpp \
     singleinstance.cpp \
     systemvolumecontroller.cpp \
@@ -33,6 +34,7 @@ HEADERS += \
     clickableslider.h \
     escawarelineedit.h \
     infowidget.h \
+    playlistview.h \
     settings.h \
     singleinstance.h \
     systemvolumecontroller.h \

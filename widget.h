@@ -11,6 +11,7 @@
 #include "audiofader.h"
 #include <3rdparty/qhotkey/QHotkey/QHotkey>
 #include "infowidget.h"
+#include "playlistview.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -130,6 +131,7 @@ private:
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
     InfoWidget *m_infoWidget;
+    PlaylistView *m_playlistView;
 };
 
 #endif // WIDGET_H

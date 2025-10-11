@@ -180,8 +180,7 @@ void Settings::loadSettings()
     else
     {
         // Se la posizione non è valida, centra la finestra
-        // La posizione di default (100, 100) verrà usata se la chiave non esiste
-        move(QPoint(100, 100));
+        move(QPoint(pos_x, pos_y));
     }
     m_sTheme = settings.value("Theme").toString();
     m_sPalette = settings.value("ThemePalette", "Light").toString();

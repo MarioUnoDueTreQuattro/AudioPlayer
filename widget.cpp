@@ -79,7 +79,9 @@ Widget::Widget(QWidget *parent)
     m_bSystemVolumeSlider = false;
     m_systemVolumeController = new SystemVolumeController(this);
     m_player->setPlaylist(m_playlist);
-    loadSettings();  // Load volume/mute state before connecting slider
+//       m_playlistView = new PlaylistView(m_player, this);
+//     ui->verticalLayout->addWidget (m_playlistView);
+  loadSettings();  // Load volume/mute state before connecting slider
     // Apply loaded volume
     ui->volumeSlider->setValue(m_lastVolume);
     if (m_bVolumeFade) m_player->setVolume(0);
@@ -673,7 +675,8 @@ void Widget::addFileToPlaylist(const QString &filePath)
     // qDebug() << "After addMedia: mediaCount =" << m_playlist->mediaCount();
     //ui->listWidget->addItem(QFileInfo(absPath).fileName());
     ui->listWidget->addItem(fi.fileName());
-    m_playlistPaths.insert(absPath);
+                //m_playlistView->addTrack (fi.absoluteFilePath());
+m_playlistPaths.insert(absPath);
     //saveSettings();
 }
 
