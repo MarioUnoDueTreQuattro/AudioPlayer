@@ -2,12 +2,11 @@
 #include "ui_playlisttable.h"
 #include "playlistdurationdelegate.h"
 #include "tagloaderworker.h"
-#include "settingsmanager.h"
 #include <QFileInfo>
 #include <QVBoxLayout>
 #include <QDebug>
 #include <QHeaderView>
-#include <QSettings>
+//#include <QSettings>
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QFuture>
@@ -30,6 +29,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     ui->setupUi(this);
     setWindowFlags(Qt::Tool);
     setWindowTitle(qApp->applicationName() + " playlist");
+    settingsMgr = SettingsManager::instance();
     // --- Create playlist ---
     m_playlist = new QMediaPlaylist(this);
     m_player->setPlaylist(m_playlist);
@@ -79,10 +79,10 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     connect(m_playlist, SIGNAL(currentIndexChanged(int)),
         this, SLOT(onCurrentTrackChanged(int)));
     loadsettings();
-//    int iSortCol = SettingsManager::instance().value("PlaylistViewSortColumn", 0).toInt();
-//    Qt::SortOrder order = static_cast<Qt::SortOrder>(SettingsManager::instance().value("PlaylistViewSortColumnOrder", 0).toInt());
-//    m_sortModel->sort(iSortCol, order);
-//    onHeaderSortChanged (iSortCol,order);
+    // int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
+    // Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
+    // m_sortModel->sort(iSortCol, order);
+    // onHeaderSortChanged (iSortCol,order);
 }
 
 PlaylistTable::~PlaylistTable()
@@ -93,9 +93,9 @@ PlaylistTable::~PlaylistTable()
 void PlaylistTable::moveEvent(QMoveEvent *event)
 {
     QWidget::moveEvent(event);
-    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     //settings.setValue("PlaylistViewPosition", pos());
-    SettingsManager::instance().setValue("PlaylistViewPosition", pos());
+    settingsMgr->setValue("PlaylistViewPosition", pos());
 }
 
 void PlaylistTable::resizeEvent(QResizeEvent *event)
@@ -105,7 +105,7 @@ void PlaylistTable::resizeEvent(QResizeEvent *event)
     // qDebug() << "Widget resized from" << oldSize << "to" << newSize;
     //QSettings settings;
     // Save window geometry & state
-    SettingsManager::instance().setValue("PlaylistViewGeometry", saveGeometry());
+    settingsMgr->setValue("PlaylistViewGeometry", saveGeometry());
     // settings.setValue("windowState", saveState());
     // Call base implementation (optional if QWidget)
     QWidget::resizeEvent(event);
@@ -118,7 +118,7 @@ void PlaylistTable::loadsettings()
     int pos_x = (screenGeometry.width() - this->width()) / 2;
     int pos_y = (screenGeometry.height() - this->height()) / 2;
     //QSettings settings;
-    QPoint savedPos = SettingsManager::instance().value("PlaylistViewPosition", QPoint(pos_x, pos_y)).toPoint();
+    QPoint savedPos = settingsMgr->value("PlaylistViewPosition", QPoint(pos_x, pos_y)).toPoint();
     QScreen *screen = QGuiApplication::screenAt(savedPos);
     if (screen)
     {
@@ -129,7 +129,7 @@ void PlaylistTable::loadsettings()
         // Se la posizione non è valida, centra la finestra
         move(QPoint(pos_x, pos_y));
     }
-    QByteArray geometry = SettingsManager::instance().value("PlaylistViewGeometry").toByteArray();
+    QByteArray geometry = settingsMgr->value("PlaylistViewGeometry").toByteArray();
     if (!geometry.isEmpty())
         restoreGeometry(geometry);
 }
@@ -175,8 +175,8 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
     Q_UNUSED(logicalIndex);
     Q_UNUSED(order);
     //qDebug() << "onHeaderSortChanged logicalIndex" << logicalIndex;
-    SettingsManager::instance().setValue("PlaylistViewSortColumn", logicalIndex);
-    SettingsManager::instance().setValue("PlaylistViewSortColumnOrder", order);
+    settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
+    settingsMgr->setValue("PlaylistViewSortColumnOrder", order);
     // After sorting the model, rebuild the QMediaPlaylist order.
     syncPlaylistOrder();
     qDebug() << "Playlist sorted and reordered to match table view.";
@@ -197,7 +197,7 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 void PlaylistTable::on_pushButton_clicked()
 {
     ui->pushButton->setEnabled(false);
-    m_view->setSortingEnabled (false);
+    m_view->setSortingEnabled(false);
     QAbstractItemModel* model = m_view->model();
     if (!model)
         return;
@@ -232,8 +232,7 @@ void PlaylistTable::onTagLoadingFinished()
 {
     ui->pushButton->setEnabled(true);
     qDebug() << "All tags loaded.";
-        m_view->setSortingEnabled (true);
-
+    m_view->setSortingEnabled(true);
 }
 
 void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)

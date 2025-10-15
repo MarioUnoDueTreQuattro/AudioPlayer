@@ -9,11 +9,12 @@
  * @brief The SettingsManager class implements a thread-safe Singleton
  * pattern to manage application settings using QSettings.
  */
-class SettingsManager
+class SettingsManager : public QObject
 {
-public:
-    static SettingsManager &instance();
+    Q_OBJECT
 
+public:
+    static SettingsManager *instance();
     // --- Configuration Access Methods ---
     QVariant value(const QString& key, const QVariant& defaultValue = QVariant()) const;
     void setValue(const QString& key, const QVariant& value);
@@ -33,15 +34,20 @@ public:
      * Reverts settings access to the previous scope.
      */
     void endGroup();
-
+    QString settingsFilePath() const;
 private:
     QSettings m_settings;
-    SettingsManager();
+
+    /**
+     * @brief Private constructor to prevent direct instantiation.
+     * @param parent The QObject parent (typically QCoreApplication::instance() for the Singleton).
+     */
+    SettingsManager(QObject* parent = nullptr);
+
+    // Deleted copy constructor and assignment operator to enforce Singleton
     SettingsManager(const SettingsManager &) = delete;
     SettingsManager &operator=(const SettingsManager &) = delete;
     SettingsManager(SettingsManager &&) = delete;
     SettingsManager &operator=(SettingsManager &&) = delete;
-    QString settingsFilePath() const;
 };
-
 #endif // SETTINGSMANAGER_H

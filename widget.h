@@ -7,11 +7,11 @@
 #include <QMediaPlaylist>
 #include <QListWidgetItem>
 #include <QStack>
+#include "settingsmanager.h"
 #include "systemvolumecontroller.h"
 #include "audiofader.h"
 //#include <3rdparty/qhotkey/QHotkey/QHotkey>
 #include "infowidget.h"
-#include "playlistview.h"
 #include "playlisttable.h"
 
 QT_BEGIN_NAMESPACE
@@ -96,7 +96,8 @@ private:
     void copyCurrentFullPath();
     void setKeyboardShortcuts();
     void setSignalsConnections();
-    AudioFader *musicFader;
+         SettingsManager *settingsMgr;
+AudioFader *musicFader;
     SystemVolumeController *m_systemVolumeController;
    bool m_bTablePlaylist;
     bool m_bVolumeFade;

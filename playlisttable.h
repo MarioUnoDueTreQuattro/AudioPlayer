@@ -8,6 +8,7 @@
 #include <QMediaPlayer>
 #include "audiotag.h"
 #include "playlistsortmodel.h"
+#include "settingsmanager.h"
 
 namespace Ui
 {
@@ -42,7 +43,8 @@ private slots:
     void on_pushButton_2_clicked();
 
 private:
-    Ui::PlaylistTable *ui;
+        SettingsManager *settingsMgr;
+ Ui::PlaylistTable *ui;
     void syncPlaylistOrder();
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;

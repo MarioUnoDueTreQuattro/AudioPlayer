@@ -70,7 +70,7 @@ QString AudioTag::formatTime(int totalSeconds)
     return minutesStr + ":" + secondsStr;
 }
 
-void AudioTag::setFile(const QString &localFile)
+void AudioTag::setFile(const QString &localFile, bool bExtractCover)
 {
     m_TagInfo.reset();
     QString nativePath = QDir::toNativeSeparators(localFile);
@@ -299,7 +299,7 @@ void AudioTag::setFile(const QString &localFile)
                 // specialmente per MP3)
                 // delete mpegFile;
                 bFomatFound = true;
-                m_pix = extractMP3Cover(mpegFile);
+                if (bExtractCover) m_pix = extractMP3Cover(mpegFile);
             }
             if (!bFomatFound)
             {
@@ -334,7 +334,7 @@ void AudioTag::setFile(const QString &localFile)
                             break;
                     }
                     bFomatFound = true;
-                    m_pix = extractMP4Cover(mp4File);
+                    if (bExtractCover) m_pix = extractMP4Cover(mp4File);
                 }
             }
             if (!bFomatFound)
@@ -352,7 +352,7 @@ void AudioTag::setFile(const QString &localFile)
                         // info.append ("Format: FLAC");
                         fields.append(Field{"Format: ", "FLAC"});
                         bFomatFound = true;
-                        m_pix = extractFLACCover(flacFile);
+                        if (bExtractCover) m_pix = extractFLACCover(flacFile);
                     }
                 }
             }

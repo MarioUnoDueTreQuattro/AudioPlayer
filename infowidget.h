@@ -17,12 +17,15 @@
 #include <wavproperties.h>
 //#include <mp4properties.h>
 //#include <tpropertymap.h>
+#include "settingsmanager.h"
 
-namespace Ui {
+namespace Ui
+{
 class InfoWidget;
 }
 
-class InfoWidget : public QWidget {
+class InfoWidget : public QWidget
+{
     Q_OBJECT
 
 public:
@@ -47,6 +50,7 @@ private slots:
     void pixClicked();
 
 private:
+    SettingsManager *settingsMgr;
     Ui::InfoWidget *ui;
     void loadSettings();
     void saveSettings();

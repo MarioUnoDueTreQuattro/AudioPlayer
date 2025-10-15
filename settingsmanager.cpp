@@ -3,16 +3,24 @@
 
 // --- Private Constructor and Singleton Access (Unchanged) ---
 
-SettingsManager::SettingsManager()
-// Initialize QSettings using the organizationName and applicationName from qApp.
-    : m_settings(QCoreApplication::organizationName(), QCoreApplication::applicationName())
+SettingsManager::SettingsManager(QObject* parent)
+    : QObject(parent),
+      m_settings(QCoreApplication::organizationName(), QCoreApplication::applicationName())
 {
+    // The parent is passed here only on the initial construction.
 }
 
-SettingsManager &SettingsManager::instance()
+// --- Singleton Access Method Implementation (Updated to return pointer) ---
+
+SettingsManager *SettingsManager::instance()
 {
-    static SettingsManager s_instance;
-    return s_instance;
+    /**
+     * @brief Meyer's Singleton: Thread-safe initialization.
+     * We pass the QCoreApplication instance as the parent, ensuring it's cleaned up
+     * when the application shuts down, and placing it logically in the object tree.
+     */
+    static SettingsManager s_instance(QCoreApplication::instance());
+    return &s_instance; // Return the address
 }
 
 // --- Configuration Access Methods Implementation (Unchanged) ---

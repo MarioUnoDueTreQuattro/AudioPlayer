@@ -8,7 +8,7 @@
 #include <QDropEvent>
 #include <QUrl>
 #include <QDebug>
-#include <QSettings>
+//#include <QSettings>
 #include <QApplication>
 #include <QTime>
 #include <QMessageBox>
@@ -56,6 +56,7 @@ Widget::Widget(QWidget *parent)
       m_bTablePlaylist(false)
 {
     ui->setupUi(this);
+    settingsMgr = SettingsManager::instance();
     ui->labelFilter->setVisible(false);
     ui->lineEditFilter->setVisible(false);
     ui->pushButtonResetFilter->setVisible(false);
@@ -83,7 +84,7 @@ Widget::Widget(QWidget *parent)
     m_player->setPlaylist(m_playlist);
     // ui->verticalLayout->addWidget (m_playlistView);
     // QSettings settings(QApplication::organizationName(), QApplication::applicationName());
-    m_bTablePlaylist = SettingsManager::instance().value("EnhancedPlaylist", true).toBool();
+    m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     if (m_bTablePlaylist)
     {
         m_playlistView = new PlaylistTable(m_player, nullptr);
@@ -324,12 +325,12 @@ void Widget::closeEvent(QCloseEvent *event)
     savePlaylist();
     //qDebug() << "closeEvent";
     //this->hide ();
-    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     // Save window geometry & state
-    settings.setValue("windowGeometry", saveGeometry());
+    settingsMgr->setValue("windowGeometry", saveGeometry());
     // settings.setValue("windowState", saveState());
     // Save volume & mute
-    settings.setValue("volume", m_lastVolume);
+    settingsMgr->setValue("volume", m_lastVolume);
     //settings.setValue("muted", m_isMuted);
     // Save playlist files
     // QStringList playlistFiles;
@@ -341,9 +342,9 @@ void Widget::closeEvent(QCloseEvent *event)
     // }
     // settings.setValue("playlistFiles", playlistFiles);
     // Save last track & position
-    settings.setValue("lastTrackIndex", m_playlist->currentIndex());
-    settings.setValue("lastTrackPosition", m_player->position());
-    settings.sync();
+    settingsMgr->setValue("lastTrackIndex", m_playlist->currentIndex());
+    settingsMgr->setValue("lastTrackPosition", m_player->position());
+    settingsMgr->sync();
     // disconnect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
     // disconnect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
     // disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
@@ -433,9 +434,9 @@ void Widget::resizeEvent(QResizeEvent *event)
     // QSize newSize = event->size();
     // QSize oldSize = event->oldSize();
     // qDebug() << "Widget resized from" << oldSize << "to" << newSize;
-    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     // Save window geometry & state
-    settings.setValue("windowGeometry", saveGeometry());
+    settingsMgr->setValue("windowGeometry", saveGeometry());
     // settings.setValue("windowState", saveState());
     // Call base implementation (optional if QWidget)
     QWidget::resizeEvent(event);
@@ -1160,28 +1161,28 @@ void Widget::clearPlaylist(bool silent)
 
 void Widget::loadSettings()
 {
-    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
-    m_bTablePlaylist = settings.value("EnhancedPlaylist", true).toBool();
-    m_bVolumeFade = settings.value("VolumeFade", true).toBool();
-    m_iVolumeFadeTime = settings.value("VolumeFadeTime", 1000).toInt();;
-    m_sTheme = settings.value("Theme").toString();
-    m_sPalette = settings.value("ThemePalette", "Light").toString();
+    //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
+    m_bVolumeFade = settingsMgr->value("VolumeFade", true).toBool();
+    m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();;
+    m_sTheme = settingsMgr->value("Theme").toString();
+    m_sPalette = settingsMgr->value("ThemePalette", "Light").toString();
     setTheme();
-    m_bAutoplay = settings.value("AutoPlay", true).toBool();
-    m_bShowInfo = settings.value("ShowInfo", true).toBool();
-    QString colorName = settings.value("PlayedTextColor", "#000080").toString();
+    m_bAutoplay = settingsMgr->value("AutoPlay", true).toBool();
+    m_bShowInfo = settingsMgr->value("ShowInfo", true).toBool();
+    QString colorName = settingsMgr->value("PlayedTextColor", "#000080").toString();
     m_playedTextColor = QColor(colorName);
     // --- Volume ---
-    m_lastVolume = settings.value("volume", 50).toInt();
+    m_lastVolume = settingsMgr->value("volume", 50).toInt();
     m_isMuted = false; // force unmuted
     ui->volumeSlider->setValue(m_lastVolume);
     ui->volumeLabel->setText(QString::number(m_lastVolume) + "%");
     //m_player->setVolume(m_isMuted ? 0 : m_lastVolume);
     // --- Last track & position ---
-    m_lastTrackIndex = settings.value("lastTrackIndex", 0).toInt();
-    m_lastTrackPosition = settings.value("lastTrackPosition", 0).toLongLong();
+    m_lastTrackIndex = settingsMgr->value("lastTrackIndex", 0).toInt();
+    m_lastTrackPosition = settingsMgr->value("lastTrackPosition", 0).toLongLong();
     // --- Restore playlist ---
-    QString lastPlaylistPath = settings.value("lastPlaylistPath").toString();
+    QString lastPlaylistPath = settingsMgr->value("lastPlaylistPath").toString();
     QString filename = QCoreApplication::applicationDirPath();
     filename.append("/");
     filename.append("current_playlist.m3u");
@@ -1229,11 +1230,11 @@ void Widget::loadSettings()
     //        // qDebug() << "Tempo impiegato dalla funzione:" << tempoTrascorso_s << "secondi";
     // }
     // --- Playback mode ---
-    int modeValue = settings.value("playbackMode", (int)QMediaPlaylist::Sequential).toInt();
+    int modeValue = settingsMgr->value("playbackMode", (int)QMediaPlaylist::Sequential).toInt();
     m_playlist->setPlaybackMode(static_cast<QMediaPlaylist::PlaybackMode>(modeValue));
     updateModeButtonIcon();
     // --- Window geometry ---
-    QByteArray geometry = settings.value("windowGeometry").toByteArray();
+    QByteArray geometry = settingsMgr->value("windowGeometry").toByteArray();
     if (!geometry.isEmpty())
         restoreGeometry(geometry);
     // Ensure window visible
@@ -1270,8 +1271,7 @@ void Widget::loadSettings()
 
 void Widget::saveSettings()
 {
-    QSettings settings(QApplication::organizationName(),
-        QApplication::applicationName());
+    //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     // --- Volume ---
     //settings.setValue("volume", m_lastVolume);
     //settings.setValue("muted", m_isMuted); // optional
@@ -1285,15 +1285,15 @@ void Widget::saveSettings()
     // }
     // settings.setValue("playlistFiles", playlistFiles);
     // --- Last playlist path (optional, for user-loaded playlists) ---
-    settings.setValue("lastPlaylistPath", m_lastPlaylistPath);
+    settingsMgr->setValue("lastPlaylistPath", m_lastPlaylistPath);
     // --- Last track & position ---
-    settings.setValue("lastTrackIndex", m_playlist->currentIndex());
-    settings.setValue("lastTrackPosition", m_player->position());
+    settingsMgr->setValue("lastTrackIndex", m_playlist->currentIndex());
+    settingsMgr->setValue("lastTrackPosition", m_player->position());
     // --- Playback mode ---
     // settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
     // --- Window geometry ---
     //settings.setValue("windowGeometry", saveGeometry());
-    settings.sync();
+    settingsMgr->sync();
     //savePlaylist ();
 }
 
@@ -1310,8 +1310,8 @@ void Widget::handleVolumeChanged(int value)
             if (m_bVolumeFade) musicFader->fadeToTarget(ui->volumeSlider->value(), m_iVolumeFadeTime);
             else m_player->setVolume(value);
         }
-        QSettings settings;
-        settings.setValue("volume", m_lastVolume);
+        //QSettings settings;
+        settingsMgr->setValue("volume", m_lastVolume);
     }
     else
     {
@@ -1551,8 +1551,8 @@ void Widget::on_configureButton_clicked()
 void Widget::settingsDialogAccepted()
 {
     //qDebug() << __PRETTY_FUNCTION__ ;
-    QSettings settings;
-    QString colorName = settings.value("PlayedTextColor", "#000080").toString();
+    //QSettings settings;
+    QString colorName = settingsMgr->value("PlayedTextColor", "#000080").toString();
     m_playedTextColor = QColor(colorName);
     int iTotalItems = ui->listWidget->count();
     int iCount = m_playedList.count();
@@ -1571,13 +1571,13 @@ void Widget::settingsDialogAccepted()
             }
         }
     }
-    m_bAutoplay = settings.value("AutoPlay", true).toBool();
-    m_bShowInfo = settings.value("ShowInfo", true).toBool();
-    QString pixPosition = settings.value("PictuePositionInInfo", "Right").toString();
-    bool bScalePixOriginalSize = settings.value("PictueScaleOriginalSize", true).toBool();
-    int iPixSize = settings.value("PictueScaleSize", 300).toInt();
-    int iScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMax", 600).toInt();
-    bool bScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMaxEnabled", true).toBool();
+    m_bAutoplay = settingsMgr->value("AutoPlay", true).toBool();
+    m_bShowInfo = settingsMgr->value("ShowInfo", true).toBool();
+    QString pixPosition = settingsMgr->value("PictuePositionInInfo", "Right").toString();
+    bool bScalePixOriginalSize = settingsMgr->value("PictueScaleOriginalSize", true).toBool();
+    int iPixSize = settingsMgr->value("PictueScaleSize", 300).toInt();
+    int iScalePixOriginalSizeMax = settingsMgr->value("PictueScaleOriginalSizeMax", 600).toInt();
+    bool bScalePixOriginalSizeMax = settingsMgr->value("PictueScaleOriginalSizeMaxEnabled", true).toBool();
     if (m_infoWidget != nullptr)
     {
         m_infoWidget->setScalePixOriginalSizeMaxEnabled(bScalePixOriginalSizeMax);
@@ -1610,8 +1610,8 @@ void Widget::settingsDialogAccepted()
         }
     }
     //m_infoWidget->setStyle (this->style ());
-    m_bVolumeFade = settings.value("VolumeFade", true).toBool();
-    m_iVolumeFadeTime = settings.value("VolumeFadeTime", 1000).toInt();;
+    m_bVolumeFade = settingsMgr->value("VolumeFade", true).toBool();
+    m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();;
 }
 
 void Widget::handleModeButton()
@@ -1639,8 +1639,8 @@ void Widget::handleModeButton()
             break;
     }
     updateModeButtonIcon();
-    QSettings settings;
-    settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
+    //QSettings settings;
+    settingsMgr->setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
     //saveSettings();  // Save current mode
 }
 
@@ -1682,8 +1682,8 @@ void Widget::handleLoadPlaylist()
 {
     // qDebug() << __FUNCTION__;
     QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    QSettings settings;
-    m_lastDialogPlaylistPath = settings.value("lastDialogPlaylistPath", documentsPath).toString();
+    //QSettings settings;
+    m_lastDialogPlaylistPath = settingsMgr->value("lastDialogPlaylistPath", documentsPath).toString();
     // QFileInfo fileInfo(m_lastDialogPlaylistPath);
     // QString path = fileInfo.absolutePath(); // or .path()
     QString fileName = QFileDialog::getOpenFileName(
@@ -1694,7 +1694,7 @@ void Widget::handleLoadPlaylist()
     on_pushButtonResetFilter_clicked();
     m_lastPlaylistPath = fileName;
     m_lastDialogPlaylistPath = fileName;
-    settings.setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
+    settingsMgr->setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
     QApplication::setOverrideCursor(Qt::WaitCursor);
     loadPlaylistFile(fileName, false, true);
     QApplication::restoreOverrideCursor();
@@ -1714,8 +1714,8 @@ void Widget::handleLoadPlaylist()
 void Widget::handleSavePlaylist()
 {
     QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    QSettings settings;
-    m_lastDialogPlaylistPath = settings.value("lastDialogPlaylistPath", documentsPath).toString();
+    //QSettings settings;
+    m_lastDialogPlaylistPath = settingsMgr->value("lastDialogPlaylistPath", documentsPath).toString();
     QString fileName = QFileDialog::getSaveFileName(
             this, tr("Save Playlist"), m_lastDialogPlaylistPath, tr("M3U Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
@@ -1811,8 +1811,8 @@ void Widget::savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath)
     {
         m_lastPlaylistPath = path;
         m_lastDialogPlaylistPath = path;
-        QSettings settings;
-        settings.setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
+        //QSettings settings;
+        settingsMgr->setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
     }
     saveSettings(); // persist lastPlaylistPath and playlist if you want immediacy
 }
@@ -1982,8 +1982,8 @@ void Widget::showModeButtonContextMenu(const QPoint &pos)
         m_playlist->setPlaybackMode(QMediaPlaylist::Random);  // Shuffle
     }
     updateModeButtonIcon();
-    QSettings settings;
-    settings.setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
+    //QSettings settings;
+    settingsMgr->setValue("playbackMode", static_cast<int>(m_playlist->playbackMode()));
 }
 
 void Widget::showVolumeSliderContextMenu(const QPoint &pos)

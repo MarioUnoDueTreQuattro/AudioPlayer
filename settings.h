@@ -1,6 +1,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include "settingsmanager.h"
 #include <QDialog>
 #include <QDialogButtonBox>
 
@@ -28,7 +29,8 @@ private slots:
 protected:
     void moveEvent(QMoveEvent *event) override;
 private:
-    Ui::Settings *ui;
+     SettingsManager *settingsMgr;
+   Ui::Settings *ui;
     QString m_sTheme;
     QString m_sPalette;
     QColor m_playedTextColor;

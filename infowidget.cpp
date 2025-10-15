@@ -1,7 +1,6 @@
 #include "infowidget.h"
 #include "clickablelabel.h"
 #include "ui_infowidget.h"
-#include "settingsmanager.h"
 #include <QAbstractTextDocumentLayout>
 #include <QDebug>
 #include <QDir>
@@ -22,6 +21,7 @@ InfoWidget::InfoWidget(QWidget *parent)
     ui->setupUi(this);
     setWindowIcon(QIcon(":/img/img/icons8-play-32.png"));
     setWindowFlags(Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
+    settingsMgr = SettingsManager::instance();
     loadSettings();
     QPalette palette = ui->textEditInfo->palette();
     palette.setColor(QPalette::Base, palette.color(QPalette::Window));
@@ -838,9 +838,9 @@ void InfoWidget::saveSettings()
     // per creare un percorso di salvataggio univoco.
     //QSettings settings;
     // Salva la posizione corrente del widget (coordinate x, y)
-    SettingsManager::instance().setValue("InfoWidgetPosition", pos());
+    settingsMgr->setValue("InfoWidgetPosition", pos());
     // Potresti anche salvare la dimensione (larghezza, altezza)
-    SettingsManager::instance().setValue("InfoWidgetSsize", size());
+    settingsMgr->setValue("InfoWidgetSsize", size());
     // In Qt, le impostazioni vengono salvate automaticamente
 }
 
@@ -848,9 +848,9 @@ void InfoWidget::loadSettings()
 {
     // QSettings settings;
     // 1. Carica la posizione
-    QPoint savedPos = SettingsManager::instance().value("InfoWidgetPosition", QPoint(100, 100)).toPoint();
+    QPoint savedPos = settingsMgr->value("InfoWidgetPosition", QPoint(100, 100)).toPoint();
     // 2. Carica la dimensione
-    QSize savedSize = SettingsManager::instance().value("InfoWidgetSsize", QSize(300, 100)).toSize();
+    QSize savedSize = settingsMgr->value("InfoWidgetSsize", QSize(300, 100)).toSize();
     // 3. Applica le impostazioni
     resize(savedSize);
     // Controlla se la posizione salvata è visibile su qualsiasi schermo
@@ -866,11 +866,11 @@ void InfoWidget::loadSettings()
         // La posizione di default (100, 100) verrà usata se la chiave non esiste
         move(QPoint(100, 100));
     }
-    m_sPictuePosition = SettingsManager::instance().value("PictuePositionInInfo", "Right").toString();
-    m_bScalePixOriginalSize = SettingsManager::instance().value("PictueScaleOriginalSize", true).toBool();
-    m_iPixSize = SettingsManager::instance().value("PictueScaleSize", 300).toInt();
-    m_iScalePixOriginalSizeMax = SettingsManager::instance().value("PictueScaleOriginalSizeMax", 600).toInt();
-    m_bScalePixOriginalSizeMax = SettingsManager::instance().value("PictueScaleOriginalSizeMaxEnabled", true).toBool();
+    m_sPictuePosition = settingsMgr->value("PictuePositionInInfo", "Right").toString();
+    m_bScalePixOriginalSize = settingsMgr->value("PictueScaleOriginalSize", true).toBool();
+    m_iPixSize = settingsMgr->value("PictueScaleSize", 300).toInt();
+    m_iScalePixOriginalSizeMax = settingsMgr->value("PictueScaleOriginalSizeMax", 600).toInt();
+    m_bScalePixOriginalSizeMax = settingsMgr->value("PictueScaleOriginalSizeMaxEnabled", true).toBool();
 }
 
 QString InfoWidget::formatTime(int totalSeconds)
