@@ -19,7 +19,6 @@ SettingsManager *SettingsManager::instance()
      * We pass the QCoreApplication instance as the parent, ensuring it's cleaned up
      * when the application shuts down, and placing it logically in the object tree.
      */
-//    static SettingsManager s_instance(QCoreApplication::instance());
     static SettingsManager s_instance(nullptr);
     return &s_instance; // Return the address
 }
