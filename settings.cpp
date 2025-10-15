@@ -162,6 +162,7 @@ void Settings::saveSettings()
     settings.setValue("VolumeFade", ui->checkBoxFade->isChecked ());
     settings.setValue("VolumeFadeTime", ui->spinBoxFade->value());
     settings.setValue("SettingsPosition", pos());
+    settings.setValue("EnhancedPlaylist", ui->checkBoxEnhancedPlaylist->isChecked ());
     settings.sync();
 }
 
@@ -238,6 +239,8 @@ void Settings::loadSettings()
         ui->spinBoxFade->setEnabled (true);
     int iFadeTime = settings.value("VolumeFadeTime", 1000).toInt ();
     ui->spinBoxFade->setValue (iFadeTime);
+    bool bEnhancedPlaylist = settings.value("EnhancedPlaylist", true).toBool ();
+    ui->checkBoxEnhancedPlaylist->setChecked (bEnhancedPlaylist);
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()
@@ -335,8 +338,8 @@ void Settings::moveEvent(QMoveEvent *event)
 
 //void Settings::centerWindow()
 //{
-//    QRect screenGeometry = QApplication::desktop()->screenGeometry();
-//    int x = (screenGeometry.width() - this->width()) / 2;
-//    int y = (screenGeometry.height() - this->height()) / 2;
-//    this->move(x, y);
+// QRect screenGeometry = QApplication::desktop()->screenGeometry();
+// int x = (screenGeometry.width() - this->width()) / 2;
+// int y = (screenGeometry.height() - this->height()) / 2;
+// this->move(x, y);
 //}

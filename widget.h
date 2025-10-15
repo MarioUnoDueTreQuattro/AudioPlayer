@@ -9,9 +9,10 @@
 #include <QStack>
 #include "systemvolumecontroller.h"
 #include "audiofader.h"
-#include <3rdparty/qhotkey/QHotkey/QHotkey>
+//#include <3rdparty/qhotkey/QHotkey/QHotkey>
 #include "infowidget.h"
 #include "playlistview.h"
+#include "playlisttable.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -28,7 +29,6 @@ public:
 public slots:
     void openFiles(const QStringList &filePaths);
 protected:
-    // Enable drag & drop
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -83,11 +83,12 @@ private slots:
     void showVolumeSliderContextMenu(const QPoint &pos);
     void handleRemoveSelected();
     void on_pushButtonResetFilter_clicked();
+    void playlistUpdated(QMediaPlaylist *playlist);
 private:
     // bool m_bPlaylistFinished;
     bool m_bIsInShuffleMode;
     bool m_bUserRequestedPlayback;
-    QHotkey *m_hotkey;
+//    QHotkey *m_hotkey;
     int findTrackIndex(const QString &filePath);
     void forgetPlayed();
     void handlePlay();
@@ -97,6 +98,7 @@ private:
     void setSignalsConnections();
     AudioFader *musicFader;
     SystemVolumeController *m_systemVolumeController;
+   bool m_bTablePlaylist;
     bool m_bVolumeFade;
     int m_iVolumeFadeTime;
     bool m_bAutoplay;
@@ -131,7 +133,8 @@ private:
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
     InfoWidget *m_infoWidget;
-    PlaylistView *m_playlistView;
+//    PlaylistView *m_playlistView;
+    PlaylistTable *m_playlistView;
 };
 
 #endif // WIDGET_H

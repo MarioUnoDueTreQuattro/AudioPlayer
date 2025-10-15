@@ -10,38 +10,49 @@ TEMPLATE = app
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    3rdparty/qhotkey/QHotkey/qhotkey.cpp \
-    3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
-    audiocover.cpp \
+#    3rdparty/qhotkey/QHotkey/qhotkey.cpp \
+#    3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
     audiofader.cpp \
+    audiotag.cpp \
     clickablelabel.cpp \
     clickableslider.cpp \
     escawarelineedit.cpp \
     infowidget.cpp \
     main.cpp \
+    playlistdurationdelegate.cpp \
+    playlistsortmodel.cpp \
+    playlisttable.cpp \
     playlistview.cpp \
     settings.cpp \
+    settingsmanager.cpp \
     singleinstance.cpp \
     systemvolumecontroller.cpp \
+    tagloaderworker.cpp \
     widget.cpp
 
 HEADERS += \
-    3rdparty/qhotkey/QHotkey/qhotkey.h \
-    3rdparty/qhotkey/QHotkey/qhotkey_p.h \
-    audiocover.h \
+#    3rdparty/qhotkey/QHotkey/qhotkey.h \
+#    3rdparty/qhotkey/QHotkey/qhotkey_p.h \
     audiofader.h \
+    audiotag.h \
     clickablelabel.h \
     clickableslider.h \
     escawarelineedit.h \
     infowidget.h \
+    playlistdurationdelegate.h \
+    playlistsortmodel.h \
+    playlisttable.h \
     playlistview.h \
     settings.h \
+    settingsmanager.h \
     singleinstance.h \
     systemvolumecontroller.h \
+    tagloaderworker.h \
     widget.h
 
 FORMS += \
     infowidget.ui \
+    playlisttable.ui \
     settings.ui \
     widget.ui
 
@@ -87,3 +98,4 @@ DEFINES += TAGLIB_DLL
 #    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_win.cpp
     VERSION = 1.0.0.3
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
+DEFINES += QT_MESSAGELOGCONTEXT

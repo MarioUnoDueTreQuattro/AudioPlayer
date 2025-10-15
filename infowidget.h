@@ -3,28 +3,26 @@
 
 #include <QWidget>
 #include <fileref.h>
-#include <tag.h>
+#include <flacfile.h>
+#include <mp4file.h>
 #include <mpegfile.h>
 #include <mpegproperties.h>
-#include <mp4file.h>
-//#include <mp4properties.h>
-//#include <tpropertymap.h>
-#include <flacfile.h>
-#include <opusfile.h>
 #include <oggfile.h>
 #include <oggflacfile.h>
-#include <vorbisfile.h>
+#include <opusfile.h>
 #include <speexfile.h>
+#include <tag.h>
+#include <vorbisfile.h>
 #include <wavfile.h>
 #include <wavproperties.h>
+//#include <mp4properties.h>
+//#include <tpropertymap.h>
 
-namespace Ui
-{
+namespace Ui {
 class InfoWidget;
 }
 
-class InfoWidget : public QWidget
-{
+class InfoWidget : public QWidget {
     Q_OBJECT
 
 public:
@@ -47,6 +45,7 @@ private slots:
     void updateSize(const QSizeF &newSize);
     QString formatFileSize(qint64 bytes);
     void pixClicked();
+
 private:
     Ui::InfoWidget *ui;
     void loadSettings();
@@ -65,6 +64,7 @@ private:
     QPixmap extractMP3Cover(TagLib::MPEG::File *mp3File);
     QPixmap extractMP4Cover(TagLib::MP4::File *file);
     QPixmap extractFLACCover(TagLib::FLAC::File *file);
+
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void moveEvent(QMoveEvent *event) override;

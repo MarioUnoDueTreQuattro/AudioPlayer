@@ -1,5 +1,5 @@
-#ifndef PLAYLISTVIEW_H
-#define PLAYLISTVIEW_H
+#ifndef PLAYLISTTABLE_H
+#define PLAYLISTTABLE_H
 
 #include <QWidget>
 #include <QTableView>
@@ -9,14 +9,20 @@
 #include "audiotag.h"
 #include "playlistsortmodel.h"
 
-class PlaylistView : public QWidget
+namespace Ui
+{
+class PlaylistTable;
+}
+
+class PlaylistTable : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PlaylistView(QMediaPlayer *player, QWidget *parent = 0);
-    ~PlaylistView();
+    explicit PlaylistTable(QMediaPlayer *player, QWidget *parent = 0);
+    ~PlaylistTable();
     void addTrack(const QString &filePath);
+    void addTrackExt(const QString &filePath);
     void clear();
     QMediaPlaylist *mediaPlaylist() const { return m_playlist; }
 signals:
@@ -29,7 +35,14 @@ public slots:
 protected:
     void moveEvent(QMoveEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+private slots:
+    void on_pushButton_clicked();
+    void onTagLoadingFinished();
+    void onTagLoaded(const QString &filePath, const AudioTagInfo &info);
+    void on_pushButton_2_clicked();
+
 private:
+    Ui::PlaylistTable *ui;
     void syncPlaylistOrder();
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;
@@ -38,6 +51,9 @@ private:
     PlaylistSortModel *m_sortModel;
     QTableView *m_view;
     void loadsettings();
+    QHash<QString, int> m_FilePathToRow;
+    int mapSourceRowToProxy(QAbstractItemModel *sourceModel, QSortFilterProxyModel *proxyModel, int sourceRow);
+    int mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int proxyRow);
 };
 
-#endif // PLAYLISTVIEW_H
+#endif // PLAYLISTTABLE_H
