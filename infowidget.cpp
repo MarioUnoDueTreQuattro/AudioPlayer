@@ -1,13 +1,14 @@
 #include "infowidget.h"
 #include "clickablelabel.h"
 #include "ui_infowidget.h"
+#include "settingsmanager.h"
 #include <QAbstractTextDocumentLayout>
 #include <QDebug>
 #include <QDir>
 #include <QIcon>
 #include <QMouseEvent>
 #include <QPalette>
-#include <QSettings>
+// #include <QSettings>
 #include <QSize>
 #include <QTextDocument>
 #include <QTextEdit>
@@ -19,12 +20,12 @@ InfoWidget::InfoWidget(QWidget *parent)
     , m_bPixIsBig(false)
 {
     ui->setupUi(this);
-    setWindowIcon (QIcon(":/img/img/icons8-play-32.png"));
+    setWindowIcon(QIcon(":/img/img/icons8-play-32.png"));
     setWindowFlags(Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
     loadSettings();
     QPalette palette = ui->textEditInfo->palette();
     palette.setColor(QPalette::Base, palette.color(QPalette::Window));
-    ui->textEditInfo->setPalette (palette);
+    ui->textEditInfo->setPalette(palette);
     // Imposta la forma del frame a nessuna forma
     ui->textEditInfo->setFrameShape(QFrame::NoFrame);
     // Imposta l'ombra del frame a nessuna ombra
@@ -36,16 +37,16 @@ InfoWidget::InfoWidget(QWidget *parent)
     // 2. Disattiva le barre di scorrimento su entrambi gli assi
     ui->textEditInfo-> setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->textEditInfo-> setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    QTextDocument *doc = ui->textEditInfo->document ();
-    QAbstractTextDocumentLayout *docLayout = doc->documentLayout ();
-    connect( docLayout, &QAbstractTextDocumentLayout::documentSizeChanged, this, updateSize);
-    connect( ui->labelPix, &ClickableLabel::clicked, this, pixClicked);
-     ui->labelPix->setMouseTracking (true);
+    QTextDocument *doc = ui->textEditInfo->document();
+    QAbstractTextDocumentLayout *docLayout = doc->documentLayout();
+    connect(docLayout, &QAbstractTextDocumentLayout::documentSizeChanged, this, updateSize);
+    connect(ui->labelPix, &ClickableLabel::clicked, this, pixClicked);
+    ui->labelPix->setMouseTracking(true);
 }
 
 InfoWidget::~InfoWidget()
 {
-    qDebug()<<__PRETTY_FUNCTION__;
+    qDebug() << __PRETTY_FUNCTION__;
     delete ui;
 }
 
@@ -54,16 +55,16 @@ void InfoWidget::updateSize(const QSizeF &newSize)
     QSize originalSize = m_pix.size();
     int originalWidth = originalSize.width();
     int originalHeight = originalSize.height();
-//    m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
-//    //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
-//    ui->labelPix->setManagedTooltip ("Original size: " + m_sPixSize + " pixels");
+    // m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
+    //    //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
+    // ui->labelPix->setManagedTooltip ("Original size: " + m_sPixSize + " pixels");
     //ui->labelPix->setToolTip (tooltipText);
     if (m_bScalePixOriginalSizeMax)
     {
         if (originalWidth > m_iScalePixOriginalSizeMax) originalWidth = m_iScalePixOriginalSizeMax;
         if (originalHeight > m_iScalePixOriginalSizeMax) originalHeight = m_iScalePixOriginalSizeMax;
     }
-    if (m_bPixIsBig && !m_pix.isNull ())
+    if (m_bPixIsBig && !m_pix.isNull())
     {
         redrawBigPix();
         return;
@@ -77,11 +78,11 @@ void InfoWidget::updateSize(const QSizeF &newSize)
     int totalHeight = contentHeight + 2 * ui->textEditInfo->frameWidth();;
     int totalWidth = contentWidth;// + 2 * ui->textEditInfo->frameWidth();
     // Picture position
-    if (m_pix.isNull () == true)
+    if (m_pix.isNull() == true)
     {
         ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-        ui->textEditInfo->move (0, 0);
-        ui->labelPix->hide ();
+        ui->textEditInfo->move(0, 0);
+        ui->labelPix->hide();
         //ui->labelPix->setFixedSize (0,0);
         setFixedSize(totalWidth, totalHeight);
     }
@@ -90,36 +91,36 @@ void InfoWidget::updateSize(const QSizeF &newSize)
         if (m_sPictuePosition == "Below")
         {
             ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-            ui->textEditInfo->move (0, 0);
-            ui->labelPix->move (0, totalHeight);
-            ui->labelPix->setFixedSize (totalWidth, totalWidth);
+            ui->textEditInfo->move(0, 0);
+            ui->labelPix->move(0, totalHeight);
+            ui->labelPix->setFixedSize(totalWidth, totalWidth);
             ui->labelPix->show();
             setFixedSize(totalWidth, totalHeight + totalWidth);
         }
         else if (m_sPictuePosition == "Above")
         {
             ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-            ui->textEditInfo->move (0, totalWidth);
-            ui->labelPix->move (0, 0);
-            ui->labelPix->setFixedSize (totalWidth, totalWidth);
+            ui->textEditInfo->move(0, totalWidth);
+            ui->labelPix->move(0, 0);
+            ui->labelPix->setFixedSize(totalWidth, totalWidth);
             ui->labelPix->show();
             setFixedSize(totalWidth, totalHeight + totalWidth);
         }
         else if (m_sPictuePosition == "Right")
         {
             ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-            ui->textEditInfo->move (0, 0);
-            ui->labelPix->move (totalWidth, 0);
-            ui->labelPix->setFixedSize (totalHeight, totalHeight);
+            ui->textEditInfo->move(0, 0);
+            ui->labelPix->move(totalWidth, 0);
+            ui->labelPix->setFixedSize(totalHeight, totalHeight);
             ui->labelPix->show();
             setFixedSize(totalWidth + totalHeight, totalHeight);
         }
         else if (m_sPictuePosition == "Left")
         {
             ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-            ui->textEditInfo->move (totalHeight, 0);
-            ui->labelPix->move (0, 0);
-            ui->labelPix->setFixedSize (totalHeight, totalHeight);
+            ui->textEditInfo->move(totalHeight, 0);
+            ui->labelPix->move(0, 0);
+            ui->labelPix->setFixedSize(totalHeight, totalHeight);
             ui->labelPix->show();
             setFixedSize(totalWidth + totalHeight, totalHeight);
         }
@@ -129,7 +130,7 @@ void InfoWidget::updateSize(const QSizeF &newSize)
 
 void InfoWidget::setInfo(QString sInfo)
 {
-    ui->textEditInfo->setText (sInfo);
+    ui->textEditInfo->setText(sInfo);
 }
 
 QString InfoWidget::getInfo()
@@ -181,14 +182,14 @@ void InfoWidget::setFile(const QString &localFile)
                 QString value;
             };
             QList<Field> fields;
-            if (artist.isEmpty () == false)
+            if (artist.isEmpty() == false)
             {
                 fields.append({"Artist: ", artist});
                 // info.append ("Artist: ");
                 // info.append (artist);
             }
             //info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
-            if (title.isEmpty () == false)
+            if (title.isEmpty() == false)
             {
                 fields.append({"Title: ", title});
                 // info.append ("\n");
@@ -196,7 +197,7 @@ void InfoWidget::setFile(const QString &localFile)
                 // info.append (title);
             }
             // info.append ( title.isEmpty() ? "[Unknown title]" : title);
-            if (album.isEmpty () == false)
+            if (album.isEmpty() == false)
             {
                 fields.append({"Album: ", album});
                 // info.append ("\n");
@@ -220,16 +221,16 @@ void InfoWidget::setFile(const QString &localFile)
                 // info.append (QString::number(year));
             }
             // info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
-            if (tag->genre ().isEmpty () == false)
+            if (tag->genre().isEmpty() == false)
             {
-                fields.append({"Genre: ", safeString(tag->genre ())});
+                fields.append({"Genre: ", safeString(tag->genre())});
                 // info.append ("\n");
                 // info.append ("Genre: ");
                 // info.append (safeString(tag->genre ()));
             }
-            if (tag->comment ().isEmpty () == false)
+            if (tag->comment().isEmpty() == false)
             {
-                fields.append({"Comment: ", safeString( tag->comment ())});
+                fields.append({"Comment: ", safeString(tag->comment())});
                 // info.append ("\n");
                 // info.append ("Comment: ");
                 // info.append (safeString(tag->comment ()));
@@ -246,21 +247,21 @@ void InfoWidget::setFile(const QString &localFile)
             int sampleRate = properties->sampleRate();
             int channels = properties->channels();
             // 4. Stampa i dettagli
-            fields.append({"Lenght: ", formatTime (lengthSeconds)});
+            fields.append({"Lenght: ", formatTime(lengthSeconds)});
             // info.append ("\n");
             // info.append ("Lenght: ");
             // info.append (formatTime (lengthSeconds));
             // info.append (QString::number (lengthSeconds));
             // info.append (" seconds");
-            fields.append({"Bitrate (kbit/s): ", QString::number (bitrate)});
+            fields.append({"Bitrate (kbit/s): ", QString::number(bitrate)});
             // info.append ("\n");
             // info.append ("Bitrate (kbit/s): ");
             // info.append (QString::number (bitrate));
-            fields.append({"Sample Rate (Hz): ", QString::number (sampleRate)});
+            fields.append({"Sample Rate (Hz): ", QString::number(sampleRate)});
             // info.append ("\n");
             // info.append ("Sample Rate (Hz): ");
             // info.append (QString::number (sampleRate));
-            fields.append({"Channels: ", QString::number (channels)});
+            fields.append({"Channels: ", QString::number(channels)});
             // info.append ("\n");
             // info.append ("Channels: ");
             // info.append (QString::number (channels));
@@ -268,82 +269,82 @@ void InfoWidget::setFile(const QString &localFile)
             TagLib::MPEG::File *mpegFile = dynamic_cast<TagLib::MPEG::File *>(m_FileRef->file());
             if (mpegFile)
             {
-                TagLib::MPEG::Properties *prop = mpegFile->audioProperties ();
+                TagLib::MPEG::Properties *prop = mpegFile->audioProperties();
                 qDebug() << "MPEG (MP3)";
                 // info.append ("\n");
                 // info.append ("Channel mode: ");
                 //TagLib::MPEG::Header::ChannelMode chanMode = mpegFile->audioProperties ()->channelMode ();
-                int chanMode = prop->channelMode ();
+                int chanMode = prop->channelMode();
                 switch (chanMode)
                 {
-                case 0:
-                    fields.append(Field{"Channel mode: ", "Stereo"});
-                    // info.append ("Stereo");
-                    break;
-                case 1:
-                    fields.append(Field{"Channel mode: ", "Joint stereo"});
-                    // info.append ("Joint stereo");
-                    break;
-                case 2:
-                    fields.append(Field{"Channel mode: ", "Dual channel (Dual mono)"});
-                    // info.append ("Dual channel (Dual mono)");
-                    break;
-                case 3:
-                    fields.append(Field{"Channel mode: ", "Single channel (Mono)"});
-                    // info.append ("Single channel (Mono)");
-                    break;
-                default:
-                    break;
+                    case 0:
+                        fields.append(Field{"Channel mode: ", "Stereo"});
+                        // info.append ("Stereo");
+                        break;
+                    case 1:
+                        fields.append(Field{"Channel mode: ", "Joint stereo"});
+                        // info.append ("Joint stereo");
+                        break;
+                    case 2:
+                        fields.append(Field{"Channel mode: ", "Dual channel (Dual mono)"});
+                        // info.append ("Dual channel (Dual mono)");
+                        break;
+                    case 3:
+                        fields.append(Field{"Channel mode: ", "Single channel (Mono)"});
+                        // info.append ("Single channel (Mono)");
+                        break;
+                    default:
+                        break;
                 }
                 QString sLayer = "";
                 QString sVersion = "";
                 // info.append ("\n");
                 // info.append ("Format: MPEG");
                 // int layer=prop->layer ();
-                int layer = prop->layer ();
+                int layer = prop->layer();
                 switch (layer)
                 {
-                case 0:
-                    // info.append(" Layer 0");
-                    sLayer = " Layer 0";
-                    break;
-                case 1:
-                    // info.append(" Layer 1");
-                    sLayer = " Layer 1";
-                    break;
-                case 2:
-                    // info.append(" Layer 2 (MP2)");
-                    sLayer = " Layer 2";
-                    break;
-                case 3:
-                    // info.append(" Layer 3 (MP3)");
-                    sLayer = " Layer 3";
-                    break;
-                default:
-                    break;
+                    case 0:
+                        // info.append(" Layer 0");
+                        sLayer = " Layer 0";
+                        break;
+                    case 1:
+                        // info.append(" Layer 1");
+                        sLayer = " Layer 1";
+                        break;
+                    case 2:
+                        // info.append(" Layer 2 (MP2)");
+                        sLayer = " Layer 2";
+                        break;
+                    case 3:
+                        // info.append(" Layer 3 (MP3)");
+                        sLayer = " Layer 3";
+                        break;
+                    default:
+                        break;
                 }
                 // TagLib::MPEG::Header::Version vers = mpegFile->audioProperties ()->version ();
-                int vers = prop->version ();
+                int vers = prop->version();
                 switch (vers)
                 {
-                case 0:
-                    // info.append(" Version 1");
-                    sVersion = " Version 1";
-                    break;
-                case 1:
-                    // info.append(" Version 2");
-                    sVersion = " Version 2";
-                    break;
-                case 2:
-                    // info.append(" Version 2.5");
-                    sVersion = " Version 2.5";
-                    break;
-                case 3:
-                    // info.append(" Version 4");
-                    sVersion = " Version 4";
-                    break;
-                default:
-                    break;
+                    case 0:
+                        // info.append(" Version 1");
+                        sVersion = " Version 1";
+                        break;
+                    case 1:
+                        // info.append(" Version 2");
+                        sVersion = " Version 2";
+                        break;
+                    case 2:
+                        // info.append(" Version 2.5");
+                        sVersion = " Version 2.5";
+                        break;
+                    case 3:
+                        // info.append(" Version 4");
+                        sVersion = " Version 4";
+                        break;
+                    default:
+                        break;
                 }
                 fields.append(Field{"Format: MPEG", sLayer + sVersion});
                 // info.append (mpegFile->audioProperties ()->version ());
@@ -352,7 +353,7 @@ void InfoWidget::setFile(const QString &localFile)
                 // specialmente per MP3)
                 // delete mpegFile;
                 bFomatFound = true;
-                m_pix = extractMP3Cover (mpegFile);
+                m_pix = extractMP3Cover(mpegFile);
             }
             if (!bFomatFound)
             {
@@ -368,26 +369,26 @@ void InfoWidget::setFile(const QString &localFile)
                     //TagLib::MP4::Properties *prop=mp4File->properties ();
                     // TagLib::PropertyMap prop=mp4File->properties ();
                     // int iCodec=prop.codec ();
-                    int iCodec = mp4File->audioProperties ()->codec ();
+                    int iCodec = mp4File->audioProperties()->codec();
                     switch (iCodec)
                     {
-                    case 0:
-                        fields.append(Field{"Format: ", "MP4 (Unknown codec)"});
-                        break;
-                    case 1:
-                        fields.append(Field{"Format: ", "MP4 (AAC codec)"});
-                        break;
-                    case 2:
-                        // ALAC can be 16 or 24 bits
-                        fields.append(Field{"Bits: ", QString::number (mp4File->audioProperties ()->bitsPerSample ())});
-                        fields.append(Field{"Format: ", "MP4 (ALAC lossless codec)"});
-                        break;
-                    default:
-                        fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
-                        break;
+                        case 0:
+                            fields.append(Field{"Format: ", "MP4 (Unknown codec)"});
+                            break;
+                        case 1:
+                            fields.append(Field{"Format: ", "MP4 (AAC codec)"});
+                            break;
+                        case 2:
+                            // ALAC can be 16 or 24 bits
+                            fields.append(Field{"Bits: ", QString::number(mp4File->audioProperties()->bitsPerSample())});
+                            fields.append(Field{"Format: ", "MP4 (ALAC lossless codec)"});
+                            break;
+                        default:
+                            fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
+                            break;
                     }
                     bFomatFound = true;
-                    m_pix = extractMP4Cover (mp4File);
+                    m_pix = extractMP4Cover(mp4File);
                 }
             }
             if (!bFomatFound)
@@ -397,7 +398,7 @@ void InfoWidget::setFile(const QString &localFile)
                     if (flacFile)
                     {
                         qDebug() << "FLAC";
-                        fields.append(Field{"Bits: ", QString::number (flacFile->audioProperties ()->bitsPerSample ())});
+                        fields.append(Field{"Bits: ", QString::number(flacFile->audioProperties()->bitsPerSample())});
                         // Se il cast ha successo, è un file FLAC.
                         // Qui puoi continuare a lavorare con 'flacFile' per accedere
                         // a proprietà specifiche del FLAC se necessario.
@@ -405,7 +406,7 @@ void InfoWidget::setFile(const QString &localFile)
                         // info.append ("Format: FLAC");
                         fields.append(Field{"Format: ", "FLAC"});
                         bFomatFound = true;
-                        m_pix = extractFLACCover (flacFile);
+                        m_pix = extractFLACCover(flacFile);
                     }
                 }
             }
@@ -478,8 +479,8 @@ void InfoWidget::setFile(const QString &localFile)
                     // info.append ("\n");
                     // info.append ("Bits: ");
                     // info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
-                    fields.append(Field{"Bits: ", QString::number (wavFile->audioProperties ()->bitsPerSample())});
-                    int iFormat = wavFile->audioProperties ()->format ();
+                    fields.append(Field{"Bits: ", QString::number(wavFile->audioProperties()->bitsPerSample())});
+                    int iFormat = wavFile->audioProperties()->format();
                     // Se il cast ha successo, è un file WAV.
                     // info.append ("\n");
                     // info.append ("Format: ");
@@ -506,11 +507,10 @@ void InfoWidget::setFile(const QString &localFile)
                 QSize originalSize = m_pix.size();
                 int originalWidth = originalSize.width();
                 int originalHeight = originalSize.height();
-                m_sPixSize = QString::number (originalWidth) + "x" + QString::number (originalHeight) ;
+                m_sPixSize = QString::number(originalWidth) + "x" + QString::number(originalHeight) ;
                 //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
                 fields.append(Field{"Cover size: ", m_sPixSize + " pixels"});
             }
-
             QFile file(localFile);
             if (file.exists())
             {
@@ -518,7 +518,7 @@ void InfoWidget::setFile(const QString &localFile)
                 // info.append ("\n");
                 // info.append ("File size: ");
                 // info.append (formatFileSize (size));
-                fields.append(Field{"File size: ", formatFileSize (size)});
+                fields.append(Field{"File size: ", formatFileSize(size)});
             }
             else
             {
@@ -531,11 +531,11 @@ void InfoWidget::setFile(const QString &localFile)
                 info.append(fields[i].label);
                 info.append(fields[i].value);
             }
-            m_FileRef->file ()->clear ();
+            m_FileRef->file()->clear();
             delete m_FileRef;
             m_FileRef = nullptr;
             m_Info = info;
-            setInfo (info);
+            setInfo(info);
             // qDebug() << "--- Dettagli Audio ---";
             // qDebug() << "Durata:" << lengthSeconds << "secondi";
             // qDebug() << "Bitrate (kbit/s):" << bitrate;
@@ -575,7 +575,7 @@ void InfoWidget::setFile(const QString &localFile)
         else
         {
             qDebug() << "Failed to read metadata!";
-            setInfo ("Failed to read metadata!");
+            setInfo("Failed to read metadata!");
         }
     }
     else
@@ -657,7 +657,7 @@ QPixmap InfoWidget::extractMP4Cover(TagLib::MP4::File *file)
     return pix;
 }
 
-QPixmap InfoWidget::extractMP3Cover( TagLib::MPEG::File *mp3File)
+QPixmap InfoWidget::extractMP3Cover(TagLib::MPEG::File *mp3File)
 {
     //TagLib::MPEG::File mp3File(filePath.toStdString().c_str());
     // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
@@ -665,7 +665,7 @@ QPixmap InfoWidget::extractMP3Cover( TagLib::MPEG::File *mp3File)
     //TagLib::FileName file(filePath.toUtf8 ().constData ());
     // QPixmap pixmap;
     // TagLib::MPEG::File *mp3File = dynamic_cast<TagLib::MPEG::File*>(file.file ());
-    if ( !mp3File->isValid())
+    if (!mp3File->isValid())
         return QPixmap();
     TagLib::ID3v2::Tag *tag = mp3File->ID3v2Tag();
     if (!tag)
@@ -703,12 +703,12 @@ void InfoWidget::pixClicked()
     if (m_bPixIsBig)
     {
         m_bPixIsBig = false;
-        updateSize (ui->textEditInfo->document ()->size ());
+        updateSize(ui->textEditInfo->document()->size());
     }
     else
     {
         m_bPixIsBig = true;
-        redrawBigPix ();
+        redrawBigPix();
         // QSize originalSize = m_pix.size();
         // int originalWidth = originalSize.width();
         // int originalHeight = originalSize.height();
@@ -770,9 +770,9 @@ void InfoWidget::redrawBigPix()
     int totalWidth = contentWidth;// + 2 * ui->textEditInfo->frameWidth();
     // Picture position
     ui->textEditInfo->setFixedSize(totalWidth, totalHeight);
-    ui->textEditInfo->move (0, 0);
-    ui->labelPix->move (0, 0);
-    ui->labelPix->setFixedSize (contentHeight, contentHeight);
+    ui->textEditInfo->move(0, 0);
+    ui->labelPix->move(0, 0);
+    ui->labelPix->setFixedSize(contentHeight, contentHeight);
     ui->labelPix->show();
     setFixedSize(contentHeight, contentHeight);
     ui->labelPix->setPixmap(m_pix.scaled(ui->labelPix->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
@@ -812,13 +812,13 @@ void InfoWidget::changeEvent(QEvent *event)
         //QPalette palette = ui->textEditInfo->palette();
         QPalette palette = this->palette();
         palette.setColor(QPalette::Base, palette.color(QPalette::Window));
-        ui->textEditInfo->setPalette (palette);
+        ui->textEditInfo->setPalette(palette);
     }
     else if (event->type() == QEvent::ActivationChange)
     {
         if (isActiveWindow())
         {
-            emit focusReceived ();
+            emit focusReceived();
         }
     }
     // 2. Chiama l'implementazione della classe base
@@ -836,21 +836,21 @@ void InfoWidget::saveSettings()
 {
     // QSettings richiede il nome dell'Organizzazione e dell'Applicazione
     // per creare un percorso di salvataggio univoco.
-    QSettings settings;
+    //QSettings settings;
     // Salva la posizione corrente del widget (coordinate x, y)
-    settings.setValue("InfoWidgetPosition", pos());
+    SettingsManager::instance().setValue("InfoWidgetPosition", pos());
     // Potresti anche salvare la dimensione (larghezza, altezza)
-    settings.setValue("InfoWidgetSsize", size());
+    SettingsManager::instance().setValue("InfoWidgetSsize", size());
     // In Qt, le impostazioni vengono salvate automaticamente
 }
 
 void InfoWidget::loadSettings()
 {
-    QSettings settings;
+    // QSettings settings;
     // 1. Carica la posizione
-    QPoint savedPos = settings.value("InfoWidgetPosition", QPoint(100, 100)).toPoint();
+    QPoint savedPos = SettingsManager::instance().value("InfoWidgetPosition", QPoint(100, 100)).toPoint();
     // 2. Carica la dimensione
-    QSize savedSize = settings.value("InfoWidgetSsize", QSize(300, 100)).toSize();
+    QSize savedSize = SettingsManager::instance().value("InfoWidgetSsize", QSize(300, 100)).toSize();
     // 3. Applica le impostazioni
     resize(savedSize);
     // Controlla se la posizione salvata è visibile su qualsiasi schermo
@@ -866,11 +866,11 @@ void InfoWidget::loadSettings()
         // La posizione di default (100, 100) verrà usata se la chiave non esiste
         move(QPoint(100, 100));
     }
-    m_sPictuePosition = settings.value("PictuePositionInInfo", "Right").toString();
-    m_bScalePixOriginalSize = settings.value("PictueScaleOriginalSize", true).toBool ();
-    m_iPixSize = settings.value("PictueScaleSize", 300).toInt ();
-    m_iScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMax", 600).toInt ();
-    m_bScalePixOriginalSizeMax = settings.value("PictueScaleOriginalSizeMaxEnabled", true).toBool ();
+    m_sPictuePosition = SettingsManager::instance().value("PictuePositionInInfo", "Right").toString();
+    m_bScalePixOriginalSize = SettingsManager::instance().value("PictueScaleOriginalSize", true).toBool();
+    m_iPixSize = SettingsManager::instance().value("PictueScaleSize", 300).toInt();
+    m_iScalePixOriginalSizeMax = SettingsManager::instance().value("PictueScaleOriginalSizeMax", 600).toInt();
+    m_bScalePixOriginalSizeMax = SettingsManager::instance().value("PictueScaleOriginalSizeMaxEnabled", true).toBool();
 }
 
 QString InfoWidget::formatTime(int totalSeconds)
@@ -929,5 +929,5 @@ QString InfoWidget::getPictuePosition() const
 void InfoWidget::setPictuePosition(const QString &sPictuePosition)
 {
     m_sPictuePosition = sPictuePosition;
-    updateSize (ui->textEditInfo->document ()->size ());
+    updateSize(ui->textEditInfo->document()->size());
 }

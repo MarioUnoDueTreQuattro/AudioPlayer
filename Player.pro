@@ -22,7 +22,6 @@ SOURCES += \
     playlistdurationdelegate.cpp \
     playlistsortmodel.cpp \
     playlisttable.cpp \
-    playlistview.cpp \
     settings.cpp \
     settingsmanager.cpp \
     singleinstance.cpp \
@@ -42,7 +41,6 @@ HEADERS += \
     playlistdurationdelegate.h \
     playlistsortmodel.h \
     playlisttable.h \
-    playlistview.h \
     settings.h \
     settingsmanager.h \
     singleinstance.h \
