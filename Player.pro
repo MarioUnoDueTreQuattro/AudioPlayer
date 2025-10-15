@@ -46,6 +46,7 @@ HEADERS += \
     singleinstance.h \
     systemvolumecontroller.h \
     tagloaderworker.h \
+    utility.h \
     widget.h
 
 FORMS += \

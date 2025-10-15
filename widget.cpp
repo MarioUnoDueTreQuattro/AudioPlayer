@@ -2,6 +2,7 @@
 #include "settings.h"
 #include "ui_widget.h"
 #include "settingsmanager.h"
+#include "utility.h"
 #include <QFileInfo>
 #include <QMimeData>
 #include <QDragEnterEvent>
