@@ -27,6 +27,8 @@ public:
     void clear();
     QMediaPlaylist *mediaPlaylist() const { return m_playlist; }
     void playlistLoadFinished();
+    void setSectionsResizeMode();
+
 signals:
     void trackActivated(int index);
     void playlistUpdated(QMediaPlaylist *playlist);

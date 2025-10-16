@@ -30,7 +30,7 @@ AudioTag::AudioTag(QObject *parent)
 
 AudioTag::AudioTag(QString sFileName, QObject *parent)
 {
-    setFile (sFileName);
+    setFile(sFileName);
 }
 
 void AudioTag::setInfo(QString sInfo)
@@ -160,7 +160,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 // info.append ("\n");
                 // info.append ("Genre: ");
                 // info.append (safeString(tag->genre ()));
-                m_TagInfo.sGenre=safeString(tag->genre());
+                m_TagInfo.sGenre = safeString(tag->genre());
             }
             if (tag->comment().isEmpty() == false)
             {
@@ -168,7 +168,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 // info.append ("\n");
                 // info.append ("Comment: ");
                 // info.append (safeString(tag->comment ()));
-                m_TagInfo.sComment=safeString(tag->comment());
+                m_TagInfo.sComment = safeString(tag->comment());
             }
             if (m_FileRef->isNull() || !m_FileRef->audioProperties())
             {
@@ -292,6 +292,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     default:
                         break;
                 }
+                m_TagInfo.sFormat = "MPEG" + sLayer + sVersion;
                 fields.append(Field{"Format: MPEG", sLayer + sVersion});
                 // info.append (mpegFile->audioProperties ()->version ());
                 // Puoi ottenere anche più dettagli specifici qui, come il bit per campione
@@ -315,21 +316,27 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     //TagLib::MP4::Properties *prop=mp4File->properties ();
                     // TagLib::PropertyMap prop=mp4File->properties ();
                     // int iCodec=prop.codec ();
+                    m_TagInfo.iBits = 16;
                     int iCodec = mp4File->audioProperties()->codec();
                     switch (iCodec)
                     {
                         case 0:
                             fields.append(Field{"Format: ", "MP4 (Unknown codec)"});
+                            m_TagInfo.sFormat = "MP4 (Unknown codec)";
                             break;
                         case 1:
                             fields.append(Field{"Format: ", "MP4 (AAC codec)"});
+                            m_TagInfo.sFormat = "MP4 (AAC codec)";
                             break;
                         case 2:
                             // ALAC can be 16 or 24 bits
                             fields.append(Field{"Bits: ", QString::number(mp4File->audioProperties()->bitsPerSample())});
+                            m_TagInfo.iBits = mp4File->audioProperties()->bitsPerSample();
+                            m_TagInfo.sFormat = "MP4 (ALAC lossless codec)";
                             fields.append(Field{"Format: ", "MP4 (ALAC lossless codec)"});
                             break;
                         default:
+                            m_TagInfo.sFormat = "MP4 (AAC, ALAC, M4A...)";
                             fields.append(Field{"Format: ", "MP4 (AAC, ALAC, M4A...)"});
                             break;
                     }
@@ -345,12 +352,14 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     {
                         qDebug() << "FLAC";
                         fields.append(Field{"Bits: ", QString::number(flacFile->audioProperties()->bitsPerSample())});
+                        m_TagInfo.iBits = flacFile->audioProperties()->bitsPerSample();
                         // Se il cast ha successo, è un file FLAC.
                         // Qui puoi continuare a lavorare con 'flacFile' per accedere
                         // a proprietà specifiche del FLAC se necessario.
                         // info.append ("\n");
                         // info.append ("Format: FLAC");
                         fields.append(Field{"Format: ", "FLAC"});
+                        m_TagInfo.sFormat = "FLAC";
                         bFomatFound = true;
                         if (bExtractCover) m_pix = extractFLACCover(flacFile);
                     }
@@ -368,6 +377,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("\n");
                     // info.append ("Format: Ogg Opus");
                     fields.append(Field{"Format: ", "Ogg Opus"});
+                    m_TagInfo.sFormat = "Ogg Opus";
                     bFomatFound = true;
                 }
             }
@@ -383,6 +393,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("\n");
                     // info.append ("Format: Ogg Vorbis");
                     fields.append(Field{"Format: ", "Ogg Vorbis"});
+                    m_TagInfo.sFormat = "Ogg Vorbis";
                     bFomatFound = true;
                 }
             }
@@ -398,6 +409,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("\n");
                     // info.append ("Format: Ogg FLAC");
                     fields.append(Field{"Format: ", "Ogg FLAC"});
+                    m_TagInfo.sFormat = "Ogg FLAC";
                     bFomatFound = true;
                 }
             }
@@ -413,6 +425,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("\n");
                     // info.append ("Format: Ogg Speex");
                     fields.append(Field{"Format: ", "Ogg Speex"});
+                    m_TagInfo.sFormat = "Ogg Speex";
                     bFomatFound = true;
                 }
             }
@@ -426,6 +439,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("Bits: ");
                     // info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));
                     fields.append(Field{"Bits: ", QString::number(wavFile->audioProperties()->bitsPerSample())});
+                    m_TagInfo.iBits = wavFile->audioProperties()->bitsPerSample();
                     int iFormat = wavFile->audioProperties()->format();
                     // Se il cast ha successo, è un file WAV.
                     // info.append ("\n");
@@ -438,13 +452,41 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // else if (iFormat == 7) info.append ("µ-law");
                     // else info.append ("Unknown fomat");
                     // info.append (" WAV (RIFF)");
-                    if (iFormat == 1) fields.append(Field{"Format: ", "PCM WAV (RIFF)"});
-                    else if (iFormat == 0) fields.append(Field{"Format: ", "Unknown format (0) WAV (RIFF)"});
-                    else if (iFormat == 2) fields.append(Field{"Format: ", "Compressed ADPCM WAV (RIFF)"});
-                    else if (iFormat == 3) fields.append(Field{"Format: ", "IEEE float WAV (RIFF)"});
-                    else if (iFormat == 6) fields.append(Field{"Format: ", "A-law WAV (RIFF)"});
-                    else if (iFormat == 7) fields.append(Field{"Format: ", "µ-law WAV (RIFF)"});
-                    else fields.append(Field{"Format: ", "Unknown format WAV (RIFF)"});
+                    if (iFormat == 1)
+                    {
+                        fields.append(Field{"Format: ", "PCM WAV (RIFF)"});
+                        m_TagInfo.sFormat = "PCM WAV (RIFF)";
+                    }
+                    else if (iFormat == 0)
+                    {
+                        fields.append(Field{"Format: ", "Unknown format (0) WAV (RIFF)"});
+                        m_TagInfo.sFormat = "Unknown format (0) WAV (RIFF)";
+                    }
+                    else if (iFormat == 2)
+                    {
+                        fields.append(Field{"Format: ", "Compressed ADPCM WAV (RIFF)"});
+                        m_TagInfo.sFormat = "Compressed ADPCM WAV (RIFF)";
+                    }
+                    else if (iFormat == 3)
+                    {
+                        fields.append(Field{"Format: ", "IEEE float WAV (RIFF)"});
+                        m_TagInfo.sFormat = "IEEE float WAV (RIFF)";
+                    }
+                    else if (iFormat == 6)
+                    {
+                        fields.append(Field{"Format: ", "A-law WAV (RIFF)"});
+                        m_TagInfo.sFormat = "A-law WAV (RIFF)";
+                    }
+                    else if (iFormat == 7)
+                    {
+                        fields.append(Field{"Format: ", "µ-law WAV (RIFF)"});
+                        m_TagInfo.sFormat = "µ-law WAV (RIFF)";
+                    }
+                    else
+                    {
+                        fields.append(Field{"Format: ", "Unknown format WAV (RIFF)"});
+                        m_TagInfo.sFormat = "Unknown format WAV (RIFF)";
+                    }
                     bFomatFound = true;
                 }
             }
@@ -456,7 +498,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 m_sPixSize = QString::number(originalWidth) + "x" + QString::number(originalHeight) ;
                 //QString tooltipText = QString("Original size: <b>%1x%2</b> pixels") .arg(originalWidth).arg(originalHeight);
                 fields.append(Field{"Cover size: ", m_sPixSize + " pixels"});
-                m_TagInfo.sCoverSize=m_sPixSize;
+                m_TagInfo.sCoverSize = m_sPixSize;
             }
             QFile file(localFile);
             if (file.exists())
@@ -466,7 +508,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 // info.append ("File size: ");
                 // info.append (formatFileSize (size));
                 fields.append(Field{"File size: ", formatFileSize(size)});
-                m_TagInfo.iFileSize=size;
+                m_TagInfo.iFileSize = size;
             }
             else
             {
@@ -703,7 +745,7 @@ AudioTagInfo AudioTag::tagInfo() const
 
 void AudioTag::resetTag()
 {
-    m_TagInfo.reset ();
+    m_TagInfo.reset();
 }
 
 AudioTagInfo::AudioTagInfo()
@@ -732,6 +774,6 @@ void AudioTagInfo::reset()
     iSamplerate = -1;
     iChannels = -1;
     iFileSize = -1;
-    iTrackNum=-1;
-    iBits=-1;
+    iTrackNum = -1;
+    iBits = -1;
 }
