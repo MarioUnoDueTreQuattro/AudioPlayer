@@ -466,7 +466,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 // info.append ("File size: ");
                 // info.append (formatFileSize (size));
                 fields.append(Field{"File size: ", formatFileSize(size)});
-                m_TagInfo.iFileSize=size/1024;
+                m_TagInfo.iFileSize=size;
             }
             else
             {

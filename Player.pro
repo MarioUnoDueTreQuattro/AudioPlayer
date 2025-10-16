@@ -19,7 +19,7 @@ SOURCES += \
     escawarelineedit.cpp \
     infowidget.cpp \
     main.cpp \
-    playlistdurationdelegate.cpp \
+    playlistdelegates.cpp \
     playlistsortmodel.cpp \
     playlisttable.cpp \
     settings.cpp \
@@ -38,7 +38,7 @@ HEADERS += \
     clickableslider.h \
     escawarelineedit.h \
     infowidget.h \
-    playlistdurationdelegate.h \
+    playlistdelegates.h \
     playlistsortmodel.h \
     playlisttable.h \
     settings.h \

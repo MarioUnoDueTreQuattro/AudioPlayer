@@ -1,6 +1,6 @@
 #include "playlisttable.h"
 #include "ui_playlisttable.h"
-#include "playlistdurationdelegate.h"
+#include "playlistdelegates.h"
 #include "tagloaderworker.h"
 #include <QFileInfo>
 #include <QVBoxLayout>
@@ -35,7 +35,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_player->setPlaylist(m_playlist);
     // --- Create source model ---
     m_model = new QStandardItemModel(this);
-    m_model->setHorizontalHeaderLabels(QStringList() << "Filename" << "Extension" << "Path" << "Duration" << "Artist" << "Title" << "Album" << "Track" << "Year" << "Genre" << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels" << "Format" << "Cover size" << "File size");
+    m_model->setHorizontalHeaderLabels(QStringList() << "Filename" << "Ext" << "Path" << "Duration" << "Artist" << "Title" << "Album" << "Track" << "Year" << "Genre" << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels" << "Format" << "Cover size" << "File size");
     // --- Create sort proxy ---
     m_sortModel = new PlaylistSortModel(this);
     m_sortModel->setSourceModel(m_model);
@@ -60,6 +60,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // --- Create and assign duration delegate ---
     PlaylistDurationDelegate *durationDelegate = new PlaylistDurationDelegate(this);
     m_view->setItemDelegateForColumn(3, durationDelegate);
+    PlaylistFileSizeDelegate *FileSizeDelegate = new PlaylistFileSizeDelegate(this);
+    m_view->setItemDelegateForColumn(17, FileSizeDelegate);
     // QHeaderView *header = m_view->horizontalHeader();
     // header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     // header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
@@ -79,6 +81,10 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     connect(m_playlist, SIGNAL(currentIndexChanged(int)),
         this, SLOT(onCurrentTrackChanged(int)));
     loadsettings();
+    // m_view->horizontalHeader ()->setSectionResizeMode (0, QHeaderView::Stretch);
+    // m_view->horizontalHeader ()->setSectionResizeMode (1, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (2, QHeaderView::Stretch);
+    // m_view->horizontalHeader ()->setSectionResizeMode (3, QHeaderView::ResizeToContents);
     // int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
     // Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
     // m_sortModel->sort(iSortCol, order);
@@ -309,13 +315,34 @@ void PlaylistTable::addTrack(const QString &filePath)
     m_model->appendRow(rowItems);
     // m_model->insertRow (m_model->rowCount (),rowItems);
     m_playlist->addMedia(QUrl::fromLocalFile(filePath));
+    // m_view->horizontalHeader()->setDefaultAlignment(Qt::AlignRight);
+    // m_view->setTextElideMode(Qt::ElideRight);
+    // for (int row = 0; row < m_model->rowCount(); ++row)
+    m_model->item(m_model->rowCount() - 1, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 }
 
 void PlaylistTable::clear()
 {
     m_model->clear();
-    m_model->setHorizontalHeaderLabels(QStringList() << "Filename" << "Extension" << "Path" << "Duration" << "Artist" << "Title" << "Album" << "Track" << "Year" << "Genre" << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels" << "Format" << "Cover size" << "File size");
+    m_model->setHorizontalHeaderLabels(QStringList() << "Filename" << "Ext" << "Path" << "Dur" << "Artist" << "Title" << "Album" << "Track" << "Year" << "Genre" << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels" << "Format" << "Cover size" << "File size");
     m_playlist->clear();
+    // m_view->horizontalHeader ()->setSectionResizeMode (0, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (1, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (2, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (3, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (4, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (5, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (6, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (7, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (9, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (10, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (11, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (12, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (13, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (14, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (15, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (16, QHeaderView::ResizeToContents);
+    // m_view->horizontalHeader ()->setSectionResizeMode (17, QHeaderView::ResizeToContents);
 }
 
 QString PlaylistTable::extractFileName(const QString &filePath)
