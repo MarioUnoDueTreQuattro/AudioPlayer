@@ -1,5 +1,5 @@
 #include "audiotag.h"
-
+#include "utility.h"
 #include <QByteArray>
 #include <QFileInfo>
 #include <QDir>
@@ -36,38 +36,6 @@ AudioTag::AudioTag(QString sFileName, QObject *parent)
 void AudioTag::setInfo(QString sInfo)
 {
     // ui->textEditInfo->setText (sInfo);
-}
-
-QString AudioTag::formatFileSize(qint64 bytes)
-{
-    const double KB = 1024.0;
-    const double MB = KB * 1024.0;
-    if (bytes < MB)
-    {
-        return QString::number(bytes / KB, 'f', 2) + " KB";
-    }
-    else
-    {
-        return QString::number(bytes / MB, 'f', 2) + " MB";
-    }
-}
-
-QString AudioTag::formatTime(int totalSeconds)
-{
-    // 1. Calcola i minuti
-    int minutes = totalSeconds / 60;
-    // 2. Calcola i secondi rimanenti
-    int seconds = totalSeconds % 60;
-    // 3. Converte i minuti in stringa
-    // Il formato è semplice, non è necessario il padding per i minuti
-    QString minutesStr = QString::number(minutes);
-    // 4. Converte i secondi in stringa, assicurando due cifre (padding)
-    // - campo di 2 cifre (width = 2)
-    // - carattere '0' per il riempimento (fillChar = '0')
-    // - allineamento a destra (right justification)
-    QString secondsStr = QString::number(seconds).rightJustified(2, '0');
-    // 5. Combina il risultato nel formato finale
-    return minutesStr + ":" + secondsStr;
 }
 
 void AudioTag::setFile(const QString &localFile, bool bExtractCover)

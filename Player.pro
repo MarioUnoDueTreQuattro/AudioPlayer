@@ -27,6 +27,7 @@ SOURCES += \
     singleinstance.cpp \
     systemvolumecontroller.cpp \
     tagloaderworker.cpp \
+    utility.cpp \
     widget.cpp
 
 HEADERS += \

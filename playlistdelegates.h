@@ -17,7 +17,6 @@ class PlaylistFileSizeDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 
-    QString formatFileSize(qint64 bytes) const;
 public:
     explicit PlaylistFileSizeDelegate(QObject *parent = 0);
 

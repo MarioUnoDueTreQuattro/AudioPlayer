@@ -57,12 +57,12 @@ public:
     AudioTag(QString sFileName, QObject *parent = nullptr);
     QPixmap extractCover(const QString &filePath);
     void setFile(const QString &localFile, bool bExtractCover = true);
-    QString formatFileSize(qint64 bytes);
+//    QString formatFileSize(qint64 bytes);
     void setInfo(QString);
     AudioTagInfo tagInfo() const;
     void resetTag();
 private:
-    QString formatTime(int totalSeconds);
+    //QString formatTime(int totalSeconds);
     QPixmap extractMP3Cover(TagLib::MPEG::File *mp3File);
     QPixmap extractMP4Cover(TagLib::MP4::File *file);
     QPixmap extractFLACCover(TagLib::FLAC::File *file);

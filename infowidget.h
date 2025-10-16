@@ -46,7 +46,7 @@ public:
 private slots:
     //void on_pushButtonClose_clicked();
     void updateSize(const QSizeF &newSize);
-    QString formatFileSize(qint64 bytes);
+   // QString formatFileSize(qint64 bytes);
     void pixClicked();
 
 private:
@@ -54,7 +54,7 @@ private:
     Ui::InfoWidget *ui;
     void loadSettings();
     void saveSettings();
-    QString formatTime(int totalSeconds);
+   // QString formatTime(int totalSeconds);
     TagLib::FileRef *m_FileRef;
     QString m_Info;
     QString m_sPictuePosition;
