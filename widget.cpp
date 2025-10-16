@@ -53,6 +53,7 @@ Widget::Widget(QWidget *parent)
       m_isMuted(false),
       m_bInfoWindowHasBeenMinimized(false),
       m_bInfoWindowHasBeenClosed(false),
+      m_bPlaylistTableWindowHasBeenClosed(false),
       m_bUserRequestedPlayback(false),
       m_bTablePlaylist(false)
 {
@@ -90,8 +91,6 @@ Widget::Widget(QWidget *parent)
     {
         m_playlistView = new PlaylistTable(m_player, nullptr);
         m_playlistView->show();
-        connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChanged);
-        connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
     }
     loadSettings(); // Load volume/mute state before connecting slider
     // Apply loaded volume
@@ -105,6 +104,7 @@ Widget::Widget(QWidget *parent)
 
 void Widget::playlistUpdated(QMediaPlaylist *playlist)
 {
+    LOG_MSG("");
     m_playlist = playlist;
     ui->listWidget->clear();
     for (int idx = 0; idx < playlist->mediaCount(); idx++)
@@ -212,6 +212,13 @@ void Widget::handlePositionBackward()
 
 void Widget::setSignalsConnections()
 {
+    if (m_bTablePlaylist)
+    {
+        connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChanged);
+        connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
+        connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
+        connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
+    }
     connect(ui->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(filterList(QString))); connect(ui->lineEditFilter, &EscAwareLineEdit::escapePressed, this, &Widget::on_pushButtonResetFilter_clicked);
     connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
     connect(m_infoWidget, SIGNAL(focusReceived()), this, SLOT(infoWindowFocusReceived()));
@@ -283,6 +290,15 @@ void Widget::changeEvent(QEvent *event)
                 m_infoWidget->raise();
                 //m_infoWidget->activateWindow();
             }
+            if (m_playlistView != nullptr && m_bPlaylistTableWindowHasBeenClosed == false && m_bTablePlaylist)
+            {
+                m_bPlaylistTableWindowHasBeenClosed = false;
+                m_playlistView->show();
+                //m_infoWidget->showNormal();
+                //m_infoWidget->show ();
+                m_playlistView->raise();
+                //m_infoWidget->activateWindow();
+            }
         }
     }
     else if (event->type() == QEvent::WindowStateChange)
@@ -299,12 +315,25 @@ void Widget::changeEvent(QEvent *event)
                     m_bInfoWindowHasBeenMinimized = true;
                 }
             }
+            if (m_playlistView != nullptr && m_bPlaylistTableWindowHasBeenClosed == false && m_bTablePlaylist)
+            {
+                if (m_playlistView->isVisible())
+                {
+                    m_playlistView->hide();
+                    // m_bInfoWindowHasBeenMinimized = true;
+                }
+            }
         }
         else
         {
             // qDebug() << "MainWindow state changed (restored/maximized)";
         }
     }
+}
+
+void Widget::playlistTableWindowFocusReceived()
+{
+    this->raise();
 }
 
 void Widget::infoWindowFocusReceived()
@@ -316,6 +345,12 @@ void Widget::infoWindowClosed()
 {
     qDebug() << __PRETTY_FUNCTION__;
     m_bInfoWindowHasBeenClosed = true;
+}
+
+void Widget::playlistTableWindowClosed()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    m_bPlaylistTableWindowHasBeenClosed = true;
 }
 
 void Widget::closeEvent(QCloseEvent *event)
@@ -450,6 +485,12 @@ void Widget::focusInEvent(QFocusEvent *event)
     {
         //m_infoWidget->showNormal();
         m_infoWidget->raise();
+        //m_infoWidget->activateWindow();
+    }
+    if (m_playlistView != nullptr)
+    {
+        //m_infoWidget->showNormal();
+        if (m_bTablePlaylist) m_playlistView->raise();
         //m_infoWidget->activateWindow();
     }
     QWidget::focusInEvent(event);
@@ -1787,7 +1828,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     // qint64 tempoTrascorso_ms = timer.elapsed();
     // double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
     // qDebug() << "Tempo impiegato dalla funzione loadPlaylistFile:" << tempoTrascorso_s << "secondi";
-    if (m_bTablePlaylist) m_playlistView->playlistLoadFinished ();
+    if (m_bTablePlaylist) m_playlistView->playlistLoadFinished();
     setInfoWidgetTitle();
 }
 

@@ -184,7 +184,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
             if (mpegFile)
             {
                 TagLib::MPEG::Properties *prop = mpegFile->audioProperties();
-                qDebug() << "MPEG (MP3)";
+                //qDebug() << "MPEG (MP3)";
                 // info.append ("\n");
                 // info.append ("Channel mode: ");
                 //TagLib::MPEG::Header::ChannelMode chanMode = mpegFile->audioProperties ()->channelMode ();
@@ -277,7 +277,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 if (mp4File)
                 {
                     // Se il cast ha successo, è un file MP4/M4A.
-                    qDebug() << "MP4 (M4A)";
+                    //qDebug() << "MP4 (M4A)";
                     // Qui puoi continuare a lavorare con 'mp4File' per accedere
                     // a proprietà specifiche MP4 come i tag 'covr' (immagine)
                     // info.append ("\n");
@@ -319,7 +319,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 {
                     if (flacFile)
                     {
-                        qDebug() << "FLAC";
+                        //qDebug() << "FLAC";
                         fields.append(Field{"Bits: ", QString::number(flacFile->audioProperties()->bitsPerSample())});
                         m_TagInfo.iBits = flacFile->audioProperties()->bitsPerSample();
                         // Se il cast ha successo, è un file FLAC.
@@ -340,7 +340,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 if (opusFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Ogg Opus";
+                    //qDebug() << "Ogg Opus";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -357,7 +357,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 if (oggFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Ogg Vorbis";
+                    //qDebug() << "Ogg Vorbis";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -374,7 +374,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 if (oggFlacFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Ogg FLAC";
+                    //qDebug() << "Ogg FLAC";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -392,7 +392,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 if (speexFile)
                 {
                     // Se il cast ha successo, è un file FLAC.
-                    qDebug() << "Ogg Speex";
+                    //qDebug() << "Ogg Speex";
                     // Qui puoi continuare a lavorare con 'flacFile' per accedere
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
@@ -408,7 +408,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                 TagLib::RIFF::WAV::File *wavFile = dynamic_cast<TagLib::RIFF::WAV::File *>(m_FileRef->file());
                 if (wavFile)
                 {
-                    qDebug() << "WAV (RIFF)";
+                    //qDebug() << "WAV (RIFF)";
                     // info.append ("\n");
                     // info.append ("Bits: ");
                     // info.append (QString::number (wavFile->audioProperties ()->bitsPerSample()));

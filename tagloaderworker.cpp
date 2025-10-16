@@ -14,7 +14,7 @@ void TagLoaderWorker::processFiles(const QStringList& fileList)
         tag.setFile(filePath); // Your actual tag loading logic
         AudioTagInfo info = tag.tagInfo();
         emit tagLoaded(filePath, info);
-        qDebug() << "Processed:" << filePath;
+        //qDebug() << "Processed:" << filePath;
     }
     emit finished();
 }

@@ -11,6 +11,7 @@
 #include <QDesktopWidget>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
+#include <QMouseEvent>
 
 //PlaylistTable::PlaylistTable(QWidget *parent) :
 // QWidget(parent),
@@ -96,6 +97,35 @@ PlaylistTable::~PlaylistTable()
     delete ui;
 }
 
+void PlaylistTable::closeEvent(QCloseEvent *event)
+{
+    emit windowClosed();
+    event->accept();
+    QWidget::closeEvent(event);
+}
+
+void PlaylistTable::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::StyleChange || event->type() == QEvent::PaletteChange)
+    {
+        //qDebug() << "Stile del widget cambiato!";
+        // Inserisci qui il tuo codice per reagire al cambio di stile
+        //QPalette palette = ui->textEditInfo->palette();
+        QPalette palette = this->palette();
+        palette.setColor(QPalette::Base, palette.color(QPalette::Window));
+        //ui->textEditInfo->setPalette(palette);
+    }
+    else if (event->type() == QEvent::ActivationChange)
+    {
+        if (isActiveWindow())
+        {
+            emit focusReceived();
+        }
+    }
+    // 2. Chiama l'implementazione della classe base
+    QWidget::changeEvent(event);
+}
+
 void PlaylistTable::moveEvent(QMoveEvent *event)
 {
     QWidget::moveEvent(event);
@@ -155,7 +185,7 @@ void PlaylistTable::syncPlaylistOrder()
         pathIndex = m_sortModel->index(i, 1);
         path.append(m_sortModel->data(pathIndex).toString());
         //path.append(".m4a");
-        qDebug() << path;
+        //qDebug() << path;
         newPlaylist->addMedia(QUrl::fromLocalFile(path));
     }
     int oldIndex = m_playlist->currentIndex();
@@ -221,7 +251,7 @@ void PlaylistTable::on_pushButton_clicked()
         sFileName.append(".");
         index = m_sortModel->index(idx, 1); // column 1 = extension
         sFileName.append(m_sortModel->data(index).toString());
-        qDebug() << sFileName;
+        //qDebug() << sFileName;
         fileList.append(sFileName);
         m_FilePathToRow.insert(sFileName, idx); // map filePath to row
     }

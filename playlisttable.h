@@ -28,10 +28,11 @@ public:
     QMediaPlaylist *mediaPlaylist() const { return m_playlist; }
     void playlistLoadFinished();
     void setSectionsResizeMode();
-
 signals:
     void trackActivated(int index);
     void playlistUpdated(QMediaPlaylist *playlist);
+    void windowClosed();
+    void focusReceived();
 public slots:
     void onDoubleClicked(const QModelIndex &index);
     void onCurrentTrackChanged(int index);
@@ -39,12 +40,13 @@ public slots:
 protected:
     void moveEvent(QMoveEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
+    void changeEvent(QEvent *event) override;
 private slots:
     void on_pushButton_clicked();
     void onTagLoadingFinished();
     void onTagLoaded(const QString &filePath, const AudioTagInfo &info);
     void on_pushButton_2_clicked();
-
 private:
         SettingsManager *settingsMgr;
  Ui::PlaylistTable *ui;

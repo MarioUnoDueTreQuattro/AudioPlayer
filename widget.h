@@ -37,6 +37,8 @@ protected:
     void changeEvent(QEvent *event) override;
 private slots:
     void filterList(const QString &text);
+    void playlistTableWindowFocusReceived();
+    void playlistTableWindowClosed();
     void infoWindowFocusReceived();
     void infoWindowClosed();
     void openGoogleSearch(const QString &text);
@@ -88,7 +90,7 @@ private:
     // bool m_bPlaylistFinished;
     bool m_bIsInShuffleMode;
     bool m_bUserRequestedPlayback;
-//    QHotkey *m_hotkey;
+    // QHotkey *m_hotkey;
     int findTrackIndex(const QString &filePath);
     void forgetPlayed();
     void handlePlay();
@@ -96,16 +98,17 @@ private:
     void copyCurrentFullPath();
     void setKeyboardShortcuts();
     void setSignalsConnections();
-         SettingsManager *settingsMgr;
-AudioFader *musicFader;
+    SettingsManager *settingsMgr;
+    AudioFader *musicFader;
     SystemVolumeController *m_systemVolumeController;
-   bool m_bTablePlaylist;
+    bool m_bTablePlaylist;
     bool m_bVolumeFade;
     int m_iVolumeFadeTime;
     bool m_bAutoplay;
     bool m_bShowInfo;
     bool m_bInfoWindowHasBeenMinimized;
     bool m_bInfoWindowHasBeenClosed;
+    bool m_bPlaylistTableWindowHasBeenClosed;
     bool m_bSystemVolumeSlider;
     QSet<QString> m_playlistPaths;
     QList<QString> m_playedList;
@@ -134,7 +137,7 @@ AudioFader *musicFader;
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
     InfoWidget *m_infoWidget;
-//    PlaylistView *m_playlistView;
+    // PlaylistView *m_playlistView;
     PlaylistTable *m_playlistView;
 };
 
