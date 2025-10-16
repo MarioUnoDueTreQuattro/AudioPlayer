@@ -1,7 +1,6 @@
 #include "playlisttable.h"
 #include "ui_playlisttable.h"
 #include "playlistdelegates.h"
-#include "tagloaderworker.h"
 #include <QFileInfo>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -99,6 +98,7 @@ PlaylistTable::~PlaylistTable()
 
 void PlaylistTable::closeEvent(QCloseEvent *event)
 {
+    if (m_tagWorker != nullptr) delete m_tagWorker;
     emit windowClosed();
     event->accept();
     QWidget::closeEvent(event);
@@ -256,16 +256,18 @@ void PlaylistTable::on_pushButton_clicked()
         m_FilePathToRow.insert(sFileName, idx); // map filePath to row
     }
     // Run the tag loading in a separate thread
-    TagLoaderWorker* worker = new TagLoaderWorker();
-    QFuture<void> future = QtConcurrent::run(worker, &TagLoaderWorker::processFiles, fileList);
+    m_tagWorker = new TagLoaderWorker();
+    QFuture<void> future = QtConcurrent::run(m_tagWorker, &TagLoaderWorker::processFiles, fileList);
     QFutureWatcher<void> *watcher = new QFutureWatcher<void>(this);
-    connect(watcher, SIGNAL(finished()), this, SLOT(onTagLoadingFinished()));
+    connect(m_tagWorker, SIGNAL(finished()), this, SLOT(onTagLoadingFinished()));
     watcher->setFuture(future);
-    connect(worker, SIGNAL(tagLoaded(QString, AudioTagInfo)), this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+    connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)), this, SLOT(onTagLoaded(QString, AudioTagInfo)));
 }
 
 void PlaylistTable::onTagLoadingFinished()
 {
+    delete m_tagWorker;
+    m_tagWorker = nullptr;
     ui->pushButton->setEnabled(true);
     qDebug() << "All tags loaded.";
     m_view->setSortingEnabled(true);
@@ -324,10 +326,10 @@ void PlaylistTable::addTrackExt(const QString &filePath)
 
 void PlaylistTable::playlistLoadFinished()
 {
-on_pushButton_clicked ();
-//on_pushButton_2_clicked ();
- //setSectionsResizeMode();
- }
+    on_pushButton_clicked();
+    //on_pushButton_2_clicked ();
+    //setSectionsResizeMode();
+}
 
 void PlaylistTable::addTrack(const QString &filePath)
 {
@@ -360,23 +362,23 @@ void PlaylistTable::addTrack(const QString &filePath)
 
 void PlaylistTable::setSectionsResizeMode()
 {
-    m_view->horizontalHeader ()->setSectionResizeMode (0, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (1, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (2, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (3, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (4, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (5, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (6, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (7, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (9, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (10, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (11, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (12, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (13, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (14, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (15, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (16, QHeaderView::ResizeToContents);
-    m_view->horizontalHeader ()->setSectionResizeMode (17, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(9, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(10, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(11, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(12, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(13, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(14, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(15, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(16, QHeaderView::ResizeToContents);
+    m_view->horizontalHeader()->setSectionResizeMode(17, QHeaderView::ResizeToContents);
 }
 
 void PlaylistTable::clear()
@@ -384,7 +386,7 @@ void PlaylistTable::clear()
     m_model->clear();
     m_model->setHorizontalHeaderLabels(QStringList() << "Filename" << "Ext" << "Path" << "Dur" << "Artist" << "Title" << "Album" << "Track" << "Year" << "Genre" << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels" << "Format" << "Cover size" << "File size");
     m_playlist->clear();
- //    setSectionsResizeMode();
+    // setSectionsResizeMode();
 }
 
 QString PlaylistTable::extractFileName(const QString &filePath)

@@ -9,6 +9,7 @@
 #include "audiotag.h"
 #include "playlistsortmodel.h"
 #include "settingsmanager.h"
+#include "tagloaderworker.h"
 
 namespace Ui
 {
@@ -61,6 +62,7 @@ private:
     QHash<QString, int> m_FilePathToRow;
     int mapSourceRowToProxy(QAbstractItemModel *sourceModel, QSortFilterProxyModel *proxyModel, int sourceRow);
     int mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int proxyRow);
+TagLoaderWorker* m_tagWorker;
 };
 
 #endif // PLAYLISTTABLE_H
