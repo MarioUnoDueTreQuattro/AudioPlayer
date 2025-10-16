@@ -8,8 +8,6 @@
 //#include <QSettings>
 #include <QApplication>
 #include <QDesktopWidget>
-#include <QFuture>
-#include <QtConcurrent/QtConcurrent>
 #include <QMouseEvent>
 
 //PlaylistTable::PlaylistTable(QWidget *parent) :
@@ -98,6 +96,18 @@ PlaylistTable::~PlaylistTable()
 
 void PlaylistTable::closeEvent(QCloseEvent *event)
 {
+    if (m_FutureWatcher != nullptr)
+    {
+        if (m_FutureWatcher->isRunning())
+        {
+            QFuture<void> future = m_FutureWatcher->future();
+            future.cancel ();
+            future.waitForFinished ();
+        }
+        m_FutureWatcher->waitForFinished();
+        delete m_tagWorker;
+        m_tagWorker = nullptr;
+    }
     if (m_tagWorker != nullptr) delete m_tagWorker;
     emit windowClosed();
     event->accept();
@@ -258,9 +268,9 @@ void PlaylistTable::on_pushButton_clicked()
     // Run the tag loading in a separate thread
     m_tagWorker = new TagLoaderWorker();
     QFuture<void> future = QtConcurrent::run(m_tagWorker, &TagLoaderWorker::processFiles, fileList);
-    QFutureWatcher<void> *watcher = new QFutureWatcher<void>(this);
+    m_FutureWatcher = new QFutureWatcher<void>(this);
     connect(m_tagWorker, SIGNAL(finished()), this, SLOT(onTagLoadingFinished()));
-    watcher->setFuture(future);
+    m_FutureWatcher->setFuture(future);
     connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)), this, SLOT(onTagLoaded(QString, AudioTagInfo)));
 }
 
@@ -268,6 +278,8 @@ void PlaylistTable::onTagLoadingFinished()
 {
     delete m_tagWorker;
     m_tagWorker = nullptr;
+    delete m_FutureWatcher;
+    m_FutureWatcher = nullptr;
     ui->pushButton->setEnabled(true);
     qDebug() << "All tags loaded.";
     m_view->setSortingEnabled(true);

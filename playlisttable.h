@@ -1,6 +1,8 @@
 #ifndef PLAYLISTTABLE_H
 #define PLAYLISTTABLE_H
 
+#include <QFuture>
+#include <QtConcurrent/QtConcurrent>
 #include <QWidget>
 #include <QTableView>
 #include <QStandardItemModel>
@@ -63,6 +65,7 @@ private:
     int mapSourceRowToProxy(QAbstractItemModel *sourceModel, QSortFilterProxyModel *proxyModel, int sourceRow);
     int mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int proxyRow);
 TagLoaderWorker* m_tagWorker;
+QFutureWatcher<void> *m_FutureWatcher;
 };
 
 #endif // PLAYLISTTABLE_H
