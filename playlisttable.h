@@ -26,6 +26,7 @@ public:
     void addTrackExt(const QString &filePath);
     void clear();
     QMediaPlaylist *mediaPlaylist() const { return m_playlist; }
+    void playlistLoadFinished();
 signals:
     void trackActivated(int index);
     void playlistUpdated(QMediaPlaylist *playlist);

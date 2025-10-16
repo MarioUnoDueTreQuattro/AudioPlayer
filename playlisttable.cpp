@@ -292,6 +292,12 @@ void PlaylistTable::addTrackExt(const QString &filePath)
     m_playlist->addMedia(QUrl::fromLocalFile(filePath));
 }
 
+void PlaylistTable::playlistLoadFinished()
+{
+on_pushButton_clicked ();
+//on_pushButton_2_clicked ();
+}
+
 void PlaylistTable::addTrack(const QString &filePath)
 {
     QString fileName = extractFileName(filePath);

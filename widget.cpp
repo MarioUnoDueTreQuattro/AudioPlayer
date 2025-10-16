@@ -1787,6 +1787,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     // qint64 tempoTrascorso_ms = timer.elapsed();
     // double tempoTrascorso_s = (double)tempoTrascorso_ms / 1000.0;
     // qDebug() << "Tempo impiegato dalla funzione loadPlaylistFile:" << tempoTrascorso_s << "secondi";
+    if (m_bTablePlaylist) m_playlistView->playlistLoadFinished ();
     setInfoWidgetTitle();
 }
 
