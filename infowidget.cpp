@@ -451,6 +451,7 @@ void InfoWidget::setFile(const QString &localFile)
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
                     // info.append ("Format: Ogg FLAC");
+                    fields.append(Field{"Bits: ", QString::number(oggFlacFile->audioProperties()->bitsPerSample())});
                     fields.append(Field{"Format: ", "Ogg FLAC"});
                     bFomatFound = true;
                 }

@@ -292,6 +292,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     default:
                         break;
                 }
+                m_TagInfo.iBits = 16;
                 m_TagInfo.sFormat = "MPEG" + sLayer + sVersion;
                 fields.append(Field{"Format: MPEG", sLayer + sVersion});
                 // info.append (mpegFile->audioProperties ()->version ());
@@ -378,6 +379,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("Format: Ogg Opus");
                     fields.append(Field{"Format: ", "Ogg Opus"});
                     m_TagInfo.sFormat = "Ogg Opus";
+                    m_TagInfo.iBits = 16;
                     bFomatFound = true;
                 }
             }
@@ -394,6 +396,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("Format: Ogg Vorbis");
                     fields.append(Field{"Format: ", "Ogg Vorbis"});
                     m_TagInfo.sFormat = "Ogg Vorbis";
+                    m_TagInfo.iBits = 16;
                     bFomatFound = true;
                 }
             }
@@ -408,8 +411,10 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // a proprietà specifiche del FLAC se necessario.
                     // info.append ("\n");
                     // info.append ("Format: Ogg FLAC");
+                    fields.append(Field{"Bits: ", QString::number(oggFlacFile->audioProperties()->bitsPerSample())});
                     fields.append(Field{"Format: ", "Ogg FLAC"});
                     m_TagInfo.sFormat = "Ogg FLAC";
+                    m_TagInfo.iBits = oggFlacFile->audioProperties()->bitsPerSample();
                     bFomatFound = true;
                 }
             }
@@ -426,6 +431,7 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
                     // info.append ("Format: Ogg Speex");
                     fields.append(Field{"Format: ", "Ogg Speex"});
                     m_TagInfo.sFormat = "Ogg Speex";
+                    m_TagInfo.iBits = 16;
                     bFomatFound = true;
                 }
             }
