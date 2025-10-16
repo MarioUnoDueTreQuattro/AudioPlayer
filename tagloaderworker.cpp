@@ -3,10 +3,16 @@
 
 TagLoaderWorker::TagLoaderWorker(QObject *parent)
 {
+    m_bStop = false;
 }
 
 void TagLoaderWorker::processFiles(const QStringList& fileList)
 {
+    if (m_bStop)
+    {
+        emit finished();
+        return;
+    }
     AudioTag tag;
     for (const QString& filePath : fileList)
     {

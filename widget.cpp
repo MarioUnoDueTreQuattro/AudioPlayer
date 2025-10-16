@@ -214,7 +214,7 @@ void Widget::setSignalsConnections()
 {
     if (m_bTablePlaylist)
     {
-        connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChanged);
+        connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
         connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
         connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
         connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
@@ -1098,6 +1098,13 @@ void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
     }
 }
 
+void Widget::handlePlaylistCurrentIndexChangedByTable(int index)
+{
+    m_bUserRequestedPlayback = true;
+handlePlaylistCurrentIndexChanged(index);
+    m_bUserRequestedPlayback = false;
+
+}
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
     qDebug() << __FUNCTION__ << "Line:" << __LINE__;

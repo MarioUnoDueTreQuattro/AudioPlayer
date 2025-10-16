@@ -11,7 +11,7 @@ class TagLoaderWorker : public QObject
 public:
     explicit TagLoaderWorker(QObject* parent = nullptr);
     void processFiles(const QStringList& fileList);
-
+bool m_bStop;
 signals:
     void finished();
     void tagLoaded(const QString& filePath, const AudioTagInfo& info);

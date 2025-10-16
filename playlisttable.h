@@ -26,7 +26,6 @@ public:
     explicit PlaylistTable(QMediaPlayer *player, QWidget *parent = 0);
     ~PlaylistTable();
     void addTrack(const QString &filePath);
-    void addTrackExt(const QString &filePath);
     void clear();
     QMediaPlaylist *mediaPlaylist() const { return m_playlist; }
     void playlistLoadFinished();
@@ -51,8 +50,8 @@ private slots:
     void onTagLoaded(const QString &filePath, const AudioTagInfo &info);
     void on_pushButton_2_clicked();
 private:
-        SettingsManager *settingsMgr;
- Ui::PlaylistTable *ui;
+    SettingsManager *settingsMgr;
+    Ui::PlaylistTable *ui;
     void syncPlaylistOrder();
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;
@@ -64,8 +63,8 @@ private:
     QHash<QString, int> m_FilePathToRow;
     int mapSourceRowToProxy(QAbstractItemModel *sourceModel, QSortFilterProxyModel *proxyModel, int sourceRow);
     int mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int proxyRow);
-TagLoaderWorker* m_tagWorker;
-QFutureWatcher<void> *m_FutureWatcher;
+    TagLoaderWorker *m_tagWorker;
+    QFutureWatcher<void> *m_FutureWatcher;
 };
 
 #endif // PLAYLISTTABLE_H
