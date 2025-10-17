@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QMouseEvent>
+#include <QMenu>
 
 //PlaylistTable::PlaylistTable(QWidget *parent) :
 // QWidget(parent),
@@ -77,6 +78,9 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // layout->addWidget(m_view);
     // setLayout(layout);
     // --- Connections ---
+    m_view->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_view->horizontalHeader(), &QHeaderView::customContextMenuRequested,
+        this, &PlaylistTable::onHeaderContextMenu);
     connect(m_view->horizontalHeader(), SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
         this, SLOT(onHeaderSortChanged(int, Qt::SortOrder)));
     connect(m_view, SIGNAL(doubleClicked(const QModelIndex &)),
@@ -182,6 +186,98 @@ void PlaylistTable::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
+//void PlaylistTable::onHeaderContextMenu(const QPoint &pos)
+//{
+//    int column = m_view->horizontalHeader()->logicalIndexAt(pos);
+//    if (column < 0) return;
+//    QMenu menu;
+//    QAction *toggleAction = menu.addAction(m_view->isColumnHidden(column)
+//        ? tr("Show column")
+//        : tr("Hide column"));
+//    QMenu *columnMenu = menu.addMenu(tr("Columns"));
+//    for (int col = 0; col < m_model->columnCount(); ++col)
+//    {
+//        QString title = m_model->headerData(col, Qt::Horizontal).toString();
+//        QAction *action = columnMenu->addAction(title);
+//        action->setCheckable(true);
+//        action->setChecked(!m_view->isColumnHidden(col));
+//        action->setData(col); // store column index
+//    }
+//    QAction *selectedColumns = columnMenu->exec(m_view->horizontalHeader()->mapToGlobal(pos));
+//    if (selectedColumns && selectedColumns->data().isValid())
+//    {
+//        int col = selectedColumns->data().toInt();
+//        bool bVisible = !m_view->isColumnHidden(col);
+//        m_view->setColumnHidden(col, bVisible);
+//        settingsMgr->beginGroup("Table");
+//        settingsMgr->setValue(QString("Column_IsVisible_%1").arg(col), !bVisible);
+//        settingsMgr->endGroup();
+//    }
+//    QAction *selected = menu.exec(m_view->horizontalHeader()->mapToGlobal(pos));
+//    if (selected == toggleAction)
+//    {
+//        bool bVisible = !m_view->isColumnHidden(column);
+//        m_view->setColumnHidden(column, bVisible);
+//        settingsMgr->beginGroup("Table");
+//        settingsMgr->setValue(QString("Column_IsVisible_%1").arg(column), !bVisible);
+//        settingsMgr->endGroup();
+//    }
+//}
+
+void PlaylistTable::onHeaderContextMenu(const QPoint &pos)
+{
+    int column = m_view->horizontalHeader()->logicalIndexAt(pos);
+    if (column < 0) return;
+
+    QMenu menu;
+
+    // Toggle current column visibility
+    QAction *toggleAction = menu.addAction(m_view->isColumnHidden(column)
+        ? tr("Show column")
+        : tr("Hide column"));
+    toggleAction->setData(column);
+
+    // Submenu for all columns
+    QMenu *columnMenu = new QMenu(tr("Columns"), &menu);
+    QList<QAction*> columnActions;
+
+    for (int col = 0; col < m_model->columnCount(); ++col)
+    {
+        QString title = m_model->headerData(col, Qt::Horizontal).toString();
+        QAction *action = columnMenu->addAction(title);
+        action->setCheckable(true);
+        action->setChecked(!m_view->isColumnHidden(col));
+        action->setData(col);
+        columnActions.append(action);
+    }
+
+    menu.addMenu(columnMenu);
+
+    QAction *selected = menu.exec(m_view->horizontalHeader()->mapToGlobal(pos));
+    if (!selected) return;
+
+    int col = selected->data().toInt();
+    if (!selected->data().isValid()) return;
+
+    bool bVisible = !m_view->isColumnHidden(col);
+    m_view->setColumnHidden(col, bVisible);
+
+    settingsMgr->beginGroup("Table");
+    settingsMgr->setValue(QString("Column_IsVisible_%1").arg(col), !bVisible);
+    settingsMgr->endGroup();
+}
+
+void PlaylistTable::restoreColumnVisibility()
+{
+    settingsMgr->beginGroup("Table");
+    for (int col = 0; col < m_view->model()->columnCount(); ++col)
+    {
+        bool bVisible = settingsMgr->value(QString("Column_IsVisible_%1").arg(col), true).toBool();
+        m_view->setColumnHidden(col, !bVisible);
+    }
+    settingsMgr->endGroup();
+}
+
 void PlaylistTable::loadsettings()
 {
     // Restore position
@@ -213,8 +309,8 @@ void PlaylistTable::syncPlaylistOrder()
     Qt::SortOrder sortOrder = m_view->horizontalHeader()->sortIndicatorOrder();
     // Force re-sort now
     m_sortModel->sort(sortCol, sortOrder);
-//    m_view->setModel (m_model);
-//    m_model->sort (sortCol, sortOrder);
+    // m_view->setModel (m_model);
+    // m_model->sort (sortCol, sortOrder);
     qApp->processEvents();
     if (m_player->state() != QMediaPlayer::StoppedState)
         m_player->stop();
@@ -537,6 +633,7 @@ void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& inf
 
 void PlaylistTable::playlistLoadFinished()
 {
+    restoreColumnVisibility();
     on_pushButton_clicked();
     //on_pushButton_2_clicked ();
     //setSectionsResizeMode();

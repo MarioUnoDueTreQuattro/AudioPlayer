@@ -49,6 +49,8 @@ private slots:
     void onTagLoadingFinished();
     void onTagLoaded(const QString &filePath, const AudioTagInfo &info);
     void on_pushButton_2_clicked();
+    void onHeaderContextMenu(const QPoint &pos);
+    void restoreColumnVisibility();
 private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
