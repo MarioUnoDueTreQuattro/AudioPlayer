@@ -62,6 +62,14 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_view->setAlternatingRowColors(true);
     // m_view->horizontalHeader()->setSectionsClickable(true);
     // --- Create and assign duration delegate ---
+    //for (int col = 0; col < m_view->model()->columnCount(); ++col) {
+    // m_view->setItemDelegateForColumn(col, new PlaylistDelegate(m_view));
+    //}
+    PlaylistDelegate *delegate = new PlaylistDelegate(m_view);
+    for (int col = 0; col < m_view->model()->columnCount(); ++col)
+    {
+        m_view->setItemDelegateForColumn(col, delegate);
+    }
     PlaylistDurationDelegate *durationDelegate = new PlaylistDurationDelegate(this);
     m_view->setItemDelegateForColumn(3, durationDelegate);
     PlaylistFileSizeDelegate *FileSizeDelegate = new PlaylistFileSizeDelegate(this);
