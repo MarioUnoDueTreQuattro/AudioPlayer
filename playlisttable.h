@@ -51,6 +51,8 @@ private slots:
     void on_pushButton_2_clicked();
     void onHeaderContextMenu(const QPoint &pos);
     void restoreColumnVisibility();
+    void onColumnResized(int column, int oldSize, int newSize);
+    void restoreColumnWidths();
 private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;

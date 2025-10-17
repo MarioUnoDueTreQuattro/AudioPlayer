@@ -78,6 +78,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // layout->addWidget(m_view);
     // setLayout(layout);
     // --- Connections ---
+    connect(m_view->horizontalHeader(), &QHeaderView::sectionResized,
+        this, &PlaylistTable::onColumnResized);
     m_view->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_view->horizontalHeader(), &QHeaderView::customContextMenuRequested,
         this, &PlaylistTable::onHeaderContextMenu);
@@ -188,59 +190,55 @@ void PlaylistTable::resizeEvent(QResizeEvent *event)
 
 //void PlaylistTable::onHeaderContextMenu(const QPoint &pos)
 //{
-//    int column = m_view->horizontalHeader()->logicalIndexAt(pos);
-//    if (column < 0) return;
-//    QMenu menu;
-//    QAction *toggleAction = menu.addAction(m_view->isColumnHidden(column)
-//        ? tr("Show column")
-//        : tr("Hide column"));
-//    QMenu *columnMenu = menu.addMenu(tr("Columns"));
-//    for (int col = 0; col < m_model->columnCount(); ++col)
-//    {
-//        QString title = m_model->headerData(col, Qt::Horizontal).toString();
-//        QAction *action = columnMenu->addAction(title);
-//        action->setCheckable(true);
-//        action->setChecked(!m_view->isColumnHidden(col));
-//        action->setData(col); // store column index
-//    }
-//    QAction *selectedColumns = columnMenu->exec(m_view->horizontalHeader()->mapToGlobal(pos));
-//    if (selectedColumns && selectedColumns->data().isValid())
-//    {
-//        int col = selectedColumns->data().toInt();
-//        bool bVisible = !m_view->isColumnHidden(col);
-//        m_view->setColumnHidden(col, bVisible);
-//        settingsMgr->beginGroup("Table");
-//        settingsMgr->setValue(QString("Column_IsVisible_%1").arg(col), !bVisible);
-//        settingsMgr->endGroup();
-//    }
-//    QAction *selected = menu.exec(m_view->horizontalHeader()->mapToGlobal(pos));
-//    if (selected == toggleAction)
-//    {
-//        bool bVisible = !m_view->isColumnHidden(column);
-//        m_view->setColumnHidden(column, bVisible);
-//        settingsMgr->beginGroup("Table");
-//        settingsMgr->setValue(QString("Column_IsVisible_%1").arg(column), !bVisible);
-//        settingsMgr->endGroup();
-//    }
+// int column = m_view->horizontalHeader()->logicalIndexAt(pos);
+// if (column < 0) return;
+// QMenu menu;
+// QAction *toggleAction = menu.addAction(m_view->isColumnHidden(column)
+// ? tr("Show column")
+// : tr("Hide column"));
+// QMenu *columnMenu = menu.addMenu(tr("Columns"));
+// for (int col = 0; col < m_model->columnCount(); ++col)
+// {
+// QString title = m_model->headerData(col, Qt::Horizontal).toString();
+// QAction *action = columnMenu->addAction(title);
+// action->setCheckable(true);
+// action->setChecked(!m_view->isColumnHidden(col));
+// action->setData(col); // store column index
+// }
+// QAction *selectedColumns = columnMenu->exec(m_view->horizontalHeader()->mapToGlobal(pos));
+// if (selectedColumns && selectedColumns->data().isValid())
+// {
+// int col = selectedColumns->data().toInt();
+// bool bVisible = !m_view->isColumnHidden(col);
+// m_view->setColumnHidden(col, bVisible);
+// settingsMgr->beginGroup("Table");
+// settingsMgr->setValue(QString("Column_IsVisible_%1").arg(col), !bVisible);
+// settingsMgr->endGroup();
+// }
+// QAction *selected = menu.exec(m_view->horizontalHeader()->mapToGlobal(pos));
+// if (selected == toggleAction)
+// {
+// bool bVisible = !m_view->isColumnHidden(column);
+// m_view->setColumnHidden(column, bVisible);
+// settingsMgr->beginGroup("Table");
+// settingsMgr->setValue(QString("Column_IsVisible_%1").arg(column), !bVisible);
+// settingsMgr->endGroup();
+// }
 //}
 
 void PlaylistTable::onHeaderContextMenu(const QPoint &pos)
 {
     int column = m_view->horizontalHeader()->logicalIndexAt(pos);
     if (column < 0) return;
-
     QMenu menu;
-
     // Toggle current column visibility
     QAction *toggleAction = menu.addAction(m_view->isColumnHidden(column)
         ? tr("Show column")
         : tr("Hide column"));
     toggleAction->setData(column);
-
     // Submenu for all columns
     QMenu *columnMenu = new QMenu(tr("Columns"), &menu);
-    QList<QAction*> columnActions;
-
+    QList<QAction *> columnActions;
     for (int col = 0; col < m_model->columnCount(); ++col)
     {
         QString title = m_model->headerData(col, Qt::Horizontal).toString();
@@ -250,18 +248,13 @@ void PlaylistTable::onHeaderContextMenu(const QPoint &pos)
         action->setData(col);
         columnActions.append(action);
     }
-
     menu.addMenu(columnMenu);
-
     QAction *selected = menu.exec(m_view->horizontalHeader()->mapToGlobal(pos));
     if (!selected) return;
-
     int col = selected->data().toInt();
     if (!selected->data().isValid()) return;
-
     bool bVisible = !m_view->isColumnHidden(col);
     m_view->setColumnHidden(col, bVisible);
-
     settingsMgr->beginGroup("Table");
     settingsMgr->setValue(QString("Column_IsVisible_%1").arg(col), !bVisible);
     settingsMgr->endGroup();
@@ -274,6 +267,25 @@ void PlaylistTable::restoreColumnVisibility()
     {
         bool bVisible = settingsMgr->value(QString("Column_IsVisible_%1").arg(col), true).toBool();
         m_view->setColumnHidden(col, !bVisible);
+    }
+    settingsMgr->endGroup();
+}
+
+void PlaylistTable::onColumnResized(int column, int oldSize, int newSize)
+{
+    settingsMgr->beginGroup("Table");
+    settingsMgr->setValue(QString("Column_Width_%1").arg(column), newSize);
+    settingsMgr->endGroup();
+}
+
+void PlaylistTable::restoreColumnWidths()
+{
+    settingsMgr->beginGroup("Table");
+    for (int col = 0; col < m_model->columnCount(); ++col)
+    {
+        int width = settingsMgr->value(QString("Column_Width_%1").arg(col), -1).toInt();
+        if (width > 0)
+            m_view->setColumnWidth(col, width);
     }
     settingsMgr->endGroup();
 }
@@ -633,6 +645,7 @@ void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& inf
 
 void PlaylistTable::playlistLoadFinished()
 {
+    restoreColumnWidths();
     restoreColumnVisibility();
     on_pushButton_clicked();
     //on_pushButton_2_clicked ();
