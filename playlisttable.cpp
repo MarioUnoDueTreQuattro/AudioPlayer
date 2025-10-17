@@ -101,20 +101,39 @@ PlaylistTable::~PlaylistTable()
 
 void PlaylistTable::closeEvent(QCloseEvent *event)
 {
-    if (m_FutureWatcher != nullptr)
+    if (m_tagWorker)
     {
-        if (m_FutureWatcher->isRunning())
+        m_tagWorker->stop(); // signal worker to abort
+        if (m_FutureWatcher)
         {
-            m_tagWorker->m_bStop = true;
-            QFuture<void> future = m_FutureWatcher->future();
-            future.cancel();
-            future.waitForFinished();
+            m_FutureWatcher->waitForFinished(); // wait for thread to finish
         }
-        m_FutureWatcher->waitForFinished();
-        delete m_tagWorker;
+    }
+    // if (m_FutureWatcher != nullptr)
+    // {
+    // if (m_FutureWatcher->isRunning())
+    // {
+    //           // m_tagWorker->m_bStop = true;
+    // QFuture<void> future = m_FutureWatcher->future();
+    // future.cancel();
+    // future.waitForFinished();
+    // }
+    // m_FutureWatcher->waitForFinished();
+    // delete m_tagWorker;
+    // m_tagWorker = nullptr;
+    // }
+    // if (m_tagWorker != nullptr) delete m_tagWorker;
+    if (m_tagWorker)
+    {
+        disconnect(m_tagWorker, nullptr, this, nullptr);
+        m_tagWorker->deleteLater();
         m_tagWorker = nullptr;
     }
-    if (m_tagWorker != nullptr) delete m_tagWorker;
+    if (m_FutureWatcher)
+    {
+        m_FutureWatcher->deleteLater();
+        m_FutureWatcher = nullptr;
+    }
     emit windowClosed();
     event->accept();
     QWidget::closeEvent(event);
@@ -191,10 +210,10 @@ void PlaylistTable::syncPlaylistOrder()
     qDebug() << "syncPlaylistOrder";
     int sortCol = m_view->horizontalHeader()->sortIndicatorSection();
     Qt::SortOrder sortOrder = m_view->horizontalHeader()->sortIndicatorOrder();
-    qApp->processEvents();
     // Force re-sort now
     m_sortModel->sort(sortCol, sortOrder);
-    if (m_player->state() != QMediaPlayer::StoppedState)
+       qApp->processEvents();
+ if (m_player->state() != QMediaPlayer::StoppedState)
         m_player->stop();
     QMediaPlaylist *newPlaylist = new QMediaPlaylist(this);
     newPlaylist->clear();
@@ -283,24 +302,93 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 // m_playlist->addMedia(QUrl::fromLocalFile(filePath));
 //}
 
+//void PlaylistTable::on_pushButton_clicked()
+//{
+// ui->pushButton->setEnabled(false);
+// m_view->setSortingEnabled(false);
+// if (!m_sortModel)
+// return;
+// int rowCount = m_sortModel->rowCount();
+// QStringList fileList;
+//    // Iterate through the proxy model (sorted/displayed order)
+// for (int idx = 0; idx < rowCount; ++idx)
+// {
+//        // Column 0 = Filename column; UserRole+1 stores the full path
+// QModelIndex index = m_sortModel->index(idx, 0);
+// QString fullPath = m_sortModel->data(index, Qt::UserRole + 1).toString();
+// if (!fullPath.isEmpty())
+// fileList.append(fullPath);
+// }
+//    // Run the tag loading in a separate thread
+// m_tagWorker = new TagLoaderWorker();
+// QFuture<void> future = QtConcurrent::run(m_tagWorker, &TagLoaderWorker::processFiles, fileList);
+// m_FutureWatcher = new QFutureWatcher<void>(this);
+// m_FutureWatcher->setFuture(future);
+// connect(m_tagWorker, SIGNAL(finished()), this, SLOT(onTagLoadingFinished()));
+// connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
+// this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+//}
+
+//void PlaylistTable::on_pushButton_clicked()
+//{
+// ui->pushButton->setEnabled(false);
+// m_view->setSortingEnabled(false);
+// QAbstractItemModel* model = m_view->model();
+// if (!model)
+// return;
+// int iCount = model->rowCount();
+// QStringList fileList;
+// QString sFileName;
+// QModelIndex index;
+// m_FilePathToRow.clear();
+// for (int idx = 0; idx < iCount; idx++)
+// {
+// index = m_sortModel->index(idx, 2); // column 2 = Path
+// sFileName = m_sortModel->data(index).toString() + "/";
+// index = m_sortModel->index(idx, 0); // column 0 = file name
+// sFileName.append(m_sortModel->data(index).toString());
+// sFileName.append(".");
+// index = m_sortModel->index(idx, 1); // column 1 = extension
+// sFileName.append(m_sortModel->data(index).toString());
+// qDebug() << sFileName;
+// fileList.append(sFileName);
+// m_FilePathToRow.insert(sFileName, idx); // map filePath to row
+// }
+//    // Run the tag loading in a separate thread
+// TagLoaderWorker* worker = new TagLoaderWorker();
+// QFuture<void> future = QtConcurrent::run(worker, &TagLoaderWorker::processFiles, fileList);
+// QFutureWatcher<void> *watcher = new QFutureWatcher<void>(this);
+// connect(watcher, SIGNAL(finished()), this, SLOT(onTagLoadingFinished()));
+// watcher->setFuture(future);
+// connect(worker, SIGNAL(tagLoaded(QString, AudioTagInfo)), this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+//}
+
 void PlaylistTable::on_pushButton_clicked()
 {
     ui->pushButton->setEnabled(false);
     m_view->setSortingEnabled(false);
+    m_view->setModel (m_model);
     if (!m_sortModel)
         return;
     int rowCount = m_sortModel->rowCount();
     QStringList fileList;
-    // Iterate through the proxy model (sorted/displayed order)
+    m_FilePathToRow.clear();
+    // Iterate sorted/displayed rows
     for (int idx = 0; idx < rowCount; ++idx)
     {
-        // Column 0 = Filename column; UserRole+1 stores the full path
-        QModelIndex index = m_sortModel->index(idx, 0);
+        QModelIndex index = m_sortModel->index(idx, 0); // column 0 = filename
         QString fullPath = m_sortModel->data(index, Qt::UserRole + 1).toString();
         if (!fullPath.isEmpty())
+        {
+            QModelIndex proxyIndex = m_sortModel->index(idx, 0);
+            QString fullPath = m_sortModel->data(proxyIndex, Qt::UserRole + 1).toString();
+            QModelIndex sourceIndex = m_sortModel->mapToSource(proxyIndex);
+            int sourceRow = sourceIndex.row();
+            m_FilePathToRow.insert(fullPath, sourceRow);
             fileList.append(fullPath);
+        }
     }
-    // Run the tag loading in a separate thread
+    // Run the tag loader in a separate thread
     m_tagWorker = new TagLoaderWorker();
     QFuture<void> future = QtConcurrent::run(m_tagWorker, &TagLoaderWorker::processFiles, fileList);
     m_FutureWatcher = new QFutureWatcher<void>(this);
@@ -312,50 +400,124 @@ void PlaylistTable::on_pushButton_clicked()
 
 void PlaylistTable::onTagLoadingFinished()
 {
-    delete m_tagWorker;
-    m_tagWorker = nullptr;
-    delete m_FutureWatcher;
-    m_FutureWatcher = nullptr;
+    // delete m_tagWorker;
+    // m_tagWorker = nullptr;
+    // delete m_FutureWatcher;
+    // m_FutureWatcher = nullptr;
     ui->pushButton->setEnabled(true);
     qDebug() << "All tags loaded.";
     m_view->setSortingEnabled(true);
 }
 
+//void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)
+//{
+////    static int icount;
+////    icount++;
+////    qDebug() icount << filePath;
+// if (!m_model)
+// return;
+//    // Find the source row by matching the stored full path in UserRole + 1
+// int matchRow = -1;
+// for (int r = 0; r < m_model->rowCount(); ++r)
+// {
+// QStandardItem* item = m_model->item(r, 0); // filename column
+// if (!item) continue;
+// QString storedPath = m_model->item(r, 0)->data(Qt::UserRole + 1).toString();
+// if (QFileInfo(storedPath).canonicalFilePath() == QFileInfo(filePath).canonicalFilePath())
+// {
+// matchRow = r;
+// break;
+// }
+// }
+// if (matchRow < 0)
+// return; // not found
+//    // Update the other columns
+// m_model->setData(m_model->index(matchRow, 3), info.iDuration);
+// m_model->setData(m_model->index(matchRow, 4), info.sArtist);
+// m_model->setData(m_model->index(matchRow, 5), info.sTitle);
+// m_model->setData(m_model->index(matchRow, 6), info.sAlbum);
+// m_model->setData(m_model->index(matchRow, 7), info.iTrackNum);
+// m_model->setData(m_model->index(matchRow, 8), info.iYear);
+// m_model->setData(m_model->index(matchRow, 9), info.sGenre);
+// m_model->setData(m_model->index(matchRow, 10), info.sComment);
+// m_model->setData(m_model->index(matchRow, 11), info.iBitrate);
+// m_model->setData(m_model->index(matchRow, 12), info.iSamplerate);
+// m_model->setData(m_model->index(matchRow, 13), info.iBits);
+// m_model->setData(m_model->index(matchRow, 14), info.iChannels);
+// m_model->setData(m_model->index(matchRow, 15), info.sFormat);
+// m_model->setData(m_model->index(matchRow, 16), info.sCoverSize);
+// m_model->setData(m_model->index(matchRow, 17), info.iFileSize);
+//}
+
+//void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)
+//{
+// static int icount;
+// icount++;
+// qDebug() << icount << filePath;
+// if (!m_FilePathToRow.contains(filePath))
+// return;
+// int row = m_FilePathToRow.value(filePath);
+// QAbstractItemModel* model = m_view->model();
+// if (!model)
+// return;
+// model->setData(model->index(row, 3), info.iDuration);
+// model->setData(model->index(row, 4), info.sArtist);
+// model->setData(model->index(row, 5), info.sTitle);
+// model->setData(model->index(row, 6), info.sAlbum);
+// model->setData(model->index(row, 7), info.iTrackNum);
+// model->setData(model->index(row, 8), info.iYear);
+// model->setData(model->index(row, 9), info.sGenre);
+// model->setData(model->index(row, 10), info.sComment);
+// model->setData(model->index(row, 11), info.iBitrate);
+// model->setData(model->index(row, 12), info.iSamplerate);
+// model->setData(model->index(row, 13), info.iBits);
+// model->setData(model->index(row, 14), info.iChannels);
+// model->setData(model->index(row, 15), info.sFormat);
+// model->setData(model->index(row, 16), info.sCoverSize);
+// model->setData(model->index(row, 17), info.iFileSize);
+//    //qDebug() << "Tag for" << filePath << ":" << info.sTitle << info.sArtist << info.sAlbum;
+//}
+
 void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)
 {
-    if (!m_model)
+    if (!m_FilePathToRow.contains(filePath))
         return;
-    // Find the source row by matching the stored full path in UserRole + 1
-    int matchRow = -1;
-    for (int r = 0; r < m_model->rowCount(); ++r)
-    {
-        QStandardItem* item = m_model->item(r, 0); // filename column
-        if (!item) continue;
-        QString storedPath = m_model->item(r, 0)->data(Qt::UserRole + 1).toString();
-        if (QFileInfo(storedPath).canonicalFilePath() == QFileInfo(filePath).canonicalFilePath())
-        {
-            matchRow = r;
-            break;
-        }
-    }
-    if (matchRow < 0)
-        return; // not found
-    // Update the other columns
-    m_model->setData(m_model->index(matchRow, 3), info.iDuration);
-    m_model->setData(m_model->index(matchRow, 4), info.sArtist);
-    m_model->setData(m_model->index(matchRow, 5), info.sTitle);
-    m_model->setData(m_model->index(matchRow, 6), info.sAlbum);
-    m_model->setData(m_model->index(matchRow, 7), info.iTrackNum);
-    m_model->setData(m_model->index(matchRow, 8), info.iYear);
-    m_model->setData(m_model->index(matchRow, 9), info.sGenre);
-    m_model->setData(m_model->index(matchRow, 10), info.sComment);
-    m_model->setData(m_model->index(matchRow, 11), info.iBitrate);
-    m_model->setData(m_model->index(matchRow, 12), info.iSamplerate);
-    m_model->setData(m_model->index(matchRow, 13), info.iBits);
-    m_model->setData(m_model->index(matchRow, 14), info.iChannels);
-    m_model->setData(m_model->index(matchRow, 15), info.sFormat);
-    m_model->setData(m_model->index(matchRow, 16), info.sCoverSize);
-    m_model->setData(m_model->index(matchRow, 17), info.iFileSize);
+    int row = m_FilePathToRow.value(filePath);
+    // int proxyRow = m_FilePathToRow.value(filePath);
+    QAbstractItemModel* model = m_view->model();
+    if (!model)
+        return;
+    model->setData(model->index(row, 3), info.iDuration);
+    model->setData(model->index(row, 4), info.sArtist);
+    model->setData(model->index(row, 5), info.sTitle);
+    model->setData(model->index(row, 6), info.sAlbum);
+    model->setData(model->index(row, 7), info.iTrackNum);
+    model->setData(model->index(row, 8), info.iYear);
+    model->setData(model->index(row, 9), info.sGenre);
+    model->setData(model->index(row, 10), info.sComment);
+    model->setData(model->index(row, 11), info.iBitrate);
+    model->setData(model->index(row, 12), info.iSamplerate);
+    model->setData(model->index(row, 13), info.iBits);
+    model->setData(model->index(row, 14), info.iChannels);
+    model->setData(model->index(row, 15), info.sFormat);
+    model->setData(model->index(row, 16), info.sCoverSize);
+    model->setData(model->index(row, 17), info.iFileSize);
+    // // Update the proxy model directly
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 3), info.iDuration);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 4), info.sArtist);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 5), info.sTitle);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 6), info.sAlbum);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 7), info.iTrackNum);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 8), info.iYear);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 9), info.sGenre);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 10), info.sComment);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 11), info.iBitrate);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 12), info.iSamplerate);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 13), info.iBits);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 14), info.iChannels);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 15), info.sFormat);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 16), info.sCoverSize);
+    // m_sortModel->setData(m_sortModel->index(proxyRow, 17), info.iFileSize);
 }
 
 void PlaylistTable::playlistLoadFinished()
@@ -438,7 +600,9 @@ void PlaylistTable::clear()
         << "Title" << "Album" << "Track" << "Year" << "Genre"
         << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
         << "Format" << "Cover size" << "File size"); m_playlist->clear();
-    // setSectionsResizeMode();
+        m_view->verticalHeader ()->setDefaultSectionSize (16);
+        m_view->verticalHeader ()->setMaximumSectionSize (32);
+ // setSectionsResizeMode();
 }
 
 QString PlaylistTable::extractFileName(const QString &filePath)
@@ -490,9 +654,11 @@ void PlaylistTable::onCurrentTrackChanged(int index)
     }
     // --- 3. Find the row in m_model with matching full path (column 18) ---
     int matchRow = -1;
-    for (int row = 0; row < m_model->rowCount(); ++row)
+for (int row = 0; row < m_model->rowCount(); ++row)
     {
-        QString path = m_model->data(m_model->index(row, 18)).toString();
+                 QModelIndex modeIndex = m_sortModel->index(row, 0); // column 0 = filename
+     QString path = m_sortModel->data(modeIndex, Qt::UserRole + 1).toString();
+      //QString path = m_model->data(m_model->index(row, 18)).toString();
         if (path.compare(currentPath, Qt::CaseInsensitive) == 0)
         {
             matchRow = row;

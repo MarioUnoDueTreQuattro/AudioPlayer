@@ -111,7 +111,8 @@ void Widget::playlistUpdated(QMediaPlaylist *playlist)
     {
         ui->listWidget->addItem(playlist->media(idx).canonicalUrl().fileName());
     }
-    //connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
+    m_player->setPlaylist(m_playlist);
+    connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
     // handleItemDoubleClicked
 }
 
@@ -534,7 +535,7 @@ QString Widget::currentTrackName()
     QString sCurrent = "";
     if (!m_playlist)
         return sCurrent;
-    int index = m_playlist->currentIndex();
+    int index = m_player->playlist()->currentIndex();
     if (index < 0)
     {
         qDebug() << "No current item in playlist";
@@ -870,18 +871,19 @@ void Widget::handlePlay()
     //m_player->stop ();
     //playSilence (100);
     //m_player->setVolume (0);
+    m_player->playlist()->setCurrentIndex(ui->listWidget->currentRow());
     m_player->setVolume(ui->volumeSlider->value());
     if (m_player->state() != QMediaPlayer::PausedState && m_bVolumeFade) musicFader->fadeIn(ui->volumeSlider->value(), m_iVolumeFadeTime);
     m_player->play();
+    ui->listWidget->setCurrentRow(m_player->playlist()->currentIndex());
     QString sPlaying = currentTrackName();
     m_playedList.append(sPlaying);
     this->setWindowTitle("AudioPlayer - " + sPlaying);
-    ui->listWidget->setCurrentRow(m_playlist->currentIndex());
-    QListWidgetItem *item = ui->listWidget->currentItem();
+    QListWidgetItem *item = ui->listWidget->item(m_player->playlist()->currentIndex());
     if (item)
     {
-        ui->listWidget->currentItem()->setTextColor(m_playedTextColor);
-        ui->listWidget->currentItem()->setIcon(QIcon(":/img/img/icons8-play-48.png"));
+        item->setTextColor(m_playedTextColor);
+        item->setIcon(QIcon(":/img/img/icons8-play-48.png"));
     }
     setInfoWidgetTitle();
     QUrl mediaUrl;
@@ -1101,9 +1103,8 @@ void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
 void Widget::handlePlaylistCurrentIndexChangedByTable(int index)
 {
     m_bUserRequestedPlayback = true;
-handlePlaylistCurrentIndexChanged(index);
+    handlePlaylistCurrentIndexChanged(index);
     m_bUserRequestedPlayback = false;
-
 }
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
