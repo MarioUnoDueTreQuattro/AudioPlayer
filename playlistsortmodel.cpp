@@ -6,15 +6,39 @@ PlaylistSortModel::PlaylistSortModel(QObject *parent)
 {
 }
 
+void PlaylistSortModel::setFilterText(const QString &text)
+{
+    m_filterText = text;
+    invalidateFilter();
+}
+
+void PlaylistSortModel::setFilterColumns(const QSet<int> &columns)
+{
+    m_filterColumns = columns;
+    invalidateFilter();
+}
+
+bool PlaylistSortModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+{
+    if (m_filterText.isEmpty())
+        return true;
+    for (int col : m_filterColumns)
+    {
+        QModelIndex index = sourceModel()->index(sourceRow, col, sourceParent);
+        QString cellText = sourceModel()->data(index).toString();
+        if (cellText.contains(m_filterText, Qt::CaseInsensitive))
+            return true;
+    }
+    return false;
+}
+
 bool PlaylistSortModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
     QVariant leftData = sourceModel()->data(left);
     QVariant rightData = sourceModel()->data(right);
-
     bool leftIsNumber, rightIsNumber;
     double leftVal = leftData.toDouble(&leftIsNumber);
     double rightVal = rightData.toDouble(&rightIsNumber);
-
     if (leftIsNumber && rightIsNumber)
         return leftVal < rightVal; // Numeric comparison
     else

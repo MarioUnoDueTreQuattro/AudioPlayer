@@ -41,6 +41,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
         << "Format" << "Cover size" << "File size");
     // --- Create sort proxy ---
     m_sortModel = new PlaylistSortModel(this);
+    m_sortModel->setFilterColumns(QSet<int> {0, 2, 4, 5, 6});
     m_sortModel->setSourceModel(m_model);
     //    // --- Create view ---
     // m_view = new QTableView(this);
@@ -86,6 +87,9 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // layout->addWidget(m_view);
     // setLayout(layout);
     // --- Connections ---
+    connect(ui->comboBoxFind, &QComboBox::currentTextChanged, this, &PlaylistTable::findInTable);
+    connect(ui->comboBoxFilter, &QComboBox::currentTextChanged,
+        m_sortModel, &PlaylistSortModel::setFilterText);
     connect(m_view->horizontalHeader(), &QHeaderView::sectionResized,
         this, &PlaylistTable::onColumnResized);
     m_view->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -185,6 +189,7 @@ void PlaylistTable::moveEvent(QMoveEvent *event)
 
 void PlaylistTable::resizeEvent(QResizeEvent *event)
 {
+    qDebug() << __PRETTY_FUNCTION__;
     // QSize newSize = event->size();
     // QSize oldSize = event->oldSize();
     // qDebug() << "Widget resized from" << oldSize << "to" << newSize;
@@ -835,4 +840,28 @@ int PlaylistTable::mapProxyRowToSource(QSortFilterProxyModel* proxyModel, int pr
     QModelIndex proxyIndex = proxyModel->index(proxyRow, 0); // column 0 is arbitrary, just needs a valid index
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     return sourceIndex.isValid() ? sourceIndex.row() : -1;
+}
+
+void PlaylistTable::findInTable(const QString &searchText)
+{
+    if (searchText.isEmpty())
+        return;
+    QAbstractItemModel *model = m_sortModel; //m_view->model();
+    QList<QModelIndex> matches;
+    for (int row = 0; row < model->rowCount(); ++row)
+    {
+        for (int col = 0; col < model->columnCount(); ++col)
+        {
+            QModelIndex index = model->index(row, col);
+            QString cellText = model->data(index).toString();
+            if (cellText.contains(searchText, Qt::CaseInsensitive))
+                matches.append(index);
+        }
+    }
+    if (!matches.isEmpty())
+    {
+        m_view->scrollTo(matches.first(), QAbstractItemView::PositionAtCenter);
+        m_view->setCurrentIndex(matches.first());
+        m_view->selectionModel()->select(matches.first(), QItemSelectionModel::Select);
+    }
 }

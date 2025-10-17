@@ -53,6 +53,7 @@ private slots:
     void restoreColumnVisibility();
     void onColumnResized(int column, int oldSize, int newSize);
     void restoreColumnWidths();
+    void findInTable(const QString &searchText);
 private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
