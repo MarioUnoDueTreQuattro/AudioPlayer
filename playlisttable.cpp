@@ -208,12 +208,15 @@ void PlaylistTable::loadsettings()
 void PlaylistTable::syncPlaylistOrder()
 {
     qDebug() << "syncPlaylistOrder";
+    m_view->setModel(m_sortModel);
     int sortCol = m_view->horizontalHeader()->sortIndicatorSection();
     Qt::SortOrder sortOrder = m_view->horizontalHeader()->sortIndicatorOrder();
     // Force re-sort now
     m_sortModel->sort(sortCol, sortOrder);
-       qApp->processEvents();
- if (m_player->state() != QMediaPlayer::StoppedState)
+//    m_view->setModel (m_model);
+//    m_model->sort (sortCol, sortOrder);
+    qApp->processEvents();
+    if (m_player->state() != QMediaPlayer::StoppedState)
         m_player->stop();
     QMediaPlaylist *newPlaylist = new QMediaPlaylist(this);
     newPlaylist->clear();
@@ -226,20 +229,32 @@ void PlaylistTable::syncPlaylistOrder()
         if (oldIndex >= 0 && oldIndex < m_playlist->mediaCount())
             oldCurrentUrl = m_playlist->media(oldIndex).canonicalUrl();
     }
-    // Iterate through the proxy model, which reflects sorted order
-    for (int i = 0; i < m_sortModel->rowCount(); ++i)
+    QAbstractItemModel *viewModel = m_view->model();
+    for (int i = 0; i < viewModel->rowCount(); ++i)
     {
-        QModelIndex pathIndex = m_sortModel->index(i, 2); // column 2 = Path
-        QString path = m_sortModel->data(pathIndex).toString() + "/";
-        pathIndex = m_sortModel->index(i, 0);
-        path.append(m_sortModel->data(pathIndex).toString());
+        QModelIndex pathIndex = viewModel->index(i, 2);
+        QString path = viewModel->data(pathIndex).toString() + "/";
+        pathIndex = viewModel->index(i, 0);
+        path.append(viewModel->data(pathIndex).toString());
         path.append(".");
-        pathIndex = m_sortModel->index(i, 1);
-        path.append(m_sortModel->data(pathIndex).toString());
-        //path.append(".m4a");
-        qDebug() << path;
+        pathIndex = viewModel->index(i, 1);
+        path.append(viewModel->data(pathIndex).toString());
         newPlaylist->addMedia(QUrl::fromLocalFile(path));
     }
+    // Iterate through the proxy model, which reflects sorted order
+    // for (int i = 0; i < m_sortModel->rowCount(); ++i)
+    // {
+    // QModelIndex pathIndex = m_sortModel->index(i, 2); // column 2 = Path
+    // QString path = m_sortModel->data(pathIndex).toString() + "/";
+    // pathIndex = m_sortModel->index(i, 0);
+    // path.append(m_sortModel->data(pathIndex).toString());
+    // path.append(".");
+    // pathIndex = m_sortModel->index(i, 1);
+    // path.append(m_sortModel->data(pathIndex).toString());
+    //        //path.append(".m4a");
+    // qDebug() << path;
+    // newPlaylist->addMedia(QUrl::fromLocalFile(path));
+    // }
     // Replace playlist
     // disconnect old playlist signals if necessary
     if (m_playlist)
@@ -367,7 +382,7 @@ void PlaylistTable::on_pushButton_clicked()
 {
     ui->pushButton->setEnabled(false);
     m_view->setSortingEnabled(false);
-    m_view->setModel (m_model);
+    m_view->setModel(m_model);
     if (!m_sortModel)
         return;
     int rowCount = m_sortModel->rowCount();
@@ -600,9 +615,9 @@ void PlaylistTable::clear()
         << "Title" << "Album" << "Track" << "Year" << "Genre"
         << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
         << "Format" << "Cover size" << "File size"); m_playlist->clear();
-        m_view->verticalHeader ()->setDefaultSectionSize (16);
-        m_view->verticalHeader ()->setMaximumSectionSize (32);
- // setSectionsResizeMode();
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+    // setSectionsResizeMode();
 }
 
 QString PlaylistTable::extractFileName(const QString &filePath)
@@ -654,11 +669,11 @@ void PlaylistTable::onCurrentTrackChanged(int index)
     }
     // --- 3. Find the row in m_model with matching full path (column 18) ---
     int matchRow = -1;
-for (int row = 0; row < m_model->rowCount(); ++row)
+    for (int row = 0; row < m_model->rowCount(); ++row)
     {
-                 QModelIndex modeIndex = m_sortModel->index(row, 0); // column 0 = filename
-     QString path = m_sortModel->data(modeIndex, Qt::UserRole + 1).toString();
-      //QString path = m_model->data(m_model->index(row, 18)).toString();
+        QModelIndex modeIndex = m_sortModel->index(row, 0); // column 0 = filename
+        QString path = m_sortModel->data(modeIndex, Qt::UserRole + 1).toString();
+        //QString path = m_model->data(m_model->index(row, 18)).toString();
         if (path.compare(currentPath, Qt::CaseInsensitive) == 0)
         {
             matchRow = row;
