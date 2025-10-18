@@ -89,10 +89,11 @@ Widget::Widget(QWidget *parent)
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     if (m_bTablePlaylist)
     {
-        m_playlistView = new PlaylistTable(m_player, nullptr);
+        m_playlistView = new PlaylistTable(m_player,nullptr);
         m_playlistView->show();
     }
     loadSettings(); // Load volume/mute state before connecting slider
+    //m_playlistView->setPlaylist (m_playlist);
     // Apply loaded volume
     ui->volumeSlider->setValue(m_lastVolume);
     m_bVolumeFadeDisabled = false;
@@ -1064,7 +1065,10 @@ void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
 void Widget::handlePlaylistCurrentIndexChangedByTable(int index)
 {
     m_bUserRequestedPlayback = true;
+    m_player->stop ();
     handlePlaylistCurrentIndexChanged(index);
+//        handlePositionChanged (m_player->position ());
+//handlePlay ();
     m_bUserRequestedPlayback = false;
 }
 void Widget::handlePlaylistCurrentIndexChanged(int index)

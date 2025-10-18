@@ -19,11 +19,12 @@
 // ui->setupUi(this);
 //}
 
-PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
+PlaylistTable::PlaylistTable(QMediaPlayer *player,  QWidget *parent)
     : QWidget(parent),
       ui(new Ui::PlaylistTable),
-      m_player(player)
-{
+      m_player(player),
+      m_CurrentItem(nullptr)
+      {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
     ui->setupUi(this);
     setWindowFlags(Qt::Tool);
@@ -110,6 +111,12 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
     // m_sortModel->sort(iSortCol, order);
     // onHeaderSortChanged (iSortCol,order);
+}
+
+void PlaylistTable::setPlaylist( QMediaPlaylist * playlist)
+{
+m_player->setPlaylist (playlist);
+
 }
 
 PlaylistTable::~PlaylistTable()
@@ -822,12 +829,12 @@ void PlaylistTable::setCurrentItemIcon(bool bPlaying)
     {
         QIcon defaultIcon(":/img/img/icons8-music-48.png");
         // QIcon defaultIcon(":/img/img/icons8-stop-48.png");
-        m_CurrentItem->setIcon(defaultIcon);
+        if (m_CurrentItem) m_CurrentItem->setIcon(defaultIcon);
     }
     else
     {
         QIcon playingIcon(":/img/img/icons8-play-48.png");
-        m_CurrentItem->setIcon(playingIcon);
+        if (m_CurrentItem) m_CurrentItem->setIcon(playingIcon);
     }
 }
 
