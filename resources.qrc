@@ -28,5 +28,6 @@
         <file>img/icons8-filter-48.png</file>
         <file>img/icons8-reload-48.png</file>
         <file>img/icons8-music-48.png</file>
+        <file>img/icons8-playlist_trim-48.png</file>
     </qresource>
 </RCC>

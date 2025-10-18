@@ -337,6 +337,9 @@ void PlaylistTable::syncPlaylistOrder()
     m_sortModel->sort(sortCol, sortOrder);
     // m_view->setModel (m_model);
     // m_model->sort (sortCol, sortOrder);
+    // QEventLoop loop;
+    // QTimer::singleShot(1000, &loop, &QEventLoop::quit);
+    // loop.exec(); // Blocks for 500 ms, but keeps UI responsive
     qApp->processEvents();
     if (m_player->state() != QMediaPlayer::StoppedState)
         m_player->stop();
@@ -412,6 +415,7 @@ void PlaylistTable::syncPlaylistOrder()
     m_view->setTextElideMode(Qt::ElideRight);
     for (int row = 0; row < m_model->rowCount(); ++row)
         m_model->item(row, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    //m_view->setModel (m_model);
     emit playlistUpdated(m_playlist);
 }
 

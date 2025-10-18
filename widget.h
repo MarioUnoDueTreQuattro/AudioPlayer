@@ -87,6 +87,7 @@ private slots:
     void on_pushButtonResetFilter_clicked();
     void playlistUpdated(QMediaPlaylist *playlist);
     void handlePlaylistCurrentIndexChangedByTable(int index);
+    void showPlaylistTable();
 private:
     // bool m_bPlaylistFinished;
     bool m_bIsInShuffleMode;

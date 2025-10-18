@@ -1614,6 +1614,7 @@ void Widget::settingsDialogAccepted()
     //m_infoWidget->setStyle (this->style ());
     m_bVolumeFade = settingsMgr->value("VolumeFade", true).toBool();
     m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();;
+    m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
 }
 
 void Widget::handleModeButton()
@@ -1846,6 +1847,12 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
     QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
     QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
+    QAction *playlistTableAction;
+    if (m_bTablePlaylist)
+    {
+        playlistTableAction = contextMenu.addAction(tr("Show playlist table"));
+        playlistTableAction->setIcon(QIcon(":/img/img/icons8-playlist_trim-48.png"));
+    }
     contextMenu.addSeparator();
     QAction* searchAction = contextMenu.addAction(tr("Search on Google"));
     searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
@@ -1871,6 +1878,10 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     else if (selectedAction == forgetPlayedAction)
     {
         forgetPlayed();
+    }
+    else if (selectedAction == playlistTableAction)
+    {
+        showPlaylistTable();
     }
     else if (selectedAction == filterAction)
     {
@@ -1948,6 +1959,20 @@ void Widget::filterList(const QString &text)
         // Hide items that do not match the filter text
         item->setHidden(!match);
     }
+}
+
+void Widget::showPlaylistTable()
+{
+    if (m_playlistView == nullptr)
+    {
+        m_playlistView = new PlaylistTable(m_player, nullptr);
+        connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
+        connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
+        connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
+        connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
+    }
+    m_playlistView->show();
+    m_playlistView->raise();
 }
 
 void Widget::showModeButtonContextMenu(const QPoint &pos)
