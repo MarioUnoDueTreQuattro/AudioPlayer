@@ -95,6 +95,7 @@ Widget::Widget(QWidget *parent)
     loadSettings(); // Load volume/mute state before connecting slider
     // Apply loaded volume
     ui->volumeSlider->setValue(m_lastVolume);
+    m_bVolumeFadeDisabled = false;
     if (m_bVolumeFade) m_player->setVolume(0);
     ui->listWidget -> setAlternatingRowColors(true);
     setSignalsConnections();
@@ -211,12 +212,20 @@ void Widget::handlePositionBackward()
     //ui->positionSlider->setValue (pos);
 }
 
+void Widget::playlistIsSorting(bool bIsSorting)
+{
+LOG_VAR(bIsSorting);
+    if (bIsSorting) m_bVolumeFadeDisabled = true;
+    else m_bVolumeFadeDisabled = false;
+}
+
 void Widget::setSignalsConnections()
 {
     if (m_bTablePlaylist)
     {
         connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
         connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
+        connect(m_playlistView, &PlaylistTable::isSorting, this, &Widget::playlistIsSorting);
         connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
         connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
     }
@@ -881,7 +890,7 @@ void Widget::handlePlay()
     if (ui->listWidget->currentRow() != m_player->playlist()->currentIndex())
         ui->listWidget->setCurrentRow(m_player->playlist()->currentIndex());
     if (!m_bVolumeFade) m_player->setVolume(ui->volumeSlider->value());
-    if (m_player->state() != QMediaPlayer::PausedState && m_bVolumeFade) musicFader->fadeIn(ui->volumeSlider->value(), m_iVolumeFadeTime);
+    if (m_player->state() != QMediaPlayer::PausedState && m_bVolumeFade && m_bVolumeFadeDisabled == false) musicFader->fadeIn(ui->volumeSlider->value(), m_iVolumeFadeTime);
     m_player->play();
     QString sPlaying = currentTrackName();
     m_playedList.append(sPlaying);
@@ -999,14 +1008,14 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
             break;
     }
     // Highlight current item in the playlist
-    if (m_player->state ()!= QMediaPlayer::StoppedState)
-{
-    int currentIndex = m_playlist->currentIndex();
-    if (currentIndex >= 0 && currentIndex < ui->listWidget->count())
+    if (m_player->state() != QMediaPlayer::StoppedState)
     {
-        ui->listWidget->setCurrentRow(currentIndex);
+        int currentIndex = m_playlist->currentIndex();
+        if (currentIndex >= 0 && currentIndex < ui->listWidget->count())
+        {
+            ui->listWidget->setCurrentRow(currentIndex);
+        }
     }
-}
 }
 
 void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
@@ -1971,6 +1980,7 @@ void Widget::showPlaylistTable()
         m_playlistView = new PlaylistTable(m_player, nullptr);
         connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
         connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
+        connect(m_playlistView, &PlaylistTable::isSorting, this, &Widget::playlistIsSorting);
         connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
         connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
     }

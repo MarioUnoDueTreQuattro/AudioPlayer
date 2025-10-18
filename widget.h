@@ -88,6 +88,7 @@ private slots:
     void playlistUpdated(QMediaPlaylist *playlist);
     void handlePlaylistCurrentIndexChangedByTable(int index);
     void showPlaylistTable();
+    void playlistIsSorting(bool bIsSorting);
 private:
     // bool m_bPlaylistFinished;
     bool m_bIsInShuffleMode;
@@ -105,6 +106,7 @@ private:
     SystemVolumeController *m_systemVolumeController;
     bool m_bTablePlaylist;
     bool m_bVolumeFade;
+    bool m_bVolumeFadeDisabled;
     int m_iVolumeFadeTime;
     bool m_bAutoplay;
     bool m_bShowInfo;

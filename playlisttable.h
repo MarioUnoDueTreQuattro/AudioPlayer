@@ -33,6 +33,7 @@ public:
 signals:
     void trackActivated(int index);
     void playlistUpdated(QMediaPlaylist *playlist);
+    void isSorting(bool);
     void windowClosed();
     void focusReceived();
 public slots:

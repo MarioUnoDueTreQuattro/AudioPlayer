@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QTextStream>
+#include <QDebug>
 
 #ifndef LOG_MACROS_H
 #define LOG_MACROS_H

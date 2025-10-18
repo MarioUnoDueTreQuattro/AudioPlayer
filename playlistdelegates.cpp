@@ -1,6 +1,7 @@
 #include "playlistdelegates.h"
 #include <QString>
 #include "utility.h"
+#include <QAbstractItemView>
 
 PlaylistDurationDelegate::PlaylistDurationDelegate(QObject *parent)
     : QStyledItemDelegate(parent)
@@ -47,12 +48,23 @@ bool PlaylistDelegate::helpEvent(QHelpEvent *event,
     if (!event || !view)
         return false;
     const QString text = index.data(Qt::DisplayRole).toString();
+    QRect visualRect = view->visualRect(index);
     QFontMetrics fm(option.font);
-    QString elided = fm.elidedText(text, option.textElideMode, option.rect.width());
-    if (text != elided)
+    int textWidth = fm.horizontalAdvance(text);
+    int availableWidth = option.rect.width() - 4; // small padding
+    const int tolerance = 2;
+//    LOG_VAR(textWidth);
+//    LOG_VAR(availableWidth);
+    bool isElided = (textWidth > (availableWidth - tolerance));
+//    LOG_MSG(availableWidth+tolerance);
+//    LOG_VAR(isElided);
+if (isElided && visualRect.contains(event->pos()))
     {
-        QToolTip::showText(event->globalPos(), text,nullptr);
-        return true;
+        if (visualRect.contains(event->pos()))
+        {
+            QToolTip::showText(event->globalPos(), text, view->viewport());
+            return true;
+        }
     }
     return QStyledItemDelegate::helpEvent(event, view, option, index);
 }

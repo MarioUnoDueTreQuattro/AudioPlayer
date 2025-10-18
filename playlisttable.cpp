@@ -457,12 +457,14 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 {
     Q_UNUSED(logicalIndex);
     Q_UNUSED(order);
+    emit isSorting (true);
     //qDebug() << "onHeaderSortChanged logicalIndex" << logicalIndex;
     settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
     settingsMgr->setValue("PlaylistViewSortColumnOrder", order);
     // After sorting the model, rebuild the QMediaPlaylist order.
     syncPlaylistOrder();
     qDebug() << "Playlist sorted and reordered to match table view.";
+    emit isSorting (false);
 }
 
 //void PlaylistView::addTrack(const QString &filePath)
