@@ -457,14 +457,14 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 {
     Q_UNUSED(logicalIndex);
     Q_UNUSED(order);
-    emit isSorting (true);
+    emit isSorting(true);
     //qDebug() << "onHeaderSortChanged logicalIndex" << logicalIndex;
     settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
     settingsMgr->setValue("PlaylistViewSortColumnOrder", order);
     // After sorting the model, rebuild the QMediaPlaylist order.
     syncPlaylistOrder();
     qDebug() << "Playlist sorted and reordered to match table view.";
-    emit isSorting (false);
+    emit isSorting(false);
 }
 
 //void PlaylistView::addTrack(const QString &filePath)
@@ -867,7 +867,7 @@ void PlaylistTable::onCurrentTrackChanged(int index)
     }
     // 4) Set playing icon on the source item
     QStandardItem *currentItem = m_model->item(matchSourceRow, 0);
-    if (currentItem)
+    if (currentItem)// && m_player->state()== QMediaPlayer::PlayingState)
         currentItem->setIcon(playingIcon);
     // 5) Map source -> proxy and select/scroll the proxy index
     QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);

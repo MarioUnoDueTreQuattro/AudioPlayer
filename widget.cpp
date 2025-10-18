@@ -975,7 +975,7 @@ void Widget::handleItemDoubleClicked()
         }
         else
         {
-            // m_playlist->setCurrentIndex(idx);
+            m_playlist->setCurrentIndex(idx);
             handlePlay();
         }
         //m_playlist->setCurrentIndex(idx);
@@ -1114,7 +1114,7 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
         }
         ui->listWidget->setCurrentRow(index);
         //ui->listWidget->scrollToItem(ui->listWidget->item(index), QAbstractItemView::PositionAtCenter);
-        if (m_player->state() == QMediaPlayer::PlayingState || m_bAutoplay)
+        if (m_player->state() == QMediaPlayer::PlayingState || m_bAutoplay && !m_bVolumeFadeDisabled)
         {
             handlePlay();
         }
