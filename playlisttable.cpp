@@ -341,6 +341,8 @@ void PlaylistTable::syncPlaylistOrder()
     // QTimer::singleShot(1000, &loop, &QEventLoop::quit);
     // loop.exec(); // Blocks for 500 ms, but keeps UI responsive
     qApp->processEvents();
+//    m_model=dynamic_cast<QStandardItemModel *>( m_sortModel);
+   // m_sortModel= dynamic_cast<PlaylistSortModel *>( m_model);
     if (m_player->state() != QMediaPlayer::StoppedState)
         m_player->stop();
     QMediaPlaylist *newPlaylist = new QMediaPlaylist(this);
@@ -508,7 +510,7 @@ void PlaylistTable::on_pushButton_clicked()
 {
     ui->pushButton->setEnabled(false);
     m_view->setSortingEnabled(false);
-    m_view->setModel(m_model);
+   // m_view->setModel(m_model);
     if (!m_sortModel)
         return;
     int rowCount = m_sortModel->rowCount();
@@ -659,7 +661,11 @@ void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& inf
     // m_sortModel->setData(m_sortModel->index(proxyRow, 15), info.sFormat);
     // m_sortModel->setData(m_sortModel->index(proxyRow, 16), info.sCoverSize);
     // m_sortModel->setData(m_sortModel->index(proxyRow, 17), info.iFileSize);
-}
+// Optional: emit dataChanged for UI update
+    QModelIndex topLeft = m_model->index(row, 3);
+    QModelIndex bottomRight = m_model->index(row, 17);
+    emit m_model->dataChanged(topLeft, bottomRight);
+    }
 
 void PlaylistTable::playlistLoadFinished()
 {
@@ -781,49 +787,94 @@ void PlaylistTable::onCurrentTrackChanged(int index)
     qDebug() << __PRETTY_FUNCTION__ << "index:" << index;
     if (index < 0 || !m_playlist)
         return;
-    // --- 1. Get the URL of the currently playing track ---
+
+    // 1) Get current playing file path, normalized
     QMediaContent media = m_playlist->media(index);
     if (media.isNull())
         return;
+
     QString currentPath = media.canonicalUrl().toLocalFile();
     if (currentPath.isEmpty())
         return;
-    // --- 2. Reset icons for all rows ---
+
+    QString currentCanon = QFileInfo(currentPath).canonicalFilePath();
+    if (currentCanon.isEmpty())
+        currentCanon = QDir::fromNativeSeparators(currentPath);
+
+    // 2) Reset icons on SOURCE model (keep icons tied to source rows)
+    QIcon defaultIcon(":/img/img/icons8-music-48.png");
+    QIcon playingIcon(":/img/img/icons8-play-48.png");
+
     for (int i = 0; i < m_model->rowCount(); ++i)
     {
-        QStandardItem *item = m_model->item(i, 0); // "Filename" column
+        QStandardItem *item = m_model->item(i, 0); // filename column
         if (item)
-            item->setIcon(QIcon(":/img/img/icons8-music-48.png"));
+            item->setIcon(defaultIcon);
     }
-    // --- 3. Find the row in m_model with matching full path (column 18) ---
-    int matchRow = -1;
-    for (int row = 0; row < m_model->rowCount(); ++row)
+
+    // 3) Find matching source row by reading UserRole+1 stored full path
+    int matchSourceRow = -1;
+    for (int r = 0; r < m_model->rowCount(); ++r)
     {
-        QModelIndex modeIndex = m_sortModel->index(row, 0); // column 0 = filename
-        QString path = m_sortModel->data(modeIndex, Qt::UserRole + 1).toString();
-        //QString path = m_model->data(m_model->index(row, 18)).toString();
-        if (path.compare(currentPath, Qt::CaseInsensitive) == 0)
+        QStandardItem *it = m_model->item(r, 0);
+        if (!it) continue;
+
+        QString stored = it->data(Qt::UserRole + 1).toString();
+        if (stored.isEmpty()) continue;
+
+        QString storedCanon = QFileInfo(stored).canonicalFilePath();
+        if (storedCanon.isEmpty())
+            storedCanon = QDir::fromNativeSeparators(stored);
+
+        if (QString::compare(storedCanon, currentCanon, Qt::CaseInsensitive) == 0)
         {
-            matchRow = row;
+            matchSourceRow = r;
             break;
         }
     }
-    // --- 4. If found, update icon and selection ---
-    if (matchRow >= 0)
+
+    if (matchSourceRow < 0)
     {
-        QStandardItem *currentItem = m_model->item(matchRow, 0);
-        if (currentItem)
-            currentItem->setIcon(QIcon(":/img/img/icons8-play-48.png"));
-        // Map model row to proxy (sorted) row for correct view position
-        QModelIndex sourceIndex = m_model->index(matchRow, 0);
-        QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);
-        // --- Optional: center and select the current track in view ---
-        m_view->scrollTo(proxyIndex, QAbstractItemView::EnsureVisible);
-        m_view->selectRow(proxyIndex.row());
+        qDebug() << "onCurrentTrackChanged: no matching source row for" << currentPath;
+        // if you want, clear selection:
+        if (m_view->selectionModel())
+            m_view->selectionModel()->clearSelection();
+        return;
     }
-    // QModelIndex modeIndex = m_sortModel->index(index, 0);
-    // m_view->scrollTo(modeIndex, QAbstractItemView::PositionAtCenter);
-    // m_view->selectRow(index);
+
+    // 4) Set playing icon on the source item
+    QStandardItem *currentItem = m_model->item(matchSourceRow, 0);
+    if (currentItem)
+        currentItem->setIcon(playingIcon);
+
+    // 5) Map source -> proxy and select/scroll the proxy index
+    QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
+    QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);
+
+    if (proxyIndex.isValid())
+    {
+        // Scroll to and select the entire row in the view
+        m_view->scrollTo(proxyIndex, QAbstractItemView::EnsureVisible);
+
+        QItemSelectionModel *sel = m_view->selectionModel();
+        if (sel)
+        {
+            sel->clearSelection();
+            sel->select(proxyIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+            m_view->setCurrentIndex(proxyIndex);
+        }
+        else
+        {
+            m_view->selectRow(proxyIndex.row());
+        }
+    }
+    else
+    {
+        // The row might be filtered out by the proxy
+        qDebug() << "proxyIndex invalid — row might be filtered out";
+        if (m_view->selectionModel())
+            m_view->selectionModel()->clearSelection();
+    }
 }
 
 void PlaylistTable::on_pushButton_2_clicked()
