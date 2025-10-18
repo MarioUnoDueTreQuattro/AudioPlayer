@@ -999,11 +999,14 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
             break;
     }
     // Highlight current item in the playlist
+    if (m_player->state ()!= QMediaPlayer::StoppedState)
+{
     int currentIndex = m_playlist->currentIndex();
     if (currentIndex >= 0 && currentIndex < ui->listWidget->count())
     {
         ui->listWidget->setCurrentRow(currentIndex);
     }
+}
 }
 
 void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
