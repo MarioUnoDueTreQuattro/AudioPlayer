@@ -816,6 +816,21 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     // emit trackActivated(sourceRow);
 }
 
+void PlaylistTable::setCurrentItemIcon(bool bPlaying)
+{
+    if (!bPlaying)
+    {
+        QIcon defaultIcon(":/img/img/icons8-music-48.png");
+        // QIcon defaultIcon(":/img/img/icons8-stop-48.png");
+        m_CurrentItem->setIcon(defaultIcon);
+    }
+    else
+    {
+        QIcon playingIcon(":/img/img/icons8-play-48.png");
+        m_CurrentItem->setIcon(playingIcon);
+    }
+}
+
 void PlaylistTable::onCurrentTrackChanged(int index)
 {
     qDebug() << __PRETTY_FUNCTION__ << "index:" << index;
@@ -868,7 +883,10 @@ void PlaylistTable::onCurrentTrackChanged(int index)
     // 4) Set playing icon on the source item
     QStandardItem *currentItem = m_model->item(matchSourceRow, 0);
     if (currentItem)// && m_player->state()== QMediaPlayer::PlayingState)
+    {
         currentItem->setIcon(playingIcon);
+        m_CurrentItem = currentItem;
+    }
     // 5) Map source -> proxy and select/scroll the proxy index
     QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
     QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);

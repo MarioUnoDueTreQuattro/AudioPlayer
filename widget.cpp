@@ -859,6 +859,7 @@ void Widget::handleStopButton()
 {
     m_player->stop();
     int iListWidgetCount = ui->listWidget->count();
+    if (m_bTablePlaylist && m_playlistView) m_playlistView->setCurrentItemIcon (false);
     for (int iIdx = 0; iIdx < iListWidgetCount; iIdx++)
     {
         ui->listWidget->item(iIdx)->setIcon(QIcon());
@@ -901,6 +902,7 @@ void Widget::handlePlay()
         item->setTextColor(m_playedTextColor);
         item->setIcon(QIcon(":/img/img/icons8-play-48.png"));
     }
+    if (m_bTablePlaylist && m_playlistView) m_playlistView->setCurrentItemIcon (true);
     setInfoWidgetTitle();
     QUrl mediaUrl;
     // If you are using a playlist:

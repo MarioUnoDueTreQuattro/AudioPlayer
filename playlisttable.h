@@ -37,7 +37,8 @@ signals:
     void windowClosed();
     void focusReceived();
 public slots:
-    void onDoubleClicked(const QModelIndex &index);
+        void setCurrentItemIcon(bool);
+void onDoubleClicked(const QModelIndex &index);
     void onCurrentTrackChanged(int index);
     void onHeaderSortChanged(int logicalIndex, Qt::SortOrder order);
 protected:
@@ -58,6 +59,7 @@ private slots:
 private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
+    QStandardItem *m_CurrentItem;
     void syncPlaylistOrder();
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;
