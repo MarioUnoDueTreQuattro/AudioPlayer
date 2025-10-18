@@ -24,7 +24,7 @@ class PlaylistTable : public QWidget
 
 public:
     explicit PlaylistTable(QMediaPlayer *player, QWidget *parent = 0);
-    ~PlaylistTable();
+    ~PlaylistTable() override;
     void addTrack(const QString &filePath);
     void clear();
     QMediaPlaylist *mediaPlaylist() const { return m_playlist; }

@@ -104,7 +104,7 @@ Widget::Widget(QWidget *parent)
 
 void Widget::playlistUpdated(QMediaPlaylist *playlist)
 {
-    LOG_MSG("");
+    LOG_MSG("") ;
     m_playlist = playlist;
     ui->listWidget->clear();
     for (int idx = 0; idx < playlist->mediaCount(); idx++)
@@ -265,6 +265,11 @@ Widget::~Widget()
     {
         delete m_infoWidget;
         m_infoWidget = nullptr;
+    }
+    if (m_playlistView != nullptr)
+    {
+        delete m_playlistView;
+        m_playlistView = nullptr;
     }
 }
 
@@ -871,11 +876,13 @@ void Widget::handlePlay()
     //m_player->stop ();
     //playSilence (100);
     //m_player->setVolume (0);
-    m_player->playlist()->setCurrentIndex(ui->listWidget->currentRow());
-    m_player->setVolume(ui->volumeSlider->value());
+    if (m_player->playlist()->currentIndex() != ui->listWidget->currentRow())
+        m_player->playlist()->setCurrentIndex(ui->listWidget->currentRow());
+    if (ui->listWidget->currentRow() != m_player->playlist()->currentIndex())
+        ui->listWidget->setCurrentRow(m_player->playlist()->currentIndex());
+    if (!m_bVolumeFade) m_player->setVolume(ui->volumeSlider->value());
     if (m_player->state() != QMediaPlayer::PausedState && m_bVolumeFade) musicFader->fadeIn(ui->volumeSlider->value(), m_iVolumeFadeTime);
     m_player->play();
-    ui->listWidget->setCurrentRow(m_player->playlist()->currentIndex());
     QString sPlaying = currentTrackName();
     m_playedList.append(sPlaying);
     this->setWindowTitle("AudioPlayer - " + sPlaying);
@@ -900,61 +907,7 @@ void Widget::handlePlay()
     if (m_infoWidget != nullptr) m_infoWidget->setFile(localFile);
     if (!localFile.isEmpty())
     {
-        // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
-        // if (!f.isNull() && f.tag())
-        // {
-        // TagLib::Tag *tag = f.tag();
-        // auto safeString = [](const TagLib::String &str) -> QString
-        // {
-        // return QString::fromUtf8(str.toCString(true));
-        // };
-        // QString title = safeString(tag->title());
-        // QString artist = safeString(tag->artist());
-        // QString album = safeString(tag->album());
-        // QString genre = safeString(tag->genre());
-        // int year = tag->year();
-        // int trackNum = tag->track();
-        // qDebug() << "Title:" << (title.isEmpty() ? "[Unknown]" : title);
-        // qDebug() << "Artist:" << (artist.isEmpty() ? "[Unknown]" : artist);
-        // qDebug() << "Album:" << (album.isEmpty() ? "[Unknown]" : album);
-        // qDebug() << "Year:" << (year == 0 ? "[Unknown]" : QString::number(year));
-        // qDebug() << "Track:" << (trackNum == 0 ? "[Unknown]" : QString::number(trackNum));
-        // qDebug() << "Genre:" << (genre.isEmpty() ? "[Unknown]" : genre);
-        // Optional: Format string for UI
-        // QString info = QString("Artist: %1\nTitle: %2\nAlbum: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
-        // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
-        // QString info = QString("<b>Artist:</b> %1<br><b>Title:</b> %2<br>Album: %3\nYear: %4").arg(artist.isEmpty() ? "[Unknown Artist]" : artist,
-        // title.isEmpty() ? "[Unknown Title]" : title, album.isEmpty() ? "[Unknown Album]" : album, year == 0 ? "[Unknown Year]" : QString::number(year));
-        QString info = "";
-        // info.append ("Artist: ");
-        // info.append (artist.isEmpty() ? "[Unknown artist]" : artist);
-        // info.append ("\n");
-        // info.append ("Title: ");
-        // info.append ( title.isEmpty() ? "[Unknown title]" : title);
-        // info.append ("\n");
-        // info.append ("Album: ");
-        // info.append ( album.isEmpty() ? "[Unknown album]" : album);
-        // info.append ("\n");
-        // info.append ("Track: ");
-        // info.append (trackNum == 0 ? "[Unknown track number]" : QString::number(trackNum));
-        // info.append ("\n");
-        // info.append ("Year: ");
-        // info.append ( year == 0 ? "[Unknown year]" : QString::number(year));
-        // if (tag->genre ().isEmpty () == false)
-        // {
-        // info.append ("\n");
-        // info.append ("Genre: ");
-        // info.append (safeString(tag->genre ()));
-        // }
-        // if (tag->comment ().isEmpty () == false)
-        // {
-        // info.append ("\n");
-        // info.append ("Comment: ");
-        // info.append (safeString(tag->comment ()));
-        // }
-        //if (m_infoWidget != nullptr) m_infoWidget->setInfo (info);
-        // if (m_infoWidget != nullptr)
-        info = m_infoWidget->getInfo();
+        QString info = m_infoWidget->getInfo();
         if (m_bShowInfo == false)
         {
             QPoint globalPos = ui->listWidget->mapToGlobal(QPoint(ui->listWidget->width() / 2, ui->listWidget->height() / 2));
@@ -964,14 +917,8 @@ void Widget::handlePlay()
         {
             if (m_infoWidget == nullptr) m_infoWidget = new InfoWidget();
             m_infoWidget->raise();
-            // m_infoWidget->setInfo (info);
             m_infoWidget->show();
         }
-        //}
-        // else
-        // {
-        // qDebug() << "Failed to read metadata!";
-        // }
     }
     else
     {
@@ -1019,10 +966,10 @@ void Widget::handleItemDoubleClicked()
         }
         else
         {
-            m_playlist->setCurrentIndex(idx);
+            // m_playlist->setCurrentIndex(idx);
             handlePlay();
         }
-        m_playlist->setCurrentIndex(idx);
+        //m_playlist->setCurrentIndex(idx);
         // if (m_player->state() == QMediaPlayer::PlayingState) m_player->stop ();
         // handlePlay();
     }

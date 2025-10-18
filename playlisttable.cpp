@@ -114,6 +114,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
 
 PlaylistTable::~PlaylistTable()
 {
+    qDebug() << __PRETTY_FUNCTION__;
     delete ui;
 }
 
@@ -679,7 +680,7 @@ void PlaylistTable::addTrack(const QString &filePath)
     QStandardItem* fileItem = new QStandardItem(icon, fileName);
     fileItem->setData(info.canonicalFilePath(), Qt::UserRole + 1); // store full path
     QStandardItem* extensionItem = new QStandardItem(info.suffix());
-    QStandardItem* pathItem = new QStandardItem(info.canonicalPath());
+    QStandardItem* pathItem = new QStandardItem(QDir::toNativeSeparators(info.canonicalPath()));
     QStandardItem* durationItem = new QStandardItem(QString::number(0));
     QStandardItem* artistItem = new QStandardItem("");
     QStandardItem* titleItem = new QStandardItem("");
