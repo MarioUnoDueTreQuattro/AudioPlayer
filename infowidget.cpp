@@ -691,11 +691,13 @@ void InfoWidget::pixClicked()
     if (m_bPixIsBig)
     {
         m_bPixIsBig = false;
+        settingsMgr->setValue("InfoWidgetBigPic", false);
         updateSize(ui->textEditInfo->document()->size());
     }
     else
     {
         m_bPixIsBig = true;
+        settingsMgr->setValue("InfoWidgetBigPic", true);
         redrawBigPix();
         // QSize originalSize = m_pix.size();
         // int originalWidth = originalSize.width();
@@ -859,6 +861,7 @@ void InfoWidget::loadSettings()
     m_iPixSize = settingsMgr->value("PictueScaleSize", 300).toInt();
     m_iScalePixOriginalSizeMax = settingsMgr->value("PictueScaleOriginalSizeMax", 600).toInt();
     m_bScalePixOriginalSizeMax = settingsMgr->value("PictueScaleOriginalSizeMaxEnabled", true).toBool();
+    m_bPixIsBig = settingsMgr->value("InfoWidgetBigPic", false).toBool();
 }
 
 void InfoWidget::setScalePixOriginalSizeMax(int iScalePixOriginalSizeMax)
