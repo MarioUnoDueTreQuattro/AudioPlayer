@@ -1024,41 +1024,42 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 
 void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
-    qDebug() << __FUNCTION__ << "Line:" << __LINE__;
+    // qDebug() << __FUNCTION__ << "Line:" << __LINE__ << status;
+    LOG_MSG_SHORT(status);
     switch (status)
     {
         case QMediaPlayer::NoMedia:
-            qDebug() << "Stato: Nessun media caricato.";
-            // Ad esempio, disabilita i pulsanti di riproduzione/pausa
+            LOG_MSG_SHORT("Status: No media loaded.");
+            // For example, disable play/pause buttons
             // m_playButton->setEnabled(false);
             break;
         case QMediaPlayer::LoadingMedia:
-            qDebug() << "Stato: Caricamento media in corso...";
+            LOG_MSG_SHORT("Status: Loading media...");
             break;
         case QMediaPlayer::LoadedMedia:
-            qDebug() << "Stato: Media caricato e pronto per la riproduzione.";
-            //m_player->setVolume (0);
-            //musicFader->fadeIn(ui->volumeSlider->value (), 5000);
+            LOG_MSG_SHORT("Status: Media loaded and ready to play.");
+            // m_player->setVolume(0);
+            // musicFader->fadeIn(ui->volumeSlider->value(), 5000);
             break;
         case QMediaPlayer::BufferingMedia:
-            qDebug() << "Stato: Buffering in corso (es. streaming).";
+            LOG_MSG_SHORT("Status: Buffering in progress (e.g. streaming).");
             break;
         case QMediaPlayer::StalledMedia:
-            qDebug() << "Stato: Buffer esaurito. Riproduzione interrotta.";
+            LOG_MSG_SHORT("Status: Buffer exhausted. Playback stalled.");
             break;
-        case QMediaPlayer::EndOfMedia: // Questo è lo stato cruciale!
-            qDebug() << "Stato: Il media corrente è TERMINATO.";
-            // La riproduzione continuerà automaticamente se è collegato a QMediaPlaylist
-            // ma questo è il momento per eseguire la pulizia o la notifica dell'utente.
+        case QMediaPlayer::EndOfMedia: // This is the crucial state!
+            LOG_MSG_SHORT("Status: Current media has ENDED.");
+            // Playback will continue automatically if linked to QMediaPlaylist
+            // but this is the moment to clean up or notify the user.
             break;
         case QMediaPlayer::InvalidMedia:
-            qDebug() << "Stato: Errore. Il media è invalido o non riproducibile.";
-            QMessageBox::critical(this, tr("Errore Media"), tr("Impossibile riprodurre il file."));
+            LOG_MSG_SHORT("Status: Error. Media is invalid or unplayable.");
+            QMessageBox::critical(this, tr("Media Error"), tr("Unable to play the file."));
             break;
         case QMediaPlayer::UnknownMediaStatus:
         default:
-            qDebug() << "Stato: Sconosciuto.";
-            //musicFader->fadeIn(ui->volumeSlider->value (), 5000);
+            LOG_MSG_SHORT("Status: Unknown.");
+            // musicFader->fadeIn(ui->volumeSlider->value(), 5000);
             break;
     }
 }
@@ -1193,12 +1194,12 @@ void Widget::reloadPlaylist()
     QApplication::restoreOverrideCursor();
     // Start playback if playlist not empty
     if (m_playlist->mediaCount() > 0)
-        if (m_player->state () == QMediaPlayer::PlayingState)
+        if (m_player->state() == QMediaPlayer::PlayingState)
         {
             m_player->setVolume(m_lastVolume);
             handlePlay();
             handleDurationChanged(m_player->duration());
-            m_player->setPosition (m_lastTrackPosition);
+            m_player->setPosition(m_lastTrackPosition);
         }
 }
 

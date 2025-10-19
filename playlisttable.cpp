@@ -1,6 +1,7 @@
 #include "playlisttable.h"
 #include "ui_playlisttable.h"
 #include "playlistdelegates.h"
+#include "utility.h"
 #include <QFileInfo>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -1030,7 +1031,7 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
     if (currentCanon.isEmpty())
         currentCanon = QDir::fromNativeSeparators(currentPath);
 
-    qDebug() << "Looking for track:" << currentCanon;
+    LOG_MSG_SHORT("Looking for track: " + currentCanon);
 
     // Define icons
     QIcon defaultIcon(":/img/img/icons8-music-48.png");
@@ -1066,7 +1067,7 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
         if (QString::compare(storedCanon, currentCanon, Qt::CaseInsensitive) == 0)
         {
             matchSourceRow = r;
-            qDebug() << "Found match at source row:" << matchSourceRow;
+            LOG_MSG_SHORT( "Found match at source row: " + QString::number (matchSourceRow));
             break;
         }
     }
@@ -1095,7 +1096,7 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
 
     if (proxyIndex.isValid())
     {
-        qDebug() << "Mapped to proxy row:" << proxyIndex.row();
+        LOG_MSG_SHORT( "Mapped to proxy row: " + QString::number (proxyIndex.row()));
 
         // Select and scroll to the row in the view
         m_view->scrollTo(proxyIndex, QAbstractItemView::EnsureVisible);

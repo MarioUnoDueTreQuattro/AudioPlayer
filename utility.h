@@ -23,6 +23,13 @@
     << "Msg:" \
     << msg
 
+// Log (short) with custom message
+#define LOG_MSG_SHORT(msg) \
+    qDebug().noquote() \
+    <<  __FUNCTION__ \
+    << "-" \
+    << msg
+
 // IF Condition Log with custom message
 #define LOG_MSG_IF(cond, msg) \
              if (cond) qDebug().noquote() \
