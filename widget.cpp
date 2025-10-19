@@ -1180,6 +1180,28 @@ void Widget::clearPlaylist(bool silent)
     qDebug() << "m_playlist->mediaCount" << m_playlist->mediaCount();
 }
 
+void Widget::reloadPlaylist()
+{
+    m_lastTrackIndex = settingsMgr->value("lastTrackIndex", 0).toInt();
+    m_lastTrackPosition = settingsMgr->value("lastTrackPosition", 0).toLongLong();
+    // --- Restore playlist ---
+    QString filename = QCoreApplication::applicationDirPath();
+    filename.append("/");
+    filename.append("current_playlist.m3u");
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    loadPlaylistFile(filename, true, false);
+    QApplication::restoreOverrideCursor();
+    // Start playback if playlist not empty
+    if (m_playlist->mediaCount() > 0)
+        if (m_player->state () == QMediaPlayer::PlayingState)
+        {
+            m_player->setVolume(m_lastVolume);
+            handlePlay();
+            handleDurationChanged(m_player->duration());
+            m_player->setPosition (m_lastTrackPosition);
+        }
+}
+
 void Widget::loadSettings()
 {
     //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
@@ -1985,7 +2007,7 @@ void Widget::showPlaylistTable()
     if (m_playlistView == nullptr)
     {
         m_playlistView = new PlaylistTable(m_player, nullptr);
-        loadSettings ();
+        reloadPlaylist();
         connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
         connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
         connect(m_playlistView, &PlaylistTable::isSorting, this, &Widget::playlistIsSorting);

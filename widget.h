@@ -89,6 +89,7 @@ private slots:
     void handlePlaylistCurrentIndexChangedByTable(int index);
     void showPlaylistTable();
     void playlistIsSorting(bool bIsSorting);
+    void reloadPlaylist();
 private:
     // bool m_bPlaylistFinished;
     bool m_bIsInShuffleMode;
