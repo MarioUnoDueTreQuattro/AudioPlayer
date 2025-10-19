@@ -547,47 +547,101 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 // connect(worker, SIGNAL(tagLoaded(QString, AudioTagInfo)), this, SLOT(onTagLoaded(QString, AudioTagInfo)));
 //}
 
+//void PlaylistTable::on_pushButton_clicked()
+//{
+//    ui->pushButton->setEnabled(false);
+//    m_view->setSortingEnabled(false);
+//    // m_view->setModel(m_model);
+//    if (!m_sortModel)
+//        return;
+//    int rowCount = m_sortModel->rowCount();
+//    QStringList fileList;
+//    m_FilePathToRow.clear();
+//    // Iterate sorted/displayed rows
+//    for (int idx = 0; idx < rowCount; ++idx)
+//    {
+//        QModelIndex index = m_sortModel->index(idx, 0); // column 0 = filename
+//        QString fullPath = m_sortModel->data(index, Qt::UserRole + 1).toString();
+//        if (!fullPath.isEmpty())
+//        {
+//            QModelIndex proxyIndex = m_sortModel->index(idx, 0);
+//            QString fullPath = m_sortModel->data(proxyIndex, Qt::UserRole + 1).toString();
+//            QModelIndex sourceIndex = m_sortModel->mapToSource(proxyIndex);
+//            int sourceRow = sourceIndex.row();
+//            m_FilePathToRow.insert(fullPath, sourceRow);
+//            fileList.append(fullPath);
+//        }
+//    }
+//    // Run the tag loader in a separate thread
+//    m_tagWorker = new TagLoaderWorker();
+//    QFuture<void> future = QtConcurrent::run(m_tagWorker, &TagLoaderWorker::processFiles, fileList);
+//    m_FutureWatcher = new QFutureWatcher<void>(this);
+//    m_FutureWatcher->setFuture(future);
+//    connect(m_tagWorker, SIGNAL(finished()), this, SLOT(onTagLoadingFinished()));
+//    connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
+//        this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+//}
 void PlaylistTable::on_pushButton_clicked()
 {
     ui->pushButton->setEnabled(false);
     m_view->setSortingEnabled(false);
-    // m_view->setModel(m_model);
+
     if (!m_sortModel)
         return;
-    int rowCount = m_sortModel->rowCount();
+
+    int proxyRowCount = m_sortModel->rowCount();
     QStringList fileList;
     m_FilePathToRow.clear();
-    // Iterate sorted/displayed rows
-    for (int idx = 0; idx < rowCount; ++idx)
+
+    // Iterate through PROXY rows (displayed order)
+    for (int proxyRow = 0; proxyRow < proxyRowCount; ++proxyRow)
     {
-        QModelIndex index = m_sortModel->index(idx, 0); // column 0 = filename
-        QString fullPath = m_sortModel->data(index, Qt::UserRole + 1).toString();
+        // Get proxy index for column 0 (filename)
+        QModelIndex proxyIndex = m_sortModel->index(proxyRow, 0);
+
+        // Map proxy index to source index
+        QModelIndex sourceIndex = m_sortModel->mapToSource(proxyIndex);
+        if (!sourceIndex.isValid())
+            continue;
+
+        int sourceRow = sourceIndex.row();
+
+        // Read data from SOURCE model
+        QStandardItem* item = m_model->item(sourceRow, 0);
+        if (!item)
+            continue;
+
+        QString fullPath = item->data(Qt::UserRole + 1).toString();
+
         if (!fullPath.isEmpty())
         {
-            QModelIndex proxyIndex = m_sortModel->index(idx, 0);
-            QString fullPath = m_sortModel->data(proxyIndex, Qt::UserRole + 1).toString();
-            QModelIndex sourceIndex = m_sortModel->mapToSource(proxyIndex);
-            int sourceRow = sourceIndex.row();
+            // Map filePath to SOURCE row (not proxy row!)
             m_FilePathToRow.insert(fullPath, sourceRow);
             fileList.append(fullPath);
         }
     }
-    // Run the tag loader in a separate thread
+
+    // Start tag loader worker thread
     m_tagWorker = new TagLoaderWorker();
-    QFuture<void> future = QtConcurrent::run(m_tagWorker, &TagLoaderWorker::processFiles, fileList);
+    QFuture<void> future = QtConcurrent::run(m_tagWorker,
+                                             &TagLoaderWorker::processFiles,
+                                             fileList);
+
     m_FutureWatcher = new QFutureWatcher<void>(this);
     m_FutureWatcher->setFuture(future);
-    connect(m_tagWorker, SIGNAL(finished()), this, SLOT(onTagLoadingFinished()));
+
+    connect(m_tagWorker, SIGNAL(finished()),
+            this, SLOT(onTagLoadingFinished()));
     connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
-        this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+            this, SLOT(onTagLoaded(QString, AudioTagInfo)));
 }
 
 void PlaylistTable::onTagLoadingFinished()
 {
-    // delete m_tagWorker;
-    // m_tagWorker = nullptr;
-    // delete m_FutureWatcher;
-    // m_FutureWatcher = nullptr;
+     delete m_tagWorker;
+     m_tagWorker = nullptr;
+     delete m_FutureWatcher;
+     m_FutureWatcher = nullptr;
     ui->pushButton->setEnabled(true);
     qDebug() << "All tags loaded.";
     m_view->setSortingEnabled(true);
@@ -662,50 +716,84 @@ void PlaylistTable::onTagLoadingFinished()
 //    //qDebug() << "Tag for" << filePath << ":" << info.sTitle << info.sArtist << info.sAlbum;
 //}
 
+//void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)
+//{
+//    if (!m_FilePathToRow.contains(filePath))
+//        return;
+//    int row = m_FilePathToRow.value(filePath);
+//    // int proxyRow = m_FilePathToRow.value(filePath);
+//    QAbstractItemModel* model = m_view->model();
+//    if (!model)
+//        return;
+//    model->setData(model->index(row, 3), info.iDuration);
+//    model->setData(model->index(row, 4), info.sArtist);
+//    model->setData(model->index(row, 5), info.sTitle);
+//    model->setData(model->index(row, 6), info.sAlbum);
+//    model->setData(model->index(row, 7), info.iTrackNum);
+//    model->setData(model->index(row, 8), info.iYear);
+//    model->setData(model->index(row, 9), info.sGenre);
+//    model->setData(model->index(row, 10), info.sComment);
+//    model->setData(model->index(row, 11), info.iBitrate);
+//    model->setData(model->index(row, 12), info.iSamplerate);
+//    model->setData(model->index(row, 13), info.iBits);
+//    model->setData(model->index(row, 14), info.iChannels);
+//    model->setData(model->index(row, 15), info.sFormat);
+//    model->setData(model->index(row, 16), info.sCoverSize);
+//    model->setData(model->index(row, 17), info.iFileSize);
+//    // // Update the proxy model directly
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 3), info.iDuration);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 4), info.sArtist);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 5), info.sTitle);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 6), info.sAlbum);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 7), info.iTrackNum);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 8), info.iYear);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 9), info.sGenre);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 10), info.sComment);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 11), info.iBitrate);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 12), info.iSamplerate);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 13), info.iBits);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 14), info.iChannels);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 15), info.sFormat);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 16), info.sCoverSize);
+//    // m_sortModel->setData(m_sortModel->index(proxyRow, 17), info.iFileSize);
+//    // Optional: emit dataChanged for UI update
+//    QModelIndex topLeft = m_model->index(row, 3);
+//    QModelIndex bottomRight = m_model->index(row, 17);
+//    emit m_model->dataChanged(topLeft, bottomRight);
+//}
 void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)
 {
+    // Check if we have mapping for this file
     if (!m_FilePathToRow.contains(filePath))
         return;
-    int row = m_FilePathToRow.value(filePath);
-    // int proxyRow = m_FilePathToRow.value(filePath);
-    QAbstractItemModel* model = m_view->model();
-    if (!model)
+
+    // Get SOURCE row index
+    int sourceRow = m_FilePathToRow.value(filePath);
+
+    // Validate source row
+    if (sourceRow < 0 || sourceRow >= m_model->rowCount())
         return;
-    model->setData(model->index(row, 3), info.iDuration);
-    model->setData(model->index(row, 4), info.sArtist);
-    model->setData(model->index(row, 5), info.sTitle);
-    model->setData(model->index(row, 6), info.sAlbum);
-    model->setData(model->index(row, 7), info.iTrackNum);
-    model->setData(model->index(row, 8), info.iYear);
-    model->setData(model->index(row, 9), info.sGenre);
-    model->setData(model->index(row, 10), info.sComment);
-    model->setData(model->index(row, 11), info.iBitrate);
-    model->setData(model->index(row, 12), info.iSamplerate);
-    model->setData(model->index(row, 13), info.iBits);
-    model->setData(model->index(row, 14), info.iChannels);
-    model->setData(model->index(row, 15), info.sFormat);
-    model->setData(model->index(row, 16), info.sCoverSize);
-    model->setData(model->index(row, 17), info.iFileSize);
-    // // Update the proxy model directly
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 3), info.iDuration);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 4), info.sArtist);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 5), info.sTitle);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 6), info.sAlbum);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 7), info.iTrackNum);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 8), info.iYear);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 9), info.sGenre);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 10), info.sComment);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 11), info.iBitrate);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 12), info.iSamplerate);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 13), info.iBits);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 14), info.iChannels);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 15), info.sFormat);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 16), info.sCoverSize);
-    // m_sortModel->setData(m_sortModel->index(proxyRow, 17), info.iFileSize);
-    // Optional: emit dataChanged for UI update
-    QModelIndex topLeft = m_model->index(row, 3);
-    QModelIndex bottomRight = m_model->index(row, 17);
-    emit m_model->dataChanged(topLeft, bottomRight);
+
+    // Update data in SOURCE model (not proxy!)
+    // The proxy will automatically reflect these changes
+    m_model->setData(m_model->index(sourceRow, 3), info.iDuration);
+    m_model->setData(m_model->index(sourceRow, 4), info.sArtist);
+    m_model->setData(m_model->index(sourceRow, 5), info.sTitle);
+    m_model->setData(m_model->index(sourceRow, 6), info.sAlbum);
+    m_model->setData(m_model->index(sourceRow, 7), info.iTrackNum);
+    m_model->setData(m_model->index(sourceRow, 8), info.iYear);
+    m_model->setData(m_model->index(sourceRow, 9), info.sGenre);
+    m_model->setData(m_model->index(sourceRow, 10), info.sComment);
+    m_model->setData(m_model->index(sourceRow, 11), info.iBitrate);
+    m_model->setData(m_model->index(sourceRow, 12), info.iSamplerate);
+    m_model->setData(m_model->index(sourceRow, 13), info.iBits);
+    m_model->setData(m_model->index(sourceRow, 14), info.iChannels);
+    m_model->setData(m_model->index(sourceRow, 15), info.sFormat);
+    m_model->setData(m_model->index(sourceRow, 16), info.sCoverSize);
+    m_model->setData(m_model->index(sourceRow, 17), info.iFileSize);
+
+    // Note: setData() automatically emits dataChanged signal
+    // No need to manually emit dataChanged
 }
 
 void PlaylistTable::playlistLoadFinished()
@@ -838,85 +926,202 @@ void PlaylistTable::setCurrentItemIcon(bool bPlaying)
     }
 }
 
-void PlaylistTable::onCurrentTrackChanged(int index)
+//void PlaylistTable::onCurrentTrackChanged(int index)
+//{
+//    qDebug() << __PRETTY_FUNCTION__ << "index:" << index;
+//    if (index < 0 || !m_playlist)
+//        return;
+//    // 1) Get current playing file path, normalized
+//    QMediaContent media = m_playlist->media(index);
+//    if (media.isNull())
+//        return;
+//    QString currentPath = media.canonicalUrl().toLocalFile();
+//    if (currentPath.isEmpty())
+//        return;
+//    QString currentCanon = QFileInfo(currentPath).canonicalFilePath();
+//    if (currentCanon.isEmpty())
+//        currentCanon = QDir::fromNativeSeparators(currentPath);
+//    // 2) Reset icons on SOURCE model (keep icons tied to source rows)
+//    QIcon defaultIcon(":/img/img/icons8-music-48.png");
+//    QIcon playingIcon(":/img/img/icons8-play-48.png");
+//    for (int i = 0; i < m_model->rowCount(); ++i)
+//    {
+//        QStandardItem *item = m_model->item(i, 0); // filename column
+//        if (item)
+//            item->setIcon(defaultIcon);
+//    }
+//    // 3) Find matching source row by reading UserRole+1 stored full path
+//    int matchSourceRow = -1;
+//    for (int r = 0; r < m_model->rowCount(); ++r)
+//    {
+//        QStandardItem *it = m_model->item(r, 0);
+//        if (!it) continue;
+//        QString stored = it->data(Qt::UserRole + 1).toString();
+//        if (stored.isEmpty()) continue;
+//        QString storedCanon = QFileInfo(stored).canonicalFilePath();
+//        if (storedCanon.isEmpty())
+//            storedCanon = QDir::fromNativeSeparators(stored);
+//        if (QString::compare(storedCanon, currentCanon, Qt::CaseInsensitive) == 0)
+//        {
+//            matchSourceRow = r;
+//            break;
+//        }
+//    }
+//    if (matchSourceRow < 0)
+//    {
+//        qDebug() << "onCurrentTrackChanged: no matching source row for" << currentPath;
+//        // if you want, clear selection:
+//        if (m_view->selectionModel())
+//            m_view->selectionModel()->clearSelection();
+//        return;
+//    }
+//    // 4) Set playing icon on the source item
+//    QStandardItem *currentItem = m_model->item(matchSourceRow, 0);
+//    if (currentItem)// && m_player->state()== QMediaPlayer::PlayingState)
+//    {
+//        currentItem->setIcon(playingIcon);
+//        m_CurrentItem = currentItem;
+//    }
+//    // 5) Map source -> proxy and select/scroll the proxy index
+//    QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
+//    QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);
+//    if (proxyIndex.isValid())
+//    {
+//        // Scroll to and select the entire row in the view
+//        m_view->scrollTo(proxyIndex, QAbstractItemView::EnsureVisible);
+//        QItemSelectionModel *sel = m_view->selectionModel();
+//        if (sel)
+//        {
+//            sel->clearSelection();
+//            sel->select(proxyIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+//            m_view->setCurrentIndex(proxyIndex);
+//        }
+//        else
+//        {
+//            m_view->selectRow(proxyIndex.row());
+//        }
+//    }
+//    else
+//    {
+//        // The row might be filtered out by the proxy
+//        qDebug() << "proxyIndex invalid — row might be filtered out";
+//        if (m_view->selectionModel())
+//            m_view->selectionModel()->clearSelection();
+//    }
+//}
+void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
 {
-    qDebug() << __PRETTY_FUNCTION__ << "index:" << index;
-    if (index < 0 || !m_playlist)
+    qDebug() << __PRETTY_FUNCTION__ << "playlistIndex:" << playlistIndex;
+
+    if (playlistIndex < 0 || !m_playlist)
         return;
-    // 1) Get current playing file path, normalized
-    QMediaContent media = m_playlist->media(index);
+
+    // Get current playing file path from playlist
+    QMediaContent media = m_playlist->media(playlistIndex);
     if (media.isNull())
         return;
+
     QString currentPath = media.canonicalUrl().toLocalFile();
     if (currentPath.isEmpty())
         return;
+
+    // Normalize path for comparison
     QString currentCanon = QFileInfo(currentPath).canonicalFilePath();
     if (currentCanon.isEmpty())
         currentCanon = QDir::fromNativeSeparators(currentPath);
-    // 2) Reset icons on SOURCE model (keep icons tied to source rows)
+
+    qDebug() << "Looking for track:" << currentCanon;
+
+    // Define icons
     QIcon defaultIcon(":/img/img/icons8-music-48.png");
     QIcon playingIcon(":/img/img/icons8-play-48.png");
+
+    // Reset ALL icons in SOURCE model first
     for (int i = 0; i < m_model->rowCount(); ++i)
     {
-        QStandardItem *item = m_model->item(i, 0); // filename column
+        QStandardItem *item = m_model->item(i, 0);
         if (item)
             item->setIcon(defaultIcon);
     }
-    // 3) Find matching source row by reading UserRole+1 stored full path
+
+    // Find matching SOURCE row by comparing stored file paths
     int matchSourceRow = -1;
+
     for (int r = 0; r < m_model->rowCount(); ++r)
     {
-        QStandardItem *it = m_model->item(r, 0);
-        if (!it) continue;
-        QString stored = it->data(Qt::UserRole + 1).toString();
-        if (stored.isEmpty()) continue;
+        QStandardItem *item = m_model->item(r, 0);
+        if (!item)
+            continue;
+
+        QString stored = item->data(Qt::UserRole + 1).toString();
+        if (stored.isEmpty())
+            continue;
+
+        // Normalize stored path
         QString storedCanon = QFileInfo(stored).canonicalFilePath();
         if (storedCanon.isEmpty())
             storedCanon = QDir::fromNativeSeparators(stored);
+
+        // Compare paths
         if (QString::compare(storedCanon, currentCanon, Qt::CaseInsensitive) == 0)
         {
             matchSourceRow = r;
+            qDebug() << "Found match at source row:" << matchSourceRow;
             break;
         }
     }
+
+    // If no match found, clear selection and exit
     if (matchSourceRow < 0)
     {
-        qDebug() << "onCurrentTrackChanged: no matching source row for" << currentPath;
-        // if you want, clear selection:
+        qDebug() << "WARNING: No matching source row found for" << currentPath;
         if (m_view->selectionModel())
             m_view->selectionModel()->clearSelection();
+        m_CurrentItem = nullptr;
         return;
     }
-    // 4) Set playing icon on the source item
+
+    // Set playing icon on the matched SOURCE item
     QStandardItem *currentItem = m_model->item(matchSourceRow, 0);
-    if (currentItem)// && m_player->state()== QMediaPlayer::PlayingState)
+    if (currentItem)
     {
         currentItem->setIcon(playingIcon);
         m_CurrentItem = currentItem;
     }
-    // 5) Map source -> proxy and select/scroll the proxy index
+
+    // Map SOURCE row to PROXY row for view operations
     QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
     QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);
+
     if (proxyIndex.isValid())
     {
-        // Scroll to and select the entire row in the view
+        qDebug() << "Mapped to proxy row:" << proxyIndex.row();
+
+        // Select and scroll to the row in the view
         m_view->scrollTo(proxyIndex, QAbstractItemView::EnsureVisible);
-        QItemSelectionModel *sel = m_view->selectionModel();
-        if (sel)
+
+        QItemSelectionModel *selModel = m_view->selectionModel();
+        if (selModel)
         {
-            sel->clearSelection();
-            sel->select(proxyIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+            selModel->clearSelection();
+
+            // Select the entire row
+            QModelIndex leftIndex = m_sortModel->index(proxyIndex.row(), 0);
+            QModelIndex rightIndex = m_sortModel->index(proxyIndex.row(),
+                                                        m_sortModel->columnCount() - 1);
+
+            QItemSelection selection(leftIndex, rightIndex);
+            selModel->select(selection, QItemSelectionModel::Select);
+
             m_view->setCurrentIndex(proxyIndex);
-        }
-        else
-        {
-            m_view->selectRow(proxyIndex.row());
         }
     }
     else
     {
-        // The row might be filtered out by the proxy
-        qDebug() << "proxyIndex invalid — row might be filtered out";
+        // Row is filtered out by proxy (not visible)
+        qDebug() << "Row is filtered out - source row" << matchSourceRow
+                 << "has no valid proxy index";
+
         if (m_view->selectionModel())
             m_view->selectionModel()->clearSelection();
     }
