@@ -99,3 +99,7 @@ DEFINES += TAGLIB_DLL
     VERSION = 1.0.0.3
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 DEFINES += QT_MESSAGELOGCONTEXT
+# Imposta il livello di ottimizzazione a 0 (nessuna ottimizzazione) per il Debug
+CONFIG(debug, debug|release) {
+    QMAKE_CXXFLAGS += -O0
+}

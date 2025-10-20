@@ -15,6 +15,7 @@ public:
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 private:
     QString m_filterText;
     QSet<int> m_filterColumns;

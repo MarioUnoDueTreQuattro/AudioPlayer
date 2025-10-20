@@ -44,3 +44,10 @@ bool PlaylistSortModel::lessThan(const QModelIndex &left, const QModelIndex &rig
     else
         return QString::localeAwareCompare(leftData.toString(), rightData.toString()) < 0;
 }
+
+QVariant PlaylistSortModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (orientation == Qt::Vertical && role == Qt::DisplayRole) {
+        return QString::number(section + 1); // numeri ordinati
+    }
+    return QSortFilterProxyModel::headerData(section, orientation, role);
+}

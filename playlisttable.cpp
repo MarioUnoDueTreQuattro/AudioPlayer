@@ -101,6 +101,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
         this, SLOT(onHeaderSortChanged(int, Qt::SortOrder)));
     connect(m_view, SIGNAL(doubleClicked(const QModelIndex &)),
         this, SLOT(onDoubleClicked(const QModelIndex &)));
+    connect(m_view, SIGNAL(clicked(const QModelIndex &)),
+        this, SLOT(onClicked(const QModelIndex &)));
     connect(m_playlist, SIGNAL(currentIndexChanged(int)),
         this, SLOT(onCurrentTrackChanged(int)));
     loadsettings();
@@ -830,8 +832,8 @@ void PlaylistTable::addTrack(const QString &filePath)
     m_model->appendRow(rowItems);
     // --- Add to playlist ---
     m_playlist->addMedia(QUrl::fromLocalFile(filePath));
-    // --- Align duration column (index 3) ---
-    m_model->item(m_model->rowCount() - 1, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    //    // --- Align duration column (index 3) ---
+    // m_model->item(m_model->rowCount() - 1, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 }
 
 void PlaylistTable::setSectionsResizeMode()
@@ -865,6 +867,15 @@ void PlaylistTable::clear()
         << "Format" << "Cover size" << "File size"); m_playlist->clear();
     m_view->verticalHeader()->setDefaultSectionSize(16);
     m_view->verticalHeader()->setMaximumSectionSize(32);
+    restoreColumnWidths();
+    restoreColumnVisibility();
+    //on_pushButton_clicked();
+    //on_pushButton_2_clicked ();
+    //setSectionsResizeMode();
+    int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
+    Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
+    // m_sortModel->sort(iSortCol, order);
+    onHeaderSortChanged(iSortCol, order);
     // setSectionsResizeMode();
 }
 
@@ -894,6 +905,14 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     // onCurrentTrackChanged(sourceRow);
     //    //m_player->play();
     // emit trackActivated(sourceRow);
+}
+
+void PlaylistTable::onClicked(const QModelIndex &index)
+{
+    int row = mapProxyRowToSource(m_sortModel, index.row());
+    LOG_MSG_SHORT("index.row()= proxy:" << index.row() <<" - Model:"<<row);
+    //m_view->setModel (m_model);
+    //m_view->verticalHeader ()->setModel (m_sortModel);
 }
 
 void PlaylistTable::setCurrentItemIcon(bool bPlaying)
