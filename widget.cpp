@@ -1076,7 +1076,7 @@ void Widget::handlePlaylistCurrentIndexChangedByTable(int index)
 }
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
-    qDebug() << __FUNCTION__ << "Line:" << __LINE__;
+    qDebug() << __FUNCTION__ << "Index=" << index;
     // if (m_bIsInShuffleMode && m_bUserRequestedPlayback==false && m_bPlaylistFinished)
     // {
     //        //m_player->stop ();
@@ -1095,7 +1095,7 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     {
         item->setTextColor(m_playedTextColor);
         item->setIcon(QIcon(":/img/img/icons8-play-48.png"));
-        ui->listWidget->setCurrentItem (item);
+        ui->listWidget->setCurrentItem(item);
     }
     setInfoWidgetTitle();
     if (index >= 0 && index < iListWidgetCount)
@@ -1240,11 +1240,11 @@ void Widget::loadSettings()
     QString filename = QCoreApplication::applicationDirPath();
     filename.append("/");
     filename.append("current_playlist.m3u");
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+    //QApplication::setOverrideCursor(Qt::WaitCursor);
     // QElapsedTimer timer;
     // timer.start(); // Il timer inizia a contare
     loadPlaylistFile(filename, true, false);
-    QApplication::restoreOverrideCursor();
+    //QApplication::restoreOverrideCursor();
     //QStringList playlistFiles = settings.value("playlistFiles").toStringList();
     // if (m_playlist->mediaCount() > 0)
     // {
@@ -1775,9 +1775,9 @@ void Widget::handleSavePlaylist()
             this, tr("Save Playlist"), m_lastDialogPlaylistPath, tr("M3U Playlist (*.m3u);;All Files (*)"));
     if (fileName.isEmpty())
         return;
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+    //QApplication::setOverrideCursor(Qt::WaitCursor);
     savePlaylistFile(fileName, true);
-    QApplication::restoreOverrideCursor();
+    //QApplication::restoreOverrideCursor();
     m_lastPlaylistPath = fileName;
     m_lastDialogPlaylistPath = fileName;
 }
@@ -1879,9 +1879,9 @@ void Widget::savePlaylist()
     QString filename = QCoreApplication::applicationDirPath();
     filename.append("/");
     filename.append("current_playlist.m3u");
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+    //QApplication::setOverrideCursor(Qt::WaitCursor);
     savePlaylistFile(filename, false);
-    QApplication::restoreOverrideCursor();
+    //QApplication::restoreOverrideCursor();
 }
 
 void Widget::showPlaylistContextMenu(const QPoint &pos)

@@ -89,6 +89,9 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // layout->addWidget(m_view);
     // setLayout(layout);
     // --- Connections ---
+    m_view->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_view, &QTableView::customContextMenuRequested,
+        this, &PlaylistTable::showPlaylistContextMenu);
     connect(ui->comboBoxFind, &QComboBox::currentTextChanged, this, &PlaylistTable::findInTable);
     connect(ui->comboBoxFilter, &QComboBox::currentTextChanged,
         m_sortModel, &PlaylistSortModel::setFilterText);
@@ -797,8 +800,8 @@ void PlaylistTable::playlistLoadFinished()
     Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
     //m_sortModel->sort(iSortCol, order);
     onHeaderSortChanged(iSortCol, order);
-//    m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
-//    m_view->horizontalHeader()->setSortIndicatorShown(true);
+    // m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
+    // m_view->horizontalHeader()->setSortIndicatorShown(true);
 }
 
 void PlaylistTable::addTrack(const QString &filePath)
@@ -1157,4 +1160,87 @@ void PlaylistTable::findInTable(const QString &searchText)
         m_view->setCurrentIndex(matches.first());
         m_view->selectionModel()->select(matches.first(), QItemSelectionModel::Select);
     }
+}
+
+void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
+{
+    QModelIndex index = m_view->indexAt(pos);
+    if (!index.isValid()) return;
+    QMenu contextMenu(this);
+    QAction *scrollToCurrentAction = contextMenu.addAction(tr("Scroll to current"));
+    scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
+    // QAction *forgetPlayedAction = contextMenu.addAction(tr("Forget played"));
+    // forgetPlayedAction->setIcon(QIcon(":/img/img/icons8-reload-48.png"));
+    // QString sText = "Forget played (" + QString::number(m_playedList.count()) + " of " + QString::number(m_model->rowCount()) + ")";
+    // forgetPlayedAction->setText(sText);
+//    QAction *filterAction = contextMenu.addAction(tr("Filter"));
+//    filterAction->setIcon(QIcon(":/img/img/icons8-filter-48.png"));
+//    contextMenu.addSeparator();
+//    QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
+//    QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
+//    QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
+    // QAction *playlistTableAction = nullptr;
+    // if (m_bTablePlaylist)
+    // {
+    // playlistTableAction = contextMenu.addAction(tr("Show playlist table"));
+    // playlistTableAction->setIcon(QIcon(":/img/img/icons8-playlist_trim-48.png"));
+    // }
+//    contextMenu.addSeparator();
+//    QAction *searchAction = contextMenu.addAction(tr("Search on Google"));
+//    searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
+//    QAction *selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
+//    selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
+//    QAction *copyNameAction = contextMenu.addAction(tr("Copy file name"));
+//    copyNameAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_file-48.png"));
+//    QAction *copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
+//    copyFullPathAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_path-48.png"));
+//    contextMenu.addSeparator();
+//    QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
+//    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
+//    saveAction->setIcon(QIcon(":/img/img/icons8-folder-save-48.png"));
+//    loadAction->setIcon(QIcon(":/img/img/icons8-folder-load-48.png"));
+//    clearAction->setIcon(QIcon(":/img/img/icons8-clear-48.png"));
+//    clearExceptSelectedAction->setIcon(QIcon(":/img/img/icons8-list_keep1-48.png"));
+//    removeSelectedAction->setIcon(QIcon(":/img/img/icons8-list_delete1-48.png"));
+    QAction *selectedAction = contextMenu.exec(m_view->viewport()->mapToGlobal(pos));
+    if (selectedAction == scrollToCurrentAction)
+    {
+        if (m_CurrentItem)
+        {
+            //QModelIndex sourceIndex = m_model->index(m_CurrentItem->row(), 0);
+            QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
+            m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
+        }
+    }
+    // if (selectedAction == saveAction) handleSavePlaylist();
+    // else if (selectedAction == forgetPlayedAction) forgetPlayed();
+    // else if (selectedAction == playlistTableAction) showPlaylistTable();
+    // else if (selectedAction == filterAction) {
+    // ui->labelFilter->setVisible(true);
+    // ui->lineEditFilter->setVisible(true);
+    // ui->pushButtonResetFilter->setVisible(true);
+    // ui->lineEditFilter->setText("");
+    // ui->lineEditFilter->setFocus();
+    // }
+    // else if (selectedAction == copyNameAction) copyCurrentName();
+    // else if (selectedAction == copyFullPathAction) copyCurrentFullPath();
+    // else if (selectedAction == loadAction) handleLoadPlaylist();
+    // else if (selectedAction == removeSelectedAction) handleRemoveSelected();
+    // else if (selectedAction == clearExceptSelectedAction) clearExceptSelected();
+    // else if (selectedAction == clearAction) clearPlaylist(false);
+    // else if (selectedAction == scrollToCurrentAction) scrollToCurrentTrack();
+    // else if (selectedAction == searchAction) {
+    // QString filename = m_view->model()->data(m_view->model()->index(index.row(), 0)).toString();
+    // QFileInfo info(filename);
+    // openGoogleSearch(info.completeBaseName());
+    // }
+    // else if (selectedAction == selectInExplorerAction) {
+    // QUrl mediaUrl;
+    // int selectedRow = index.row();
+    // QModelIndex sourceIndex = m_sortModel->mapToSource(m_sortModel->index(selectedRow, 0));
+    // if (selectedRow < 0 || selectedRow >= m_playlist->mediaCount()) return;
+    // mediaUrl = m_playlist->media(selectedRow).canonicalUrl();
+    // QString localFile = mediaUrl.toLocalFile();
+    // openFolderAndSelectFileEx(localFile);
+    // }
 }

@@ -58,6 +58,7 @@ private slots:
     void restoreColumnWidths();
     void findInTable(const QString &searchText);
     void onClicked(const QModelIndex &index);
+    void showPlaylistContextMenu(const QPoint &pos);
 private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
