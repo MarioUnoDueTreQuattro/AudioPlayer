@@ -68,6 +68,7 @@ private:
     QPixmap extractMP3Cover(TagLib::MPEG::File *mp3File);
     QPixmap extractMP4Cover(TagLib::MP4::File *file);
     QPixmap extractFLACCover(TagLib::FLAC::File *file);
+    bool m_bEnableLog;
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

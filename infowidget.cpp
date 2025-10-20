@@ -19,6 +19,7 @@ InfoWidget::InfoWidget(QWidget *parent)
     , m_Info("")
     , m_bPixIsBig(false)
 {
+    m_bEnableLog = false;
     ui->setupUi(this);
     setWindowIcon(QIcon(":/img/img/icons8-play-32.png"));
     setWindowFlags(Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);

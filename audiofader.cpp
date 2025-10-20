@@ -13,6 +13,7 @@ AudioFader::AudioFader(QMediaPlayer *player, QObject *parent)
       currentStep(0)/*,
       durationTimer(new QElapsedTimer())*/
 {
+    m_bEnableLog = false;
     // Connect the timer's timeout signal to the updateFade slot
     // This is the classic SIGNAL/SLOT approach
     fadeTimer->setTimerType(Qt::PreciseTimer);
@@ -31,12 +32,12 @@ AudioFader::~AudioFader()
     }
     QObject::disconnect(fadeTimer, SIGNAL(timeout()), this, SLOT(updateFade()));
     // Since fadeTimer has 'this' as its parent, Qt will delete it automatically.
-//    if (durationTimer)
-//    {
-//        delete durationTimer;
-//        durationTimer = nullptr;
-//    }
-    qDebug() << __PRETTY_FUNCTION__;
+    // if (durationTimer)
+    // {
+    // delete durationTimer;
+    // durationTimer = nullptr;
+    // }
+    if (m_bEnableLog) qDebug() << __PRETTY_FUNCTION__;
 }
 
 // Public method to start the fade-in effect
@@ -137,7 +138,7 @@ void AudioFader::startFade(int targetVol, int durationMs)
     // Set the timer interval and start it
     fadeTimer->setInterval(updateIntervalMs);
     fadeTimer->start();
-    qDebug() << "Fade started. Initial:" << initialVolume << "Target:" << targetVolume << "Step:" << volumeStep;
+    if (m_bEnableLog) qDebug() << "Fade started. Initial:" << initialVolume << "Target:" << targetVolume << "Step:" << volumeStep;
 }
 
 // SLOT: Called repeatedly by the QTimer
@@ -231,10 +232,10 @@ void AudioFader::finishFade()
     // mediaPlayer->stop();
     // }
     // --- Misurazione e Output della Durata Totale ---
-//    long long actualDuration = durationTimer->elapsed();
-//    qDebug() << "Target Duration (ms):" << m_iDuration; // Stima della durata target
-//    qDebug() << "Actual Duration (ms):" << actualDuration;
-    qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
+    // long long actualDuration = durationTimer->elapsed();
+    // qDebug() << "Target Duration (ms):" << m_iDuration; // Stima della durata target
+    // qDebug() << "Actual Duration (ms):" << actualDuration;
+    if (m_bEnableLog) qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
 }
 
 void AudioFader::stopFadeImmediately()
@@ -245,7 +246,7 @@ void AudioFader::stopFadeImmediately()
     if (fadeTimer && fadeTimer->isActive())
     {
         fadeTimer->stop();
-        qDebug() << "Fade timer stopped by external request (shutdown).";
+        if (m_bEnableLog) qDebug() << "Fade timer stopped by external request (shutdown).";
     }
     QObject::disconnect(fadeTimer, SIGNAL(timeout()), this, SLOT(updateFade()));
     // Sicurezza aggiuntiva: Rendiamo il puntatore nullo DOPO la disconnessione
@@ -258,5 +259,5 @@ void AudioFader::fadeToTarget(int targetVolume, int durationMs)
 {
     m_iDuration = durationMs;
     // int iCurVol = mediaPlayer->volume ();
-    startFade (targetVolume, durationMs);
+    startFade(targetVolume, durationMs);
 }

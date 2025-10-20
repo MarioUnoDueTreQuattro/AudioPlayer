@@ -26,6 +26,7 @@
 AudioTag::AudioTag(QObject *parent)
     : QObject(parent)
 {
+    m_bEnableLog = false;
 }
 
 AudioTag::AudioTag(QString sFileName, QObject *parent)

@@ -35,6 +35,7 @@ private:
     // Helper functions
     void startFade(int targetVolume, int durationMs);
     void finishFade();
+    bool m_bEnableLog;
 };
 
 #endif // AUDIOFADER_H

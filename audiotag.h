@@ -73,6 +73,7 @@ private:
     QPixmap m_pix;
     QString m_sPixSize;
     AudioTagInfo m_TagInfo;
+    bool m_bEnableLog;
 };
 
 #endif // AUDIOTAG_H
