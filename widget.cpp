@@ -913,7 +913,8 @@ void Widget::handlePlay()
     else
         mediaUrl = m_player->media().canonicalUrl();
     QString localFile = mediaUrl.toLocalFile();
-    qDebug() << __FUNCTION__ << "Line:" << __LINE__ << "Current file:" << localFile;
+    //qDebug() << __FUNCTION__ << "Line:" << __LINE__ << "Current file:" << localFile;
+    LOG_MSG_SHORT(localFile);
     // QEventLoop loop;
     // QTimer::singleShot(100, &loop, &QEventLoop::quit);
     // loop.exec(); // Blocks for 500 ms, but keeps UI responsive
@@ -1089,6 +1090,14 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
     {
         ui->listWidget->item(iIdx)->setIcon(QIcon());
     }
+    QListWidgetItem *item = ui->listWidget->item(index);
+    if (item)
+    {
+        item->setTextColor(m_playedTextColor);
+        item->setIcon(QIcon(":/img/img/icons8-play-48.png"));
+        ui->listWidget->setCurrentItem (item);
+    }
+    setInfoWidgetTitle();
     if (index >= 0 && index < iListWidgetCount)
     {
         int iCount = m_playlist->mediaCount();
@@ -1103,8 +1112,8 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
             // }
             //qDebug()<< "m_playedList.count="<< m_playedList.count ();
             //qDebug()<< "next:" << m_playlist->currentMedia ().canonicalUrl ().fileName ();
-           // qDebug() << "next:" << m_playlist->media(index).canonicalUrl().fileName();
-            LOG_MSG_SHORT( "next:" << m_playlist->media(index).canonicalUrl().fileName());
+            // qDebug() << "next:" << m_playlist->media(index).canonicalUrl().fileName();
+            LOG_MSG_SHORT("next:" << m_playlist->media(index).canonicalUrl().fileName());
             QString sNext = m_playlist->media(index).canonicalUrl().fileName();
             for (QString sItem : m_playedList)
             {

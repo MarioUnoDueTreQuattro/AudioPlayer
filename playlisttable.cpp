@@ -338,7 +338,8 @@ void PlaylistTable::loadsettings()
 
 void PlaylistTable::syncPlaylistOrder()
 {
-    qDebug() << "syncPlaylistOrder";
+    //qDebug() << "syncPlaylistOrder";
+    LOG_MSG_SHORT("");
     m_view->setModel(m_sortModel);
     int sortCol = m_view->horizontalHeader()->sortIndicatorSection();
     Qt::SortOrder sortOrder = m_view->horizontalHeader()->sortIndicatorOrder();
@@ -466,6 +467,7 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 {
     Q_UNUSED(logicalIndex);
     Q_UNUSED(order);
+    m_view->blockSignals(true);
     emit isSorting(true);
     //qDebug() << "onHeaderSortChanged logicalIndex" << logicalIndex;
     settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
@@ -474,6 +476,7 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
     syncPlaylistOrder();
     qDebug() << "Playlist sorted and reordered to match table view.";
     emit isSorting(false);
+    m_view->blockSignals(false);
 }
 
 //void PlaylistView::addTrack(const QString &filePath)
@@ -634,7 +637,7 @@ void PlaylistTable::onTagLoadingFinished()
     delete m_FutureWatcher;
     m_FutureWatcher = nullptr;
     ui->pushButton->setEnabled(true);
-    qDebug() << "All tags loaded.";
+    //qDebug() << "All tags loaded.";
     m_view->setSortingEnabled(true);
 }
 
@@ -794,6 +797,8 @@ void PlaylistTable::playlistLoadFinished()
     Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
     //m_sortModel->sort(iSortCol, order);
     onHeaderSortChanged(iSortCol, order);
+//    m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
+//    m_view->horizontalHeader()->setSortIndicatorShown(true);
 }
 
 void PlaylistTable::addTrack(const QString &filePath)
@@ -910,7 +915,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
 void PlaylistTable::onClicked(const QModelIndex &index)
 {
     int row = mapProxyRowToSource(m_sortModel, index.row());
-    LOG_MSG_SHORT("index.row()= proxy:" << index.row() <<" - Model:"<<row);
+    LOG_MSG_SHORT("index.row()= proxy:" << index.row() << " - Model:" << row);
     //m_view->setModel (m_model);
     //m_view->verticalHeader ()->setModel (m_sortModel);
 }
