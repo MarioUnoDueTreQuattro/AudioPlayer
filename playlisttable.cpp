@@ -792,7 +792,7 @@ void PlaylistTable::playlistLoadFinished()
     //setSectionsResizeMode();
     int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
     Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
-    // m_sortModel->sort(iSortCol, order);
+    //m_sortModel->sort(iSortCol, order);
     onHeaderSortChanged(iSortCol, order);
 }
 
@@ -891,7 +891,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     int row = index.row();
     m_playlist->setCurrentIndex(row);
     //m_player->play();
-    onCurrentTrackChanged(row);
+    //onCurrentTrackChanged(row);
     emit trackActivated(row);
     // qDebug() << __PRETTY_FUNCTION__ << "proxy row:" << index.row();
     //    // Map proxy index to source model index

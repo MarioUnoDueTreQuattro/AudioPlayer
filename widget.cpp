@@ -1103,7 +1103,8 @@ void Widget::handlePlaylistCurrentIndexChanged(int index)
             // }
             //qDebug()<< "m_playedList.count="<< m_playedList.count ();
             //qDebug()<< "next:" << m_playlist->currentMedia ().canonicalUrl ().fileName ();
-            qDebug() << "next:" << m_playlist->media(index).canonicalUrl().fileName();
+           // qDebug() << "next:" << m_playlist->media(index).canonicalUrl().fileName();
+            LOG_MSG_SHORT( "next:" << m_playlist->media(index).canonicalUrl().fileName());
             QString sNext = m_playlist->media(index).canonicalUrl().fileName();
             for (QString sItem : m_playedList)
             {

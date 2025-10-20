@@ -52,7 +52,7 @@ bool PlaylistDelegate::helpEvent(QHelpEvent *event,
     QFontMetrics fm(option.font);
     int textWidth = fm.horizontalAdvance(text);
     int availableWidth = option.rect.width() - 4; // small padding
-    const int tolerance = 2;
+    const int tolerance = 4;
 //    LOG_VAR(textWidth);
 //    LOG_VAR(availableWidth);
     bool isElided = (textWidth > (availableWidth - tolerance));
