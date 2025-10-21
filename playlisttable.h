@@ -29,6 +29,7 @@ public:
     void clear();
     QMediaPlaylist *mediaPlaylist() const { return m_playlist; }
     void playlistLoadFinished();
+    void addFilesFinished();
     void setSectionsResizeMode();
 signals:
     void trackActivated(int index);
@@ -49,6 +50,8 @@ protected:
     void changeEvent(QEvent *event) override;
 private slots:
     void on_pushButton_clicked();
+    void readTags();
+    void readPlaylistTags();
     void onTagLoadingFinished();
     void onTagLoaded(const QString &filePath, const AudioTagInfo &info);
     void on_pushButton_2_clicked();

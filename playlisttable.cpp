@@ -367,14 +367,15 @@ void PlaylistTable::syncPlaylistOrder()
     QMediaPlaylist *newPlaylist = new QMediaPlaylist(this);
     newPlaylist->clear();
     // Keep old current media URL so we can restore the same track (if present)
-    QUrl oldCurrentUrl;
-    int oldIndex = -1;
-    if (m_playlist)
-    {
-        oldIndex = m_playlist->currentIndex();
-        if (oldIndex >= 0 && oldIndex < m_playlist->mediaCount())
-            oldCurrentUrl = m_playlist->media(oldIndex).canonicalUrl();
-    }
+    // TODO uncomment?
+    /* QUrl oldCurrentUrl;
+          int oldIndex = -1;
+          if (m_playlist)
+          {
+              oldIndex = m_playlist->currentIndex();
+              if (oldIndex >= 0 && oldIndex < m_playlist->mediaCount())
+                  oldCurrentUrl = m_playlist->media(oldIndex).canonicalUrl();
+          } */
     QAbstractItemModel *viewModel = m_view->model();
     for (int i = 0; i < viewModel->rowCount(); ++i)
     {
@@ -418,19 +419,22 @@ void PlaylistTable::syncPlaylistOrder()
     // m_player->setPlaylist(m_playlist);
     connect(m_playlist, SIGNAL(currentIndexChanged(int)),
         this, SLOT(onCurrentTrackChanged(int)));
+    // TODO uncomment?
+    /*
     if (oldIndex >= 0 && oldIndex < newCount)
-        m_playlist->setCurrentIndex(oldIndex);
+    m_playlist->setCurrentIndex(oldIndex);
     if (!oldCurrentUrl.isEmpty())
     {
-        for (int i = 0; i < m_playlist->mediaCount(); ++i)
+    for (int i = 0; i < m_playlist->mediaCount(); ++i)
+    {
+        if (m_playlist->media(i).canonicalUrl() == oldCurrentUrl)
         {
-            if (m_playlist->media(i).canonicalUrl() == oldCurrentUrl)
-            {
-                m_playlist->setCurrentIndex(i);
-                break;
-            }
+            m_playlist->setCurrentIndex(i);
+            break;
         }
     }
+    }
+    */
     // align
     //m_view->setColumnWidth(3, 80);
     m_view->horizontalHeader()->setDefaultAlignment(Qt::AlignRight);
@@ -589,7 +593,61 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 // connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
 // this, SLOT(onTagLoaded(QString, AudioTagInfo)));
 //}
+void PlaylistTable::readTags()
+{
+    ui->pushButton->setEnabled(false);
+    m_view->setSortingEnabled(false);
+    if (!m_sortModel)
+        return;
+    int proxyRowCount = m_sortModel->rowCount();
+    QStringList fileList;
+    m_FilePathToRow.clear();
+    // Iterate through PROXY rows (displayed order)
+    for (int proxyRow = 0; proxyRow < proxyRowCount; ++proxyRow)
+    {
+        // Get proxy index for column 0 (filename)
+        QModelIndex proxyIndex = m_sortModel->index(proxyRow, 0);
+        // Map proxy index to source index
+        QModelIndex sourceIndex = m_sortModel->mapToSource(proxyIndex);
+        if (!sourceIndex.isValid())
+            continue;
+        int sourceRow = sourceIndex.row();
+        // Read data from SOURCE model
+        QStandardItem* item = m_model->item(sourceRow, 0);
+        if (!item)
+            continue;
+        QString fullPath = item->data(Qt::UserRole + 1).toString();
+        bool bIsTagged = item->data(Qt::UserRole + 2).toBool();
+        //if (bIsTagged==false) qDebug()<<"Not tagged"; else qDebug()<<"TAGGED";
+        if (bIsTagged == false)
+        {
+            if (!fullPath.isEmpty())
+            {
+                // Map filePath to SOURCE row (not proxy row!)
+                m_FilePathToRow.insert(fullPath, sourceRow);
+                fileList.append(fullPath);
+            }
+        }
+    }
+    // Start tag loader worker thread
+    m_tagWorker = new TagLoaderWorker();
+    QFuture<void> future = QtConcurrent::run(m_tagWorker,
+            &TagLoaderWorker::processFiles,
+            fileList);
+    m_FutureWatcher = new QFutureWatcher<void>(this);
+    m_FutureWatcher->setFuture(future);
+    connect(m_tagWorker, SIGNAL(finished()),
+        this, SLOT(onTagLoadingFinished()));
+    connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
+        this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+}
+
 void PlaylistTable::on_pushButton_clicked()
+{
+    readPlaylistTags();
+}
+
+void PlaylistTable::readPlaylistTags()
 {
     ui->pushButton->setEnabled(false);
     m_view->setSortingEnabled(false);
@@ -635,6 +693,8 @@ void PlaylistTable::on_pushButton_clicked()
 
 void PlaylistTable::onTagLoadingFinished()
 {
+    LOG_MSG_SHORT("Read" << m_FilePathToRow.count() << "tags");
+    m_FilePathToRow.clear();
     delete m_tagWorker;
     m_tagWorker = nullptr;
     delete m_FutureWatcher;
@@ -770,6 +830,9 @@ void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& inf
         return;
     // Update data in SOURCE model (not proxy!)
     // The proxy will automatically reflect these changes
+    QStandardItem* item = m_model->item(sourceRow, 0);
+    item->setData(true, Qt::UserRole + 2);
+    // m_model->setData(m_model->index(sourceRow,  Qt::UserRole + 2), true);
     m_model->setData(m_model->index(sourceRow, 3), info.iDuration);
     m_model->setData(m_model->index(sourceRow, 4), info.sArtist);
     m_model->setData(m_model->index(sourceRow, 5), info.sTitle);
@@ -804,6 +867,11 @@ void PlaylistTable::playlistLoadFinished()
     // m_view->horizontalHeader()->setSortIndicatorShown(true);
 }
 
+void PlaylistTable::addFilesFinished()
+{
+    readTags();
+}
+
 void PlaylistTable::addTrack(const QString &filePath)
 {
     QString fileName = extractFileName(filePath);
@@ -813,6 +881,7 @@ void PlaylistTable::addTrack(const QString &filePath)
     // --- Create standard items for each column ---
     QStandardItem* fileItem = new QStandardItem(icon, fileName);
     fileItem->setData(info.canonicalFilePath(), Qt::UserRole + 1); // store full path
+    fileItem->setData(false, Qt::UserRole + 2);
     QStandardItem* extensionItem = new QStandardItem(info.suffix());
     QStandardItem* pathItem = new QStandardItem(QDir::toNativeSeparators(info.canonicalPath()));
     QStandardItem* durationItem = new QStandardItem(QString::number(0));
@@ -1173,35 +1242,35 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     // forgetPlayedAction->setIcon(QIcon(":/img/img/icons8-reload-48.png"));
     // QString sText = "Forget played (" + QString::number(m_playedList.count()) + " of " + QString::number(m_model->rowCount()) + ")";
     // forgetPlayedAction->setText(sText);
-//    QAction *filterAction = contextMenu.addAction(tr("Filter"));
-//    filterAction->setIcon(QIcon(":/img/img/icons8-filter-48.png"));
-//    contextMenu.addSeparator();
-//    QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
-//    QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
-//    QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
+    // QAction *filterAction = contextMenu.addAction(tr("Filter"));
+    // filterAction->setIcon(QIcon(":/img/img/icons8-filter-48.png"));
+    // contextMenu.addSeparator();
+    // QAction *removeSelectedAction = contextMenu.addAction(tr("Remove selected"));
+    // QAction *clearExceptSelectedAction = contextMenu.addAction(tr("Clear all except selected"));
+    // QAction *clearAction = contextMenu.addAction(tr("Clear playlist"));
     // QAction *playlistTableAction = nullptr;
     // if (m_bTablePlaylist)
     // {
     // playlistTableAction = contextMenu.addAction(tr("Show playlist table"));
     // playlistTableAction->setIcon(QIcon(":/img/img/icons8-playlist_trim-48.png"));
     // }
-//    contextMenu.addSeparator();
-//    QAction *searchAction = contextMenu.addAction(tr("Search on Google"));
-//    searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
-//    QAction *selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
-//    selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
-//    QAction *copyNameAction = contextMenu.addAction(tr("Copy file name"));
-//    copyNameAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_file-48.png"));
-//    QAction *copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
-//    copyFullPathAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_path-48.png"));
-//    contextMenu.addSeparator();
-//    QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
-//    QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
-//    saveAction->setIcon(QIcon(":/img/img/icons8-folder-save-48.png"));
-//    loadAction->setIcon(QIcon(":/img/img/icons8-folder-load-48.png"));
-//    clearAction->setIcon(QIcon(":/img/img/icons8-clear-48.png"));
-//    clearExceptSelectedAction->setIcon(QIcon(":/img/img/icons8-list_keep1-48.png"));
-//    removeSelectedAction->setIcon(QIcon(":/img/img/icons8-list_delete1-48.png"));
+    // contextMenu.addSeparator();
+    // QAction *searchAction = contextMenu.addAction(tr("Search on Google"));
+    // searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
+    // QAction *selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
+    // selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
+    // QAction *copyNameAction = contextMenu.addAction(tr("Copy file name"));
+    // copyNameAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_file-48.png"));
+    // QAction *copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
+    // copyFullPathAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_path-48.png"));
+    // contextMenu.addSeparator();
+    // QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
+    // QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
+    // saveAction->setIcon(QIcon(":/img/img/icons8-folder-save-48.png"));
+    // loadAction->setIcon(QIcon(":/img/img/icons8-folder-load-48.png"));
+    // clearAction->setIcon(QIcon(":/img/img/icons8-clear-48.png"));
+    // clearExceptSelectedAction->setIcon(QIcon(":/img/img/icons8-list_keep1-48.png"));
+    // removeSelectedAction->setIcon(QIcon(":/img/img/icons8-list_delete1-48.png"));
     QAction *selectedAction = contextMenu.exec(m_view->viewport()->mapToGlobal(pos));
     if (selectedAction == scrollToCurrentAction)
     {

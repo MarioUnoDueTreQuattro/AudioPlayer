@@ -648,6 +648,8 @@ void Widget::openFiles(const QStringList &filePaths)
         m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
         updateModeButtonIcon();
     }
+    // TODO make it works
+    if (m_bTablePlaylist && m_playlistView != nullptr) m_playlistView->addFilesFinished ();
     savePlaylist();
     //saveSettings();
 }
