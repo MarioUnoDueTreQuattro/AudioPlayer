@@ -56,7 +56,7 @@ public:
     AudioTag(QObject *parent = nullptr);
     AudioTag(QString sFileName, QObject *parent = nullptr);
     QPixmap extractCover(const QString &filePath);
-    void setFile(const QString &localFile, bool bExtractCover = true);
+    void setFile(const QString &localFile, bool bExtractCover = false);
 //    QString formatFileSize(qint64 bytes);
     void setInfo(QString);
     AudioTagInfo tagInfo() const;

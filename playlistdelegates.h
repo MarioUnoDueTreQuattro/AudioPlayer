@@ -35,7 +35,9 @@ public:
         QAbstractItemView *view,
         const QStyleOptionViewItem &option,
         const QModelIndex &index) override;
-
+void paint(QPainter *painter,
+               const QStyleOptionViewItem &option,
+               const QModelIndex &index) const override;
 };
 
 #endif // PLAYLISTDELEGATES_H

@@ -79,7 +79,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_3">
+        <widget class="QPushButton" name="pushButtonClearFilter">
          <property name="text">
           <string/>
          </property>
@@ -127,13 +127,41 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_4">
+        <widget class="QPushButton" name="pushButtonClearFind">
          <property name="text">
           <string/>
          </property>
          <property name="icon">
           <iconset resource="resources.qrc">
            <normaloff>:/img/img/icons8-delete-48.png</normaloff>:/img/img/icons8-delete-48.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonPrev">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="resources.qrc">
+           <normaloff>:/img/img/icons8-previous-48.png</normaloff>:/img/img/icons8-previous-48.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonNext">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="resources.qrc">
+           <normaloff>:/img/img/icons8-next-48.png</normaloff>:/img/img/icons8-next-48.png</iconset>
          </property>
         </widget>
        </item>
@@ -167,7 +195,7 @@
  </resources>
  <connections>
   <connection>
-   <sender>pushButton_3</sender>
+   <sender>pushButtonClearFilter</sender>
    <signal>clicked()</signal>
    <receiver>comboBoxFilter</receiver>
    <slot>clearEditText()</slot>
@@ -183,7 +211,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>pushButton_4</sender>
+   <sender>pushButtonClearFind</sender>
    <signal>clicked()</signal>
    <receiver>comboBoxFind</receiver>
    <slot>clearEditText()</slot>

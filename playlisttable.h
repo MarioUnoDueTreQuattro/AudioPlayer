@@ -38,8 +38,8 @@ signals:
     void windowClosed();
     void focusReceived();
 public slots:
-        void setCurrentItemIcon(bool);
-void onDoubleClicked(const QModelIndex &index);
+    void setCurrentItemIcon(bool);
+    void onDoubleClicked(const QModelIndex &index);
     void onCurrentTrackChanged(int index);
     void onHeaderSortChanged(int logicalIndex, Qt::SortOrder order);
     void setPlaylist(QMediaPlaylist *playlist);
@@ -60,8 +60,11 @@ private slots:
     void onColumnResized(int column, int oldSize, int newSize);
     void restoreColumnWidths();
     void findInTable(const QString &searchText);
+    void findNext();
+    void findPrevious();
     void onClicked(const QModelIndex &index);
     void showPlaylistContextMenu(const QPoint &pos);
+    void clearSearchHighlight();
 private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
@@ -79,6 +82,11 @@ private:
     int mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int proxyRow);
     TagLoaderWorker *m_tagWorker;
     QFutureWatcher<void> *m_FutureWatcher;
+    // QList<QModelIndex> m_findMatches;    // indici sul proxy (visibili)
+    // int m_findCurrentIndex = -1;
+    QString m_lastSearchText;
+    QList<QPersistentModelIndex> m_findMatches;
+    void updateSearchCount(int currentMatchIndex);
 };
 
 #endif // PLAYLISTTABLE_H

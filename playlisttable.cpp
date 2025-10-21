@@ -11,6 +11,11 @@
 #include <QDesktopWidget>
 #include <QMouseEvent>
 #include <QMenu>
+#include <QTimer>
+#include <QBrush>
+
+//#include <QItemSelectionModel>
+//#include <QDebug>
 
 //PlaylistTable::PlaylistTable(QWidget *parent) :
 // QWidget(parent),
@@ -24,7 +29,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     : QWidget(parent),
       ui(new Ui::PlaylistTable),
       m_player(player),
-      m_CurrentItem(nullptr)
+      m_CurrentItem(nullptr)/*,
+      m_findCurrentIndex (-1)*/
 {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
     ui->setupUi(this);
@@ -92,6 +98,9 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_view->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_view, &QTableView::customContextMenuRequested,
         this, &PlaylistTable::showPlaylistContextMenu);
+    connect(ui->pushButtonClearFind, &QPushButton::clicked, this, &PlaylistTable::clearSearchHighlight);
+    connect(ui->pushButtonPrev, &QPushButton::clicked, this, &PlaylistTable::findPrevious);
+    connect(ui->pushButtonNext, &QPushButton::clicked, this, &PlaylistTable::findNext);
     connect(ui->comboBoxFind, &QComboBox::currentTextChanged, this, &PlaylistTable::findInTable);
     connect(ui->comboBoxFilter, &QComboBox::currentTextChanged,
         m_sortModel, &PlaylistSortModel::setFilterText);
@@ -870,6 +879,10 @@ void PlaylistTable::playlistLoadFinished()
 void PlaylistTable::addFilesFinished()
 {
     readTags();
+    // int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
+    // Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
+    //    //m_sortModel->sort(iSortCol, order);
+    // onHeaderSortChanged(iSortCol, order);
 }
 
 void PlaylistTable::addTrack(const QString &filePath)
@@ -1207,29 +1220,212 @@ int PlaylistTable::mapProxyRowToSource(QSortFilterProxyModel* proxyModel, int pr
     return sourceIndex.isValid() ? sourceIndex.row() : -1;
 }
 
-void PlaylistTable::findInTable(const QString &searchText)
+void PlaylistTable::updateSearchCount(int currentRow)
 {
-    if (searchText.isEmpty())
-        return;
-    QAbstractItemModel *model = m_sortModel; //m_view->model();
-    QList<QModelIndex> matches;
-    for (int row = 0; row < model->rowCount(); ++row)
+    QPoint globalPos = ui->pushButtonClearFind-> mapToGlobal(QPoint(ui->pushButtonClearFind->width() / 2, ui->pushButtonClearFind->height() / 2));
+    // Costruisci una lista delle righe uniche con match
+    QSet<int> uniqueRows;
+    for (const QModelIndex &idx : m_findMatches)
+        uniqueRows.insert(idx.row());
+    QList<int> rowsList = uniqueRows.toList();
+    std::sort(rowsList.begin(), rowsList.end()); // Ordina le righe
+    if (rowsList.isEmpty())
     {
-        for (int col = 0; col < model->columnCount(); ++col)
+        // ui->labelSearchStatus->setText("0 of 0");
+        QToolTip::showText(globalPos, "No results", ui->pushButtonClearFind);
+        return;
+    }
+    // Trova l’indice della riga corrente
+    int currentIndex = rowsList.indexOf(currentRow);
+    if (currentIndex == -1)
+        currentIndex = 0; // fallback
+    // ui->labelSearchStatus->setText(QString("%1 of %2")
+    // .arg(currentIndex + 1)
+    // .arg(rowsList.size()));
+    QString text = QString("%1 of %2").arg(currentIndex + 1) .arg(rowsList.size());
+    QToolTip::showText(globalPos, text, ui->pushButtonClearFind);
+}
+
+//void PlaylistTable::updateSearchCount(int currentMatchIndex)
+//{
+// int totalMatches = m_findMatches.size();
+// QPoint globalPos = ui->label_2-> mapToGlobal(QPoint(ui->label_2->width() / 2, ui->label_2->height() / 2));
+// if (totalMatches == 0)
+// {
+//        //ui->labelSearchStatus->setText("0 of 0");
+// QToolTip::showText(globalPos, "No results", ui->label_2);
+// return;
+// }
+//    // currentMatchIndex deve essere tra 0 e totalMatches-1
+// currentMatchIndex = qBound(0, currentMatchIndex, totalMatches - 1);
+// QString text = QString("%1 of %2").arg(currentMatchIndex + 1).arg(totalMatches);
+// QToolTip::showText(globalPos, text, ui->label_2);
+
+////ui->labelSearchStatus->setText(text);
+//}
+
+void PlaylistTable::findNext()
+{
+    if (m_findMatches.isEmpty() && !m_lastSearchText.isEmpty())
+        findInTable(m_lastSearchText);
+    if (m_findMatches.isEmpty())
+        return;
+    int currentRow = m_view->currentIndex().isValid()
+        ? m_view->currentIndex().row()
+        : -1;
+    // Trova la prossima riga contenente un match
+    int nextRow = -1;
+    int nextIndexInMatches = -1;
+ for (int i = 0; i < m_findMatches.size(); ++i)
+    {
+        if (m_findMatches[i].row() > currentRow)
         {
-            QModelIndex index = model->index(row, col);
-            QString cellText = model->data(index).toString();
-            if (cellText.contains(searchText, Qt::CaseInsensitive))
-                matches.append(index);
+            nextRow = m_findMatches[i].row();
+            nextIndexInMatches = i;
+            break;
         }
     }
-    if (!matches.isEmpty())
-    {
-        m_view->scrollTo(matches.first(), QAbstractItemView::PositionAtCenter);
-        m_view->setCurrentIndex(matches.first());
-        m_view->selectionModel()->select(matches.first(), QItemSelectionModel::Select);
-    }
+     if (nextRow == -1) // ricomincia dall'inizio
+        nextRow = m_findMatches.first().row();
+    QModelIndex nextIndex = m_sortModel->index(nextRow, 0);
+    m_view->setCurrentIndex(nextIndex);
+    m_view->scrollTo(nextIndex, QAbstractItemView::EnsureVisible);
+    updateSearchCount(nextRow);
 }
+
+void PlaylistTable::findPrevious()
+{
+    if (m_findMatches.isEmpty() && !m_lastSearchText.isEmpty())
+        findInTable(m_lastSearchText);
+    if (m_findMatches.isEmpty())
+        return;
+    int currentRow = m_view->currentIndex().isValid()
+        ? m_view->currentIndex().row()
+        : m_sortModel->rowCount();
+    // Trova la riga precedente contenente un match
+    int prevRow = -1;
+    int nextIndexInMatches = -1;
+    for (int i = m_findMatches.size() - 1; i >= 0; --i)
+    {
+        if (m_findMatches[i].row() < currentRow)
+        {
+            prevRow = m_findMatches[i].row();
+            nextIndexInMatches = i - 1;
+            break;
+        }
+    }
+    if (prevRow == -1) // torna all’ultima
+        prevRow = m_findMatches.last().row();
+    QModelIndex nextIndex = m_sortModel->index(prevRow, 0);
+    m_view->setCurrentIndex(nextIndex);
+    m_view->scrollTo(nextIndex, QAbstractItemView::EnsureVisible);
+    updateSearchCount(prevRow);
+}
+
+void PlaylistTable::clearSearchHighlight()
+{
+    for (int r = 0; r < m_sortModel->rowCount(); ++r)
+        for (int c = 0; c < m_sortModel->columnCount(); ++c)
+            m_sortModel->setData(m_sortModel->index(r, c), QVariant(), Qt::UserRole + 10);
+    m_findMatches.clear();
+    m_view->viewport()->update();
+    // ui->pushButtonNext->setEnabled (true);
+    // ui->pushButtonPrev->setEnabled (true);
+}
+
+void PlaylistTable::findInTable(const QString &searchText)
+{
+    if (searchText.length() < 4) return;
+    if (!m_sortModel || searchText.isEmpty())
+        return;
+    m_lastSearchText = searchText;
+    m_findMatches.clear();
+    // Clear previous highlights
+    for (int r = 0; r < m_sortModel->rowCount(); ++r)
+        for (int c = 0; c < m_sortModel->columnCount(); ++c)
+            m_sortModel->setData(m_sortModel->index(r, c), QVariant(), Qt::UserRole + 10);
+    //    // Rimuovi evidenziazione precedente
+    // for (int r = 0; r < m_sortModel->rowCount(); ++r)
+    // for (int c = 0; c < m_sortModel->columnCount(); ++c)
+    // m_sortModel->setData(m_sortModel->index(r, c), QVariant(), Qt::BackgroundRole);
+    // Cerca e colora
+    for (int r = 0; r < m_sortModel->rowCount(); ++r)
+    {
+        for (int c = 0; c < m_sortModel->columnCount(); ++c)
+        {
+            QModelIndex idx = m_sortModel->index(r, c);
+            QString text = m_sortModel->data(idx).toString();
+            if (text.contains(searchText, Qt::CaseInsensitive))
+            {
+                // m_sortModel->setData(idx, QColor(Qt::yellow), Qt::BackgroundRole);
+                // m_sortModel->setData(idx, QColor(Qt::red), Qt::ForegroundRole);
+                m_sortModel->setData(idx, true, Qt::UserRole + 10);
+                m_findMatches.append(idx);
+            }
+        }
+    }
+    if (m_findMatches.isEmpty())
+{
+     updateSearchCount(0);
+       return;
+}
+    QModelIndex first = m_findMatches.first();
+    m_view->setCurrentIndex(first);
+    m_view->scrollTo(first, QAbstractItemView::EnsureVisible);
+    ui->pushButtonNext->setEnabled(true);
+    ui->pushButtonPrev->setEnabled(true);
+    updateSearchCount(1);
+    // Se nessuna selezione, vai al primo risultato
+    // QModelIndex current = m_view->currentIndex();
+    // if (!current.isValid())
+    // {
+    // QModelIndex first = m_findMatches.first();
+    // m_view->scrollTo(first, QAbstractItemView::EnsureVisible);
+    // m_view->setCurrentIndex(first);
+    // m_view->selectionModel()->select(first, QItemSelectionModel::ClearAndSelect);
+    // }
+    // else
+    //{
+    // QModelIndex first = m_findMatches.first();
+    // m_view->scrollTo(first, QAbstractItemView::EnsureVisible);
+    // m_view->setCurrentIndex(first);
+    // m_view->selectionModel()->select(first, QItemSelectionModel::ClearAndSelect);
+    //}
+}
+
+//void PlaylistTable::clearSearchHighlight()
+//{
+// for (int r = 0; r < m_sortModel->rowCount(); ++r)
+// for (int c = 0; c < m_sortModel->columnCount(); ++c)
+// m_sortModel->setData(m_sortModel->index(r, c), QVariant(), Qt::BackgroundRole);
+
+// m_findMatches.clear();
+// m_lastSearchText.clear();
+//}
+
+//void PlaylistTable::findInTable(const QString &searchText)
+//{
+// if (searchText.isEmpty())
+// return;
+// QAbstractItemModel *model = m_sortModel; //m_view->model();
+// QList<QModelIndex> matches;
+// for (int row = 0; row < model->rowCount(); ++row)
+// {
+// for (int col = 0; col < model->columnCount(); ++col)
+// {
+// QModelIndex index = model->index(row, col);
+// QString cellText = model->data(index).toString();
+// if (cellText.contains(searchText, Qt::CaseInsensitive))
+// matches.append(index);
+// }
+// }
+// if (!matches.isEmpty())
+// {
+// m_view->scrollTo(matches.first(), QAbstractItemView::PositionAtCenter);
+// m_view->setCurrentIndex(matches.first());
+// m_view->selectionModel()->select(matches.first(), QItemSelectionModel::Select);
+// }
+//}
 
 void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
 {
