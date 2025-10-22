@@ -49,6 +49,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
 private slots:
+    void handleNewSearchInput();
     void on_pushButton_clicked();
     void readTags();
     void readPlaylistTags();
@@ -88,6 +89,9 @@ private:
     QString m_lastSearchText;
     QList<QPersistentModelIndex> m_findMatches;
     void updateSearchCount(int currentMatchIndex);
+    const int MAX_SEARCH_HISTORY_SIZE = 20;
+    void loadSearchHistory();
+    void saveSearchHistory(const QStringList &history);
 };
 
 #endif // PLAYLISTTABLE_H

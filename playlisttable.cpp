@@ -13,6 +13,7 @@
 #include <QMenu>
 #include <QTimer>
 #include <QBrush>
+#include <QLineEdit>
 
 //#include <QItemSelectionModel>
 //#include <QDebug>
@@ -34,6 +35,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
 {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
     ui->setupUi(this);
+    ui->comboBoxFind->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    ui->comboBoxFilter->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     setWindowFlags(Qt::Tool);
     setWindowTitle(qApp->applicationName() + " playlist");
     settingsMgr = SettingsManager::instance();
@@ -94,6 +97,9 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // QVBoxLayout *layout = new QVBoxLayout(this);
     // layout->addWidget(m_view);
     // setLayout(layout);
+    loadSearchHistory();
+    connect(ui->comboBoxFind->lineEdit(), &QLineEdit::editingFinished,
+        this, &PlaylistTable::handleNewSearchInput);
     // --- Connections ---
     m_view->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_view, &QTableView::customContextMenuRequested,
@@ -1250,6 +1256,104 @@ void PlaylistTable::updateSearchCount(int currentRow)
     // .arg(rowsList.size()));
     QString text = QString("%1 of %2").arg(currentIndex + 1) .arg(rowsList.size());
     QToolTip::showText(globalPos, text, ui->pushButtonClearFind);
+}
+
+void PlaylistTable::handleNewSearchInput()
+{
+    QString newText = ui->comboBoxFind->currentText().trimmed();
+    if (newText.isEmpty() || newText.length() < 4)
+    {
+        return;
+    }
+    int existingIndex = -1;
+    for (int i = 0; i < ui->comboBoxFind->count(); ++i)
+    {
+        if (ui->comboBoxFind->itemText(i).compare(newText, Qt::CaseInsensitive) == 0)
+        {
+            existingIndex = i;
+            break;
+        }
+    }
+    if (existingIndex != -1)
+    {
+        ui->comboBoxFind->removeItem(existingIndex);
+    }
+    ui->comboBoxFind->insertItem(0, newText);
+    while (ui->comboBoxFind->count() > MAX_SEARCH_HISTORY_SIZE)
+    {
+        ui->comboBoxFind->removeItem(ui->comboBoxFind->count() - 1); // Rimuove l'ultimo elemento
+    }
+    ui->comboBoxFind->setCurrentText(newText);
+    QStringList updatedHistory;
+    for (int i = 0; i < ui->comboBoxFind->count(); ++i)
+    {
+        updatedHistory.append(ui->comboBoxFind->itemText(i));
+    }
+    saveSearchHistory(updatedHistory);
+}
+
+/*
+  void PlaylistTable::handleNewSearchInput()
+{
+    QString newText = ui->comboBoxFind->currentText().trimmed();
+    if (newText.length() < 4) return;
+    if (newText.isEmpty())
+    {
+        return;
+    }
+    QStringList currentHistory;
+    for (int i = 0; i < ui->comboBoxFind->count(); ++i)
+    {
+        currentHistory.append(ui->comboBoxFind->itemText(i));
+    }
+    // currentHistory.removeAll(newText);
+    int existingIndex = -1;
+    QString itemText;
+    for (int i = 0; i < ui->comboBoxFind->count(); ++i)
+    {
+    itemText=ui->comboBoxFind->itemText(i);
+        if (itemText.compare(newText, Qt::CaseInsensitive) == 0)
+        {
+            existingIndex = i;
+            break; // Trovato, esci dal loop
+        }
+    }
+    if (existingIndex != -1)
+    {
+        // Rimuovi la vecchia versione (duplicata) trovata
+        ui->comboBoxFind->removeItem(existingIndex);
+        currentHistory.removeAt (existingIndex);
+    }
+    currentHistory.prepend(newText);
+    while (currentHistory.size() > MAX_SEARCH_HISTORY_SIZE)
+    {
+        currentHistory.removeLast();
+    }
+    ui->comboBoxFind->clear();
+    ui->comboBoxFind->addItems(currentHistory);
+    ui->comboBoxFind->setCurrentText(newText);
+    saveSearchHistory(currentHistory);
+}
+
+*/
+void PlaylistTable::loadSearchHistory()
+{
+    settingsMgr->beginGroup("Table");
+    QStringList history = settingsMgr->value("SearchHistory").toStringList();
+    settingsMgr->endGroup();
+    if (!history.isEmpty())
+    {
+        ui->comboBoxFind->addItems(history);
+        //ui->comboBoxFind->setCurrentText(history.first());
+    }
+    ui->comboBoxFind->setCurrentText(QString());
+}
+
+void PlaylistTable::saveSearchHistory(const QStringList &history)
+{
+    settingsMgr->beginGroup("Table");
+    settingsMgr->setValue("SearchHistory", history);
+    settingsMgr->endGroup();
 }
 
 //void PlaylistTable::updateSearchCount(int currentMatchIndex)
