@@ -65,6 +65,7 @@ private slots:
     void onClicked(const QModelIndex &index);
     void showPlaylistContextMenu(const QPoint &pos);
     void clearSearchHighlight();
+    void delayedFindInTable();
 private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;

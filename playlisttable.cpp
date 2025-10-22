@@ -479,11 +479,16 @@ void PlaylistTable::syncPlaylistOrder()
     }
 }
 
+void PlaylistTable::delayedFindInTable()
+{
+    findInTable(ui->comboBoxFind->currentText());
+}
+
 void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 {
     Q_UNUSED(logicalIndex);
     Q_UNUSED(order);
-    m_view->blockSignals(true);
+    //m_view->blockSignals(true);
     emit isSorting(true);
     //qDebug() << "onHeaderSortChanged logicalIndex" << logicalIndex;
     settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
@@ -492,7 +497,8 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
     syncPlaylistOrder();
     qDebug() << "Playlist sorted and reordered to match table view.";
     emit isSorting(false);
-    m_view->blockSignals(false);
+    //m_view->blockSignals(false);
+    if (!ui->comboBoxFind->currentText().isEmpty() && ui->comboBoxFind->currentText().length() < 4 == false) QTimer::singleShot(100, this, delayedFindInTable);
 }
 
 //void PlaylistView::addTrack(const QString &filePath)
@@ -1276,7 +1282,7 @@ void PlaylistTable::findNext()
     // Trova la prossima riga contenente un match
     int nextRow = -1;
     int nextIndexInMatches = -1;
- for (int i = 0; i < m_findMatches.size(); ++i)
+    for (int i = 0; i < m_findMatches.size(); ++i)
     {
         if (m_findMatches[i].row() > currentRow)
         {
@@ -1285,7 +1291,7 @@ void PlaylistTable::findNext()
             break;
         }
     }
-     if (nextRow == -1) // ricomincia dall'inizio
+    if (nextRow == -1) // ricomincia dall'inizio
         nextRow = m_findMatches.first().row();
     QModelIndex nextIndex = m_sortModel->index(nextRow, 0);
     m_view->setCurrentIndex(nextIndex);
@@ -1353,6 +1359,8 @@ void PlaylistTable::findInTable(const QString &searchText)
     {
         for (int c = 0; c < m_sortModel->columnCount(); ++c)
         {
+            if (m_view->isColumnHidden(c)) // skip hidden columns
+                continue;
             QModelIndex idx = m_sortModel->index(r, c);
             QString text = m_sortModel->data(idx).toString();
             if (text.contains(searchText, Qt::CaseInsensitive))
@@ -1360,15 +1368,16 @@ void PlaylistTable::findInTable(const QString &searchText)
                 // m_sortModel->setData(idx, QColor(Qt::yellow), Qt::BackgroundRole);
                 // m_sortModel->setData(idx, QColor(Qt::red), Qt::ForegroundRole);
                 m_sortModel->setData(idx, true, Qt::UserRole + 10);
+                qDebug() << text;
                 m_findMatches.append(idx);
             }
         }
     }
     if (m_findMatches.isEmpty())
-{
-     updateSearchCount(0);
-       return;
-}
+    {
+        updateSearchCount(0);
+        return;
+    }
     QModelIndex first = m_findMatches.first();
     m_view->setCurrentIndex(first);
     m_view->scrollTo(first, QAbstractItemView::EnsureVisible);
