@@ -1279,11 +1279,12 @@ void PlaylistTable::handleNewSearchInput()
         ui->comboBoxFind->removeItem(existingIndex);
     }
     ui->comboBoxFind->insertItem(0, newText);
+    ui->comboBoxFind->setEditText(newText);
     while (ui->comboBoxFind->count() > MAX_SEARCH_HISTORY_SIZE)
     {
         ui->comboBoxFind->removeItem(ui->comboBoxFind->count() - 1); // Rimuove l'ultimo elemento
     }
-    ui->comboBoxFind->setCurrentText(newText);
+    // ui->comboBoxFind->setCurrentText(newText);
     QStringList updatedHistory;
     for (int i = 0; i < ui->comboBoxFind->count(); ++i)
     {
@@ -1341,12 +1342,14 @@ void PlaylistTable::loadSearchHistory()
     settingsMgr->beginGroup("Table");
     QStringList history = settingsMgr->value("SearchHistory").toStringList();
     settingsMgr->endGroup();
+    ui->comboBoxFind->clear();
     if (!history.isEmpty())
     {
         ui->comboBoxFind->addItems(history);
         //ui->comboBoxFind->setCurrentText(history.first());
+        //ui->comboBoxFind->setEditText(history.first());
     }
-    ui->comboBoxFind->setCurrentText(QString());
+    ui->comboBoxFind->setEditText(QString());
 }
 
 void PlaylistTable::saveSearchHistory(const QStringList &history)
