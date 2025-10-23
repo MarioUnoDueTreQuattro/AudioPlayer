@@ -35,6 +35,7 @@ public:
      */
     void endGroup();
     QString settingsFilePath() const;
+    const QSettings &getSettings() const;
 private:
     QSettings m_settings;
 

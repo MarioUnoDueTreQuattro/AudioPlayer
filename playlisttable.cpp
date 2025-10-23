@@ -212,9 +212,8 @@ void PlaylistTable::changeEvent(QEvent *event)
 
 void PlaylistTable::moveEvent(QMoveEvent *event)
 {
+    qDebug() << __PRETTY_FUNCTION__;
     QWidget::moveEvent(event);
-    //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
-    //settings.setValue("PlaylistViewPosition", pos());
     settingsMgr->setValue("PlaylistViewPosition", pos());
 }
 
@@ -306,36 +305,45 @@ void PlaylistTable::onHeaderContextMenu(const QPoint &pos)
 
 void PlaylistTable::restoreColumnVisibility()
 {
-    settingsMgr->beginGroup("Table");
+    //settingsMgr->beginGroup("Table");
     for (int col = 0; col < m_view->model()->columnCount(); ++col)
     {
-        bool bVisible = settingsMgr->value(QString("Column_IsVisible_%1").arg(col), true).toBool();
+        bool bVisible = settingsMgr->value(QString("Table/Column_IsVisible_%1").arg(col), true).toBool();
         m_view->setColumnHidden(col, !bVisible);
     }
-    settingsMgr->endGroup();
+    //settingsMgr->endGroup();
 }
 
 void PlaylistTable::onColumnResized(int column, int oldSize, int newSize)
 {
-    settingsMgr->beginGroup("Table");
-    settingsMgr->setValue(QString("Column_Width_%1").arg(column), newSize);
-    settingsMgr->endGroup();
+    // settingsMgr->beginGroup("Table");
+    QString sSettingsGroup = settingsMgr->getSettings().group() ;
+    if (sSettingsGroup != "")
+    {
+        //settingsMgr->endGroup();
+        LOG_VAR(sSettingsGroup);
+    }
+    settingsMgr->setValue(QString("Table/Column_Width_%1").arg(column), newSize);
+    // settingsMgr->endGroup();
 }
 
 void PlaylistTable::restoreColumnWidths()
 {
-    settingsMgr->beginGroup("Table");
     for (int col = 0; col < m_model->columnCount(); ++col)
     {
-        int width = settingsMgr->value(QString("Column_Width_%1").arg(col), -1).toInt();
+        // settingsMgr->beginGroup("Table");
+        int width = settingsMgr->value(QString("Table/Column_Width_%1").arg(col), -1).toInt();
         if (width > 0)
             m_view->setColumnWidth(col, width);
+        // settingsMgr->endGroup();
     }
-    settingsMgr->endGroup();
 }
 
 void PlaylistTable::loadsettings()
 {
+    QByteArray geometry = settingsMgr->value("PlaylistViewGeometry").toByteArray();
+    if (!geometry.isEmpty())
+        restoreGeometry(geometry);
     // Restore position
     QRect screenGeometry = QApplication::desktop()->screenGeometry();
     int pos_x = (screenGeometry.width() - this->width()) / 2;
@@ -352,9 +360,6 @@ void PlaylistTable::loadsettings()
         // Se la posizione non è valida, centra la finestra
         move(QPoint(pos_x, pos_y));
     }
-    QByteArray geometry = settingsMgr->value("PlaylistViewGeometry").toByteArray();
-    if (!geometry.isEmpty())
-        restoreGeometry(geometry);
 }
 
 void PlaylistTable::syncPlaylistOrder()
@@ -1535,7 +1540,7 @@ void PlaylistTable::findInTable(const QString &searchText)
                 // m_sortModel->setData(idx, QColor(Qt::yellow), Qt::BackgroundRole);
                 // m_sortModel->setData(idx, QColor(Qt::red), Qt::ForegroundRole);
                 m_sortModel->setData(idx, true, Qt::UserRole + 10);
-                qDebug() << text;
+                //qDebug() << text;
                 m_findMatches.append(idx);
             }
         }

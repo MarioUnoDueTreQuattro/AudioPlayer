@@ -71,3 +71,8 @@ QString SettingsManager::settingsFilePath() const
      */
     return m_settings.fileName();
 }
+
+const QSettings &SettingsManager::getSettings() const
+{
+    return m_settings;
+}
