@@ -98,8 +98,11 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // layout->addWidget(m_view);
     // setLayout(layout);
     loadSearchHistory();
+    loadFilterHistory();
     connect(ui->comboBoxFind->lineEdit(), &QLineEdit::editingFinished,
         this, &PlaylistTable::handleNewSearchInput);
+    connect(ui->comboBoxFilter->lineEdit(), &QLineEdit::editingFinished,
+        this, &PlaylistTable::handleNewFilterInput);
     // --- Connections ---
     m_view->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_view, &QTableView::customContextMenuRequested,
@@ -1293,6 +1296,41 @@ void PlaylistTable::handleNewSearchInput()
     saveSearchHistory(updatedHistory);
 }
 
+void PlaylistTable::handleNewFilterInput()
+{
+    QString newText = ui->comboBoxFilter->currentText().trimmed();
+    if (newText.isEmpty() || newText.length() < 4)
+    {
+        return;
+    }
+    int existingIndex = -1;
+    for (int i = 0; i < ui->comboBoxFilter->count(); ++i)
+    {
+        if (ui->comboBoxFilter->itemText(i).compare(newText, Qt::CaseInsensitive) == 0)
+        {
+            existingIndex = i;
+            break;
+        }
+    }
+    if (existingIndex != -1)
+    {
+        ui->comboBoxFilter->removeItem(existingIndex);
+    }
+    ui->comboBoxFilter->insertItem(0, newText);
+    ui->comboBoxFilter->setEditText(newText);
+    while (ui->comboBoxFilter->count() > MAX_SEARCH_HISTORY_SIZE)
+    {
+        ui->comboBoxFilter->removeItem(ui->comboBoxFilter->count() - 1); // Rimuove l'ultimo elemento
+    }
+    // ui->comboBoxFilter->setCurrentText(newText);
+    QStringList updatedHistory;
+    for (int i = 0; i < ui->comboBoxFilter->count(); ++i)
+    {
+        updatedHistory.append(ui->comboBoxFilter->itemText(i));
+    }
+    saveFilterHistory(updatedHistory);
+}
+
 /*
   void PlaylistTable::handleNewSearchInput()
 {
@@ -1352,10 +1390,32 @@ void PlaylistTable::loadSearchHistory()
     ui->comboBoxFind->setEditText(QString());
 }
 
+void PlaylistTable::loadFilterHistory()
+{
+    settingsMgr->beginGroup("Table");
+    QStringList history = settingsMgr->value("FilterHistory").toStringList();
+    settingsMgr->endGroup();
+    ui->comboBoxFilter->clear();
+    if (!history.isEmpty())
+    {
+        ui->comboBoxFilter->addItems(history);
+        //ui->comboBoxFilter->setCurrentText(history.first());
+        //ui->comboBoxFilter->setEditText(history.first());
+    }
+    ui->comboBoxFilter->setEditText(QString());
+}
+
 void PlaylistTable::saveSearchHistory(const QStringList &history)
 {
     settingsMgr->beginGroup("Table");
     settingsMgr->setValue("SearchHistory", history);
+    settingsMgr->endGroup();
+}
+
+void PlaylistTable::saveFilterHistory(const QStringList &history)
+{
+    settingsMgr->beginGroup("Table");
+    settingsMgr->setValue("FilterHistory", history);
     settingsMgr->endGroup();
 }
 
