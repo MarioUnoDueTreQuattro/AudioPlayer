@@ -26,6 +26,7 @@ public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget() override;
     void setInfoWidgetTitle();
+    // QAction *getActionPlay() const { return m_playAction; }
 public slots:
     void openFiles(const QStringList &filePaths);
 protected:
@@ -91,6 +92,7 @@ private slots:
     void playlistIsSorting(bool bIsSorting);
     void reloadPlaylist();
 private:
+    // QAction *m_playAction;
     // bool m_bPlaylistFinished;
     bool m_bIsInShuffleMode;
     bool m_bUserRequestedPlayback;

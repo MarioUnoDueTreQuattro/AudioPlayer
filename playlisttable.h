@@ -13,6 +13,8 @@
 #include "settingsmanager.h"
 #include "tagloaderworker.h"
 
+//class Widget;
+
 namespace Ui
 {
 class PlaylistTable;
@@ -27,10 +29,10 @@ public:
     ~PlaylistTable() override;
     void addTrack(const QString &filePath);
     void clear();
-    QMediaPlaylist *mediaPlaylist() const { return m_playlist; }
     void playlistLoadFinished();
     void addFilesFinished();
     void setSectionsResizeMode();
+    // void setKeyboardTargetWidget(Widget *target);
 signals:
     void trackActivated(int index);
     void playlistUpdated(QMediaPlaylist *playlist);
@@ -42,12 +44,12 @@ public slots:
     void onDoubleClicked(const QModelIndex &index);
     void onCurrentTrackChanged(int index);
     void onHeaderSortChanged(int logicalIndex, Qt::SortOrder order);
-    void setPlaylist(QMediaPlaylist *playlist);
 protected:
     void moveEvent(QMoveEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
+    // void keyPressEvent(QKeyEvent *event) override;
 private slots:
     void handleNewSearchInput();
     void handleNewFilterInput();
@@ -72,6 +74,7 @@ private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
     QStandardItem *m_CurrentItem;
+    void setSignalsConnections();
     void syncPlaylistOrder();
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;
@@ -95,6 +98,7 @@ private:
     void saveSearchHistory(const QStringList &history);
     void loadFilterHistory();
     void saveFilterHistory(const QStringList &history);
+    // Widget *m_target;
 };
 
 #endif // PLAYLISTTABLE_H

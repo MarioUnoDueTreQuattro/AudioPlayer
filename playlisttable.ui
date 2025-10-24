@@ -70,6 +70,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="QComboBox" name="comboBoxFilter">
+         <property name="toolTip">
+          <string>Press Enter to save</string>
+         </property>
          <property name="editable">
           <bool>true</bool>
          </property>
@@ -129,6 +132,9 @@
            <width>0</width>
            <height>0</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Press Enter to save</string>
          </property>
          <property name="editable">
           <bool>true</bool>

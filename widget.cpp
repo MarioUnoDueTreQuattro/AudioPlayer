@@ -92,6 +92,7 @@ Widget::Widget(QWidget *parent)
     {
         m_playlistView = new PlaylistTable(m_player, nullptr);
         m_playlistView->show();
+        // m_playlistView->setKeyboardTargetWidget (this);
     }
     loadSettings(); // Load volume/mute state before connecting slider
     //m_playlistView->setPlaylist (m_playlist);
@@ -127,6 +128,10 @@ void Widget::setKeyboardShortcuts()
     ui->muteButton->setShortcut(QKeySequence(Qt::Key_M));
     ui->prevButton->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left));
     ui->nextButton->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right));
+    // m_playAction = new QAction(tr("Play"), this);
+    // m_playAction->setShortcut(QKeySequence(Qt::Key_Space));
+    // connect(m_playAction, SIGNAL(triggered()), this, SLOT(handlePlayButton()));
+    // addAction(m_playAction);
     // Volume up with '+'
     QAction *volumeUpAction = new QAction(tr("Volume Up"), this);
     volumeUpAction->setShortcut(QKeySequence(Qt::Key_Plus));
@@ -649,7 +654,7 @@ void Widget::openFiles(const QStringList &filePaths)
         updateModeButtonIcon();
     }
     // TODO make it works
-    if (m_bTablePlaylist && m_playlistView != nullptr) m_playlistView->addFilesFinished ();
+    if (m_bTablePlaylist && m_playlistView != nullptr) m_playlistView->addFilesFinished();
     savePlaylist();
     //saveSettings();
 }

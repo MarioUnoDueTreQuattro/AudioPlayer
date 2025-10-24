@@ -14,6 +14,7 @@
 #include <QTimer>
 #include <QBrush>
 #include <QLineEdit>
+//#include "widget.h"
 
 //#include <QItemSelectionModel>
 //#include <QDebug>
@@ -54,22 +55,13 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_sortModel = new PlaylistSortModel(this);
     m_sortModel->setSourceModel(m_model);
     m_sortModel->setFilterColumns(QSet<int> {0, 2, 4, 5, 6});
-    //    // --- Create view ---
-    // m_view = new QTableView(this);
-    // m_view->setModel(m_sortModel);
-    // m_view->horizontalHeader()->setStretchLastSection(true);
-    // --- Create table view ---
-    m_view = ui->tableView; // new QTableView(this);
+    m_view = ui->tableView;
     m_view->horizontalHeader()->setHighlightSections(false);
-    //m_view->setModel(m_model);
     m_view->setModel(m_sortModel);
     m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    //m_view->horizontalHeader()->setStretchLastSection(true);
-    // m_view->verticalHeader()->hide();
-    // Enable sorting
     m_view->setSortingEnabled(true);
-    m_view->horizontalHeader()->setSortIndicatorShown(true);
+    //m_view->horizontalHeader()->setSortIndicatorShown(true);
     m_view->setShowGrid(false);
     m_view->setAlternatingRowColors(true);
     // m_view->horizontalHeader()->setSectionsClickable(true);
@@ -93,39 +85,11 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // header->setSectionResizeMode(3, QHeaderView::ResizeToContents);
     // header->setSectionResizeMode(4, QHeaderView::ResizeToContents);
     // header->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-    // --- Layout ---
-    // QVBoxLayout *layout = new QVBoxLayout(this);
-    // layout->addWidget(m_view);
-    // setLayout(layout);
+    m_view->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_view->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
     loadSearchHistory();
     loadFilterHistory();
-    connect(ui->comboBoxFind->lineEdit(), &QLineEdit::editingFinished,
-        this, &PlaylistTable::handleNewSearchInput);
-    connect(ui->comboBoxFilter->lineEdit(), &QLineEdit::editingFinished,
-        this, &PlaylistTable::handleNewFilterInput);
-    // --- Connections ---
-    m_view->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_view, &QTableView::customContextMenuRequested,
-        this, &PlaylistTable::showPlaylistContextMenu);
-    connect(ui->pushButtonClearFind, &QPushButton::clicked, this, &PlaylistTable::clearSearchHighlight);
-    connect(ui->pushButtonPrev, &QPushButton::clicked, this, &PlaylistTable::findPrevious);
-    connect(ui->pushButtonNext, &QPushButton::clicked, this, &PlaylistTable::findNext);
-    connect(ui->comboBoxFind, &QComboBox::currentTextChanged, this, &PlaylistTable::findInTable);
-    connect(ui->comboBoxFilter, &QComboBox::currentTextChanged,
-        m_sortModel, &PlaylistSortModel::setFilterText);
-    connect(m_view->horizontalHeader(), &QHeaderView::sectionResized,
-        this, &PlaylistTable::onColumnResized);
-    m_view->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_view->horizontalHeader(), &QHeaderView::customContextMenuRequested,
-        this, &PlaylistTable::onHeaderContextMenu);
-    connect(m_view->horizontalHeader(), SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
-        this, SLOT(onHeaderSortChanged(int, Qt::SortOrder)));
-    connect(m_view, SIGNAL(doubleClicked(const QModelIndex &)),
-        this, SLOT(onDoubleClicked(const QModelIndex &)));
-    connect(m_view, SIGNAL(clicked(const QModelIndex &)),
-        this, SLOT(onClicked(const QModelIndex &)));
-    connect(m_playlist, SIGNAL(currentIndexChanged(int)),
-        this, SLOT(onCurrentTrackChanged(int)));
+    setSignalsConnections();
     loadsettings();
     // m_view->horizontalHeader ()->setSectionResizeMode (0, QHeaderView::Stretch);
     // m_view->horizontalHeader ()->setSectionResizeMode (1, QHeaderView::ResizeToContents);
@@ -137,9 +101,22 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // onHeaderSortChanged (iSortCol,order);
 }
 
-void PlaylistTable::setPlaylist(QMediaPlaylist * playlist)
+void PlaylistTable::setSignalsConnections()
 {
-    m_player->setPlaylist(playlist);
+    connect(m_view, &QTableView::customContextMenuRequested, this, &PlaylistTable::showPlaylistContextMenu);
+    connect(ui->pushButtonClearFind, &QPushButton::clicked, this, &PlaylistTable::clearSearchHighlight);
+    connect(ui->pushButtonPrev, &QPushButton::clicked, this, &PlaylistTable::findPrevious);
+    connect(ui->pushButtonNext, &QPushButton::clicked, this, &PlaylistTable::findNext);
+    connect(ui->comboBoxFind, &QComboBox::currentTextChanged, this, &PlaylistTable::findInTable);
+    connect(ui->comboBoxFilter, &QComboBox::currentTextChanged, m_sortModel, &PlaylistSortModel::setFilterText);
+    connect(ui->comboBoxFind->lineEdit(), &QLineEdit::returnPressed, this, &PlaylistTable::handleNewSearchInput);
+    connect(ui->comboBoxFilter->lineEdit(), &QLineEdit::returnPressed, this, &PlaylistTable::handleNewFilterInput);
+    connect(m_view->horizontalHeader(), &QHeaderView::sectionResized, this, &PlaylistTable::onColumnResized);
+    connect(m_view->horizontalHeader(), &QHeaderView::customContextMenuRequested, this, &PlaylistTable::onHeaderContextMenu);
+    connect(m_view->horizontalHeader(), SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)), this, SLOT(onHeaderSortChanged(int, Qt::SortOrder)));
+    connect(m_view, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(onDoubleClicked(const QModelIndex &)));
+    connect(m_view, SIGNAL(clicked(const QModelIndex &)), this, SLOT(onClicked(const QModelIndex &)));
+    connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
 }
 
 PlaylistTable::~PlaylistTable()
@@ -212,14 +189,14 @@ void PlaylistTable::changeEvent(QEvent *event)
 
 void PlaylistTable::moveEvent(QMoveEvent *event)
 {
-    qDebug() << __PRETTY_FUNCTION__;
+    //qDebug() << __PRETTY_FUNCTION__;
     QWidget::moveEvent(event);
     settingsMgr->setValue("PlaylistViewPosition", pos());
 }
 
 void PlaylistTable::resizeEvent(QResizeEvent *event)
 {
-    qDebug() << __PRETTY_FUNCTION__;
+    //qDebug() << __PRETTY_FUNCTION__;
     // QSize newSize = event->size();
     // QSize oldSize = event->oldSize();
     // qDebug() << "Widget resized from" << oldSize << "to" << newSize;
@@ -731,6 +708,8 @@ void PlaylistTable::onTagLoadingFinished()
     ui->pushButton->setEnabled(true);
     //qDebug() << "All tags loaded.";
     m_view->setSortingEnabled(true);
+    // QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
+    // m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
 }
 
 //void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)
@@ -891,6 +870,7 @@ void PlaylistTable::playlistLoadFinished()
     int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
     Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
     //m_sortModel->sort(iSortCol, order);
+    //if (m_view->horizontalHeader()->isSortIndicatorShown())
     onHeaderSortChanged(iSortCol, order);
     // m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
     // m_view->horizontalHeader()->setSortIndicatorShown(true);
@@ -985,7 +965,8 @@ void PlaylistTable::clear()
     int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
     Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
     // m_sortModel->sort(iSortCol, order);
-    onHeaderSortChanged(iSortCol, order);
+    if (m_model->rowCount() > 0) onHeaderSortChanged(iSortCol, order);
+    //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
     // setSectionsResizeMode();
 }
 
@@ -1690,3 +1671,31 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     // openFolderAndSelectFileEx(localFile);
     // }
 }
+
+/*
+  void PlaylistTable::setKeyboardTargetWidget(Widget *target)
+{
+    m_target = target;
+}
+
+void PlaylistTable::keyPressEvent(QKeyEvent *event)
+{
+    if (!m_target)
+    {
+        QWidget::keyPressEvent(event);
+        return;
+    }
+
+    if (event->key() == Qt::Key_Space)
+    {
+        QAction *action = m_target->getActionPlay();
+        if (action)
+            action->trigger();
+    }
+    else
+    {
+        QWidget::keyPressEvent(event);
+    }
+}
+
+*/
