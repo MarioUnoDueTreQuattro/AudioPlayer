@@ -19,6 +19,8 @@ protected:
 private:
     QString m_filterText;
     QSet<int> m_filterColumns;
+    const int MIN_SEARCH_CHARS = 3;
+
 };
 
 #endif // PLAYLISTSORTMODEL_H

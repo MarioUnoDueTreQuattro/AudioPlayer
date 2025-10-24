@@ -75,7 +75,10 @@ private:
     Ui::PlaylistTable *ui;
     QStandardItem *m_CurrentItem;
     void setSignalsConnections();
-    void syncPlaylistOrder();
+    void syncPlaylistOrder(int sortCol,Qt::SortOrder sortOrder  );
+    int m_iSortCol;
+    Qt::SortOrder m_SortOrder;
+    bool m_bHasBeenSorted;
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
@@ -94,6 +97,7 @@ private:
     QList<QPersistentModelIndex> m_findMatches;
     void updateSearchCount(int currentMatchIndex);
     const int MAX_SEARCH_HISTORY_SIZE = 20;
+    const int MIN_SEARCH_CHARS = 3;
     void loadSearchHistory();
     void saveSearchHistory(const QStringList &history);
     void loadFilterHistory();

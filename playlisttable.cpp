@@ -31,7 +31,9 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     : QWidget(parent),
       ui(new Ui::PlaylistTable),
       m_player(player),
-      m_CurrentItem(nullptr)/*,
+      m_CurrentItem(nullptr),
+      m_bHasBeenSorted(false)
+      /*,
       m_findCurrentIndex (-1)*/
 {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
@@ -60,7 +62,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_view->setModel(m_sortModel);
     m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    m_view->setSortingEnabled(true);
+    //m_view->setSortingEnabled(true);
     //m_view->horizontalHeader()->setSortIndicatorShown(true);
     m_view->setShowGrid(false);
     m_view->setAlternatingRowColors(true);
@@ -339,7 +341,7 @@ void PlaylistTable::loadsettings()
     }
 }
 
-void PlaylistTable::syncPlaylistOrder()
+void PlaylistTable::syncPlaylistOrder(int sortColumn, Qt::SortOrder order)
 {
     //qDebug() << "syncPlaylistOrder";
     LOG_MSG_SHORT("");
@@ -347,6 +349,8 @@ void PlaylistTable::syncPlaylistOrder()
     int sortCol = m_view->horizontalHeader()->sortIndicatorSection();
     Qt::SortOrder sortOrder = m_view->horizontalHeader()->sortIndicatorOrder();
     // Force re-sort now
+    // m_view->horizontalHeader ()->setSortIndicator (sortCol,sortOrder);
+    // m_view->horizontalHeader ()->setSortIndicatorShown (true);
     m_sortModel->sort(sortCol, sortOrder);
     // m_view->setModel (m_model);
     // m_model->sort (sortCol, sortOrder);
@@ -417,9 +421,9 @@ void PlaylistTable::syncPlaylistOrder()
     // delete m_playlist;
     // m_playlist = newPlaylist;
     // m_player->setPlaylist(m_playlist);
-    connect(m_playlist, SIGNAL(currentIndexChanged(int)),
+      connect(m_playlist, SIGNAL(currentIndexChanged(int)),
         this, SLOT(onCurrentTrackChanged(int)));
-    // TODO uncomment?
+  // TODO uncomment?
     /*
     if (oldIndex >= 0 && oldIndex < newCount)
     m_playlist->setCurrentIndex(oldIndex);
@@ -479,17 +483,22 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 {
     Q_UNUSED(logicalIndex);
     Q_UNUSED(order);
+    m_iSortCol = logicalIndex;
+    m_SortOrder = order;
+    //if (m_bHasBeenSorted==false) return;
     //m_view->blockSignals(true);
     emit isSorting(true);
     //qDebug() << "onHeaderSortChanged logicalIndex" << logicalIndex;
     settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
     settingsMgr->setValue("PlaylistViewSortColumnOrder", order);
+    // m_view->horizontalHeader ()->setSortIndicator (logicalIndex,order);
+    // m_view->horizontalHeader ()->setSortIndicatorShown (true);
     // After sorting the model, rebuild the QMediaPlaylist order.
-    syncPlaylistOrder();
+    syncPlaylistOrder(logicalIndex, order);
     qDebug() << "Playlist sorted and reordered to match table view.";
     emit isSorting(false);
     //m_view->blockSignals(false);
-    if (!ui->comboBoxFind->currentText().isEmpty() && ui->comboBoxFind->currentText().length() < 4 == false) QTimer::singleShot(100, this, delayedFindInTable);
+    if (!ui->comboBoxFind->currentText().isEmpty() && ui->comboBoxFind->currentText().length() < MIN_SEARCH_CHARS == false) QTimer::singleShot(100, this, delayedFindInTable);
 }
 
 //void PlaylistView::addTrack(const QString &filePath)
@@ -707,7 +716,13 @@ void PlaylistTable::onTagLoadingFinished()
     m_FutureWatcher = nullptr;
     ui->pushButton->setEnabled(true);
     //qDebug() << "All tags loaded.";
+    // disconnect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
+    m_bHasBeenSorted = true;
     m_view->setSortingEnabled(true);
+    // m_view->horizontalHeader()->setSortIndicator(m_iSortCol, m_SortOrder);
+    // m_view->horizontalHeader()->setSortIndicatorShown(true);
+    // connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
+    // After sorting the model, rebuild the QMediaPlaylist order.
     // QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
     // m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
 }
@@ -1250,7 +1265,7 @@ void PlaylistTable::updateSearchCount(int currentRow)
 void PlaylistTable::handleNewSearchInput()
 {
     QString newText = ui->comboBoxFind->currentText().trimmed();
-    if (newText.isEmpty() || newText.length() < 4)
+    if (newText.isEmpty() || newText.length() < MIN_SEARCH_CHARS)
     {
         return;
     }
@@ -1285,7 +1300,7 @@ void PlaylistTable::handleNewSearchInput()
 void PlaylistTable::handleNewFilterInput()
 {
     QString newText = ui->comboBoxFilter->currentText().trimmed();
-    if (newText.isEmpty() || newText.length() < 4)
+    if (newText.isEmpty() || newText.length() < MIN_SEARCH_CHARS)
     {
         return;
     }
@@ -1494,7 +1509,7 @@ void PlaylistTable::clearSearchHighlight()
 
 void PlaylistTable::findInTable(const QString &searchText)
 {
-    if (searchText.length() < 4) return;
+    if (searchText.length() < MIN_SEARCH_CHARS) return;
     if (!m_sortModel || searchText.isEmpty())
         return;
     m_lastSearchText = searchText;

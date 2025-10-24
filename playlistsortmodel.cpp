@@ -8,9 +8,16 @@ PlaylistSortModel::PlaylistSortModel(QObject *parent)
 
 void PlaylistSortModel::setFilterText(const QString &text)
 {
-    if (text.length() < 4) return;
-    m_filterText = text;
-    invalidateFilter();
+    if (text.length() < MIN_SEARCH_CHARS)
+    {
+        m_filterText = "";
+        invalidateFilter();
+    }
+    else
+    {
+        m_filterText = text;
+        invalidateFilter();
+    }
 }
 
 void PlaylistSortModel::setFilterColumns(const QSet<int> &columns)
