@@ -1,4 +1,4 @@
-#include "settingsmanager.h"
+#include "settings_manager.h"
 #include <QCoreApplication>
 
 // --- Private Constructor and Singleton Access (Unchanged) ---

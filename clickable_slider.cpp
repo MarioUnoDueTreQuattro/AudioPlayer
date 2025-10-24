@@ -1,4 +1,4 @@
-#include "clickableslider.h"
+#include "clickable_slider.h"
 
 ClickableSlider::ClickableSlider(QWidget *parent) : QSlider(parent)
 {

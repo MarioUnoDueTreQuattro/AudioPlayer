@@ -1,4 +1,4 @@
-#include "clickablelabel.h"
+#include "clickable_label.h"
 #include <QDebug>
 
 // Constructor Implementation

@@ -1,4 +1,4 @@
-#include "singleinstance.h"
+#include "single_instance.h"
 #include "widget.h"
 #include <QApplication>
 #include <QDateTime>

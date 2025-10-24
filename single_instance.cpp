@@ -1,4 +1,4 @@
-#include "singleinstance.h"
+#include "single_instance.h"
 #include <QTextStream>
 #include <QDebug>
 #include <QFile>

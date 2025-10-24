@@ -1,4 +1,4 @@
-#include "playlistdelegates.h"
+#include "playlist_delegates.h"
 #include <QString>
 #include <QPainter>
 #include <QPainterPath>

@@ -1,7 +1,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include "settingsmanager.h"
+#include "settings_manager.h"
 #include <QDialog>
 #include <QDialogButtonBox>
 

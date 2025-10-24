@@ -1,6 +1,6 @@
-#include "playlisttable.h"
+#include "playlist_table.h"
 #include "ui_playlisttable.h"
-#include "playlistdelegates.h"
+#include "playlist_delegates.h"
 #include "utility.h"
 #include <QFileInfo>
 #include <QVBoxLayout>

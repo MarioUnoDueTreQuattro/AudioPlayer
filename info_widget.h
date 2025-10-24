@@ -17,7 +17,7 @@
 #include <wavproperties.h>
 //#include <mp4properties.h>
 //#include <tpropertymap.h>
-#include "settingsmanager.h"
+#include "settings_manager.h"
 
 namespace Ui
 {

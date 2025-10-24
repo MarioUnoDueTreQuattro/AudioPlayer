@@ -12,49 +12,49 @@ TEMPLATE = app
 SOURCES += \
 #    3rdparty/qhotkey/QHotkey/qhotkey.cpp \
 #    3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
-    audiofader.cpp \
-    audiotag.cpp \
-    clickablelabel.cpp \
-    clickableslider.cpp \
-    databasemanager.cpp \
-    escawarelineedit.cpp \
-    infowidget.cpp \
+    audio_fader.cpp \
+    audio_tag.cpp \
+    clickable_label.cpp \
+    clickable_slider.cpp \
+    database_manager.cpp \
+    esc_aware_lineedit.cpp \
+    info_widget.cpp \
     main.cpp \
-    playlistdelegates.cpp \
-    playlistsortmodel.cpp \
-    playlisttable.cpp \
+    playlist_delegates.cpp \
+    playlist_sortmodel.cpp \
+    playlist_table.cpp \
     settings.cpp \
-    settingsmanager.cpp \
-    singleinstance.cpp \
-    systemvolumecontroller.cpp \
-    tagloaderworker.cpp \
+    settings_manager.cpp \
+    single_instance.cpp \
+    system_volume_controller.cpp \
+    tag_loader_worker.cpp \
     utility.cpp \
     widget.cpp
 
 HEADERS += \
 #    3rdparty/qhotkey/QHotkey/qhotkey.h \
 #    3rdparty/qhotkey/QHotkey/qhotkey_p.h \
-    audiofader.h \
-    audiotag.h \
-    clickablelabel.h \
-    clickableslider.h \
-    databasemanager.h \
-    escawarelineedit.h \
-    infowidget.h \
-    playlistdelegates.h \
-    playlistsortmodel.h \
-    playlisttable.h \
+    audio_fader.h \
+    audio_tag.h \
+    clickable_label.h \
+    clickable_slider.h \
+    database_manager.h \
+    esc_aware_lineedit.h \
+    info_widget.h \
+    playlist_delegates.h \
+    playlist_sortmodel.h \
+    playlist_table.h \
     settings.h \
-    settingsmanager.h \
-    singleinstance.h \
-    systemvolumecontroller.h \
-    tagloaderworker.h \
+    settings_manager.h \
+    single_instance.h \
+    system_volume_controller.h \
+    tag_loader_worker.h \
     utility.h \
     widget.h
 
 FORMS += \
-    infowidget.ui \
-    playlisttable.ui \
+    info_widget.ui \
+    playlist_table.ui \
     settings.ui \
     widget.ui
 

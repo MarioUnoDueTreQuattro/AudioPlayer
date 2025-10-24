@@ -1,7 +1,7 @@
 #include "widget.h"
 #include "settings.h"
 #include "ui_widget.h"
-#include "settingsmanager.h"
+#include "settings_manager.h"
 #include "utility.h"
 #include <QFileInfo>
 #include <QMimeData>

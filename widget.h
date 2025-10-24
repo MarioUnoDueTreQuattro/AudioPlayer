@@ -7,12 +7,12 @@
 #include <QMediaPlaylist>
 #include <QListWidgetItem>
 #include <QStack>
-#include "settingsmanager.h"
-#include "systemvolumecontroller.h"
-#include "audiofader.h"
+#include "settings_manager.h"
+#include "system_volume_controller.h"
+#include "audio_fader.h"
 //#include <3rdparty/qhotkey/QHotkey/QHotkey>
-#include "infowidget.h"
-#include "playlisttable.h"
+#include "info_widget.h"
+#include "playlist_table.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }

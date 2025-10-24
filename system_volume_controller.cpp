@@ -1,4 +1,4 @@
-#include "systemvolumecontroller.h"
+#include "system_volume_controller.h"
 #include <QDebug>
 #ifndef INITGUID
 #define INITGUID

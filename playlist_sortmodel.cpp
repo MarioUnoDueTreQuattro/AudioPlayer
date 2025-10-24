@@ -1,4 +1,4 @@
-#include "playlistsortmodel.h"
+#include "playlist_sortmodel.h"
 #include <QVariant>
 
 PlaylistSortModel::PlaylistSortModel(QObject *parent)

@@ -8,10 +8,10 @@
 #include <QStandardItemModel>
 #include <QMediaPlaylist>
 #include <QMediaPlayer>
-#include "audiotag.h"
-#include "playlistsortmodel.h"
-#include "settingsmanager.h"
-#include "tagloaderworker.h"
+#include "audio_tag.h"
+#include "playlist_sortmodel.h"
+#include "settings_manager.h"
+#include "tag_loader_worker.h"
 
 //class Widget;
 

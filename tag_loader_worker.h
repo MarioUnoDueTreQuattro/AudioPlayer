@@ -2,7 +2,7 @@
 #define TAGLOADERWORKER_H
 
 #include <QObject>
-#include "audiotag.h"
+#include "audio_tag.h"
 
 class TagLoaderWorker : public QObject
 {

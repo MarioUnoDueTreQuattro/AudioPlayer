@@ -1,4 +1,4 @@
-#include "audiofader.h"
+#include "audio_fader.h"
 #include <QDebug>
 
 // Constructor: Initializes members and connects the timer

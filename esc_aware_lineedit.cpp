@@ -1,4 +1,4 @@
-#include "escawarelineedit.h"
+#include "esc_aware_lineedit.h"
 
 EscAwareLineEdit::EscAwareLineEdit(QWidget *parent)
     : QLineEdit(parent)

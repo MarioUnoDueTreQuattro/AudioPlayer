@@ -329,12 +329,12 @@
   <customwidget>
    <class>ClickableSlider</class>
    <extends>QSlider</extends>
-   <header>clickableslider.h</header>
+   <header>clickable_slider.h</header>
   </customwidget>
   <customwidget>
    <class>EscAwareLineEdit</class>
    <extends>QLineEdit</extends>
-   <header>escawarelineedit.h</header>
+   <header>esc_aware_lineedit.h</header>
   </customwidget>
  </customwidgets>
  <resources>
