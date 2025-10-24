@@ -1,5 +1,5 @@
 QT       += core gui multimedia widgets
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets sql
 
 CONFIG += c++11
 
@@ -16,6 +16,7 @@ SOURCES += \
     audiotag.cpp \
     clickablelabel.cpp \
     clickableslider.cpp \
+    databasemanager.cpp \
     escawarelineedit.cpp \
     infowidget.cpp \
     main.cpp \
@@ -37,6 +38,7 @@ HEADERS += \
     audiotag.h \
     clickablelabel.h \
     clickableslider.h \
+    databasemanager.h \
     escawarelineedit.h \
     infowidget.h \
     playlistdelegates.h \

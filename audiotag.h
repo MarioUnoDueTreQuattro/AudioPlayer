@@ -44,6 +44,8 @@ public:
     QString sCoverSize;
     int iFileSize;
     int iBits;
+    int iRating;
+    int iPlayCount;
 };
 
 Q_DECLARE_METATYPE(AudioTagInfo)

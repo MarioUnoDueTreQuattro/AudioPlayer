@@ -751,4 +751,6 @@ void AudioTagInfo::reset()
     iFileSize = -1;
     iTrackNum = -1;
     iBits = -1;
+    iRating = -1;
+    iPlayCount = -1;
 }

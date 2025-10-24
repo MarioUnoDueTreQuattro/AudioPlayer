@@ -1,0 +1,330 @@
+#include "databasemanager.h"
+
+DatabaseManager::DatabaseManager(QObject *parent)
+    : QObject(parent)
+{
+}
+
+DatabaseManager::~DatabaseManager()
+{
+    closeDatabase();
+}
+
+bool DatabaseManager::openDatabase(const QString &dbPath)
+{
+    if (QSqlDatabase::contains("audio_connection"))
+        m_db = QSqlDatabase::database("audio_connection");
+    else
+        m_db = QSqlDatabase::addDatabase("QSQLITE", "audio_connection");
+    m_db.setDatabaseName(dbPath);
+    if (!m_db.open())
+    {
+        qDebug() << "Database open error:" << m_db.lastError().text();
+        return false;
+    }
+    return createTables();
+}
+
+void DatabaseManager::closeDatabase()
+{
+    if (m_db.isOpen())
+        m_db.close();
+}
+
+bool DatabaseManager::createTables()
+{
+    QSqlQuery query(m_db);
+    // Tracks
+    QString tracksSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS Tracks ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "FullFilePath TEXT UNIQUE NOT NULL,"
+            "FileName TEXT,"
+            "BaseFileName TEXT,"
+            "Extension TEXT,"
+            "Path TEXT,"
+            "Duration INTEGER,"
+            "Artist TEXT,"
+            "Title TEXT,"
+            "Album TEXT,"
+            "Genre TEXT,"
+            "TrackNum INTEGER,"
+            "Year INTEGER,"
+            "Comment TEXT,"
+            "Bitrate INTEGER,"
+            "Samplerate INTEGER,"
+            "Channels INTEGER,"
+            "Bits INTEGER,"
+            "Format TEXT,"
+            "CoverSize TEXT,"
+            "FileSize INTEGER,"
+            "LastModified INTEGER,"
+            "Rating INTEGER DEFAULT 0,"
+            "PlayCount INTEGER DEFAULT 0);"
+        );
+    if (!query.exec(tracksSql))
+    {
+        qDebug() << "Error creating Tracks:" << query.lastError().text();
+        return false;
+    }
+    // Playlists
+    QString playlistsSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS Playlists ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "Name TEXT UNIQUE NOT NULL,"
+            "Created DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "PlayCount INTEGER DEFAULT 0);"
+        );
+    if (!query.exec(playlistsSql))
+    {
+        qDebug() << "Error creating Playlists:" << query.lastError().text();
+        return false;
+    }
+    // PlaylistItems
+    QString playlistItemsSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS PlaylistItems ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "PlaylistId INTEGER NOT NULL,"
+            "TrackId INTEGER NOT NULL,"
+            "Position INTEGER,"
+            "FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id),"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(playlistItemsSql))
+    {
+        qDebug() << "Error creating PlaylistItems:" << query.lastError().text();
+        return false;
+    }
+    // History
+    QString historySql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS History ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "PlayDate INTEGER,"
+            "PlayPosition INTEGER,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(historySql))
+    {
+        qDebug() << "Error creating History:" << query.lastError().text();
+        return false;
+    }
+    // Favorites
+    QString favoritesSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS Favorites ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "DateAdded INTEGER,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(favoritesSql))
+    {
+        qDebug() << "Error creating Favorites:" << query.lastError().text();
+        return false;
+    }
+    // SessionPlaylist
+    QString sessionSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS SessionPlaylist ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "Position INTEGER,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(sessionSql))
+    {
+        qDebug() << "Error creating SessionPlaylist:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+bool DatabaseManager::addToFavorites(const QString &fullFilePath)
+{
+    QSqlQuery query(m_db);
+    query.prepare("INSERT OR IGNORE INTO Favorites (TrackId, DateAdded) "
+                  "SELECT Id, ? FROM Tracks WHERE FullFilePath = ?");
+    query.addBindValue(QDateTime::currentSecsSinceEpoch());
+    query.addBindValue(fullFilePath);
+    return query.exec();
+}
+
+bool DatabaseManager::removeFromFavorites(const QString &fullFilePath)
+{
+    QSqlQuery query(m_db);
+    query.prepare("DELETE FROM Favorites WHERE TrackId = (SELECT Id FROM Tracks WHERE FullFilePath = ?)");
+    query.addBindValue(fullFilePath);
+    return query.exec();
+}
+
+QList<AudioTagInfo> DatabaseManager::favoriteTracks()
+{
+    QList<AudioTagInfo> list;
+    QSqlQuery query(m_db);
+    query.prepare("SELECT T.* FROM Tracks T JOIN Favorites F ON T.Id = F.TrackId ORDER BY F.DateAdded DESC");
+    if (!query.exec()) return list;
+    while (query.next())
+    {
+        AudioTagInfo info;
+        info.sFileName = query.value("FileName").toString();
+        info.sBaseFileName = query.value("BaseFileName").toString();
+        info.sExtension = query.value("Extension").toString();
+        info.sPath = query.value("Path").toString();
+        info.iDuration = query.value("Duration").toInt();
+        info.sArtist = query.value("Artist").toString();
+        info.sTitle = query.value("Title").toString();
+        info.sAlbum = query.value("Album").toString();
+        info.sGenre = query.value("Genre").toString();
+        info.iTrackNum = query.value("TrackNum").toInt();
+        info.iYear = query.value("Year").toInt();
+        info.sComment = query.value("Comment").toString();
+        info.iBitrate = query.value("Bitrate").toInt();
+        info.iSamplerate = query.value("Samplerate").toInt();
+        info.iChannels = query.value("Channels").toInt();
+        info.iBits = query.value("Bits").toInt();
+        info.sFormat = query.value("Format").toString();
+        info.sCoverSize = query.value("CoverSize").toString();
+        info.iFileSize = query.value("FileSize").toInt();
+        info.iRating = query.value("Rating").toInt();
+        info.iPlayCount = query.value("PlayCount").toInt();
+        list.append(info);
+    }
+    return list;
+}
+
+bool DatabaseManager::addToHistory(const QString &fullFilePath, int playPosition)
+{
+    QSqlQuery query(m_db);
+    query.prepare("INSERT INTO History (TrackId, PlayDate, PlayPosition) "
+                  "SELECT Id, ?, ? FROM Tracks WHERE FullFilePath = ?");
+    query.addBindValue(QDateTime::currentSecsSinceEpoch());
+    query.addBindValue(playPosition);
+    query.addBindValue(fullFilePath);
+    return query.exec();
+}
+
+QList<AudioTagInfo> DatabaseManager::recentHistory(int limit)
+{
+    QList<AudioTagInfo> list;
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral(
+        "SELECT T.* FROM Tracks T JOIN History H ON T.Id = H.TrackId "
+        "ORDER BY H.PlayDate DESC LIMIT %1").arg(limit)
+    );
+    if (!query.exec()) return list;
+    while (query.next())
+    {
+        AudioTagInfo info;
+        info.sFileName = query.value("FileName").toString();
+        info.sBaseFileName = query.value("BaseFileName").toString();
+        info.sExtension = query.value("Extension").toString();
+        info.sPath = query.value("Path").toString();
+        info.iDuration = query.value("Duration").toInt();
+        info.sArtist = query.value("Artist").toString();
+        info.sTitle = query.value("Title").toString();
+        info.sAlbum = query.value("Album").toString();
+        info.sGenre = query.value("Genre").toString();
+        info.iTrackNum = query.value("TrackNum").toInt();
+        info.iYear = query.value("Year").toInt();
+        info.sComment = query.value("Comment").toString();
+        info.iBitrate = query.value("Bitrate").toInt();
+        info.iSamplerate = query.value("Samplerate").toInt();
+        info.iChannels = query.value("Channels").toInt();
+        info.iBits = query.value("Bits").toInt();
+        info.sFormat = query.value("Format").toString();
+        info.sCoverSize = query.value("CoverSize").toString();
+        info.iFileSize = query.value("FileSize").toInt();
+        info.iRating = query.value("Rating").toInt();
+        info.iPlayCount = query.value("PlayCount").toInt();
+        list.append(info);
+    }
+    return list;
+}
+bool DatabaseManager::clearSessionPlaylist()
+{
+    QSqlQuery query(m_db);
+    return query.exec("DELETE FROM SessionPlaylist");
+}
+
+bool DatabaseManager::saveSessionPlaylist(const QList<QString> &fullFilePaths)
+{
+    if (!clearSessionPlaylist()) return false;
+    QSqlQuery query(m_db);
+    for (int pos = 0; pos < fullFilePaths.size(); ++pos)
+    {
+        query.prepare("INSERT INTO SessionPlaylist (TrackId, Position) "
+                      "SELECT Id, ? FROM Tracks WHERE FullFilePath = ?");
+        query.addBindValue(pos);
+        query.addBindValue(fullFilePaths[pos]);
+        if (!query.exec()) return false;
+    }
+    return true;
+}
+
+QList<AudioTagInfo> DatabaseManager::loadSessionPlaylist()
+{
+    QList<AudioTagInfo> list;
+    QSqlQuery query(m_db);
+    if (!query.exec(
+        "SELECT T.* FROM Tracks T JOIN SessionPlaylist S ON T.Id = S.TrackId "
+        "ORDER BY S.Position ASC")) return list;
+    while (query.next())
+    {
+        AudioTagInfo info;
+        info.sFileName = query.value("FileName").toString();
+        info.sBaseFileName = query.value("BaseFileName").toString();
+        info.sExtension = query.value("Extension").toString();
+        info.sPath = query.value("Path").toString();
+        info.iDuration = query.value("Duration").toInt();
+        info.sArtist = query.value("Artist").toString();
+        info.sTitle = query.value("Title").toString();
+        info.sAlbum = query.value("Album").toString();
+        info.sGenre = query.value("Genre").toString();
+        info.iTrackNum = query.value("TrackNum").toInt();
+        info.iYear = query.value("Year").toInt();
+        info.sComment = query.value("Comment").toString();
+        info.iBitrate = query.value("Bitrate").toInt();
+        info.iSamplerate = query.value("Samplerate").toInt();
+        info.iChannels = query.value("Channels").toInt();
+        info.iBits = query.value("Bits").toInt();
+        info.sFormat = query.value("Format").toString();
+        info.sCoverSize = query.value("CoverSize").toString();
+        info.iFileSize = query.value("FileSize").toInt();
+        info.iRating = query.value("Rating").toInt();
+        info.iPlayCount = query.value("PlayCount").toInt();
+        list.append(info);
+    }
+    return list;
+}
+QList<AudioTagInfo> DatabaseManager::topPlayed(int limit)
+{
+    QList<AudioTagInfo> list;
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("SELECT * FROM Tracks ORDER BY PlayCount DESC LIMIT %1").arg(limit));
+    if (!query.exec()) return list;
+    while (query.next())
+    {
+        AudioTagInfo info;
+        info.sFileName = query.value("FileName").toString();
+        info.sBaseFileName = query.value("BaseFileName").toString();
+        info.sExtension = query.value("Extension").toString();
+        info.sPath = query.value("Path").toString();
+        info.iDuration = query.value("Duration").toInt();
+        info.sArtist = query.value("Artist").toString();
+        info.sTitle = query.value("Title").toString();
+        info.sAlbum = query.value("Album").toString();
+        info.sGenre = query.value("Genre").toString();
+        info.iTrackNum = query.value("TrackNum").toInt();
+        info.iYear = query.value("Year").toInt();
+        info.sComment = query.value("Comment").toString();
+        info.iBitrate = query.value("Bitrate").toInt();
+        info.iSamplerate = query.value("Samplerate").toInt();
+        info.iChannels = query.value("Channels").toInt();
+        info.iBits = query.value("Bits").toInt();
+        info.sFormat = query.value("Format").toString();
+        info.sCoverSize = query.value("CoverSize").toString();
+        info.iFileSize = query.value("FileSize").toInt();
+        info.iRating = query.value("Rating").toInt();
+        info.iPlayCount = query.value("PlayCount").toInt();
+        list.append(info);
+    }
+    return list;
+}
