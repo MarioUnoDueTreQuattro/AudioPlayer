@@ -1,7 +1,7 @@
 #include "info_widget.h"
 #include "clickable_label.h"
 #include "utility.h"
-#include "ui_infowidget.h"
+#include "ui_info_widget.h"
 #include <QAbstractTextDocumentLayout>
 #include <QDebug>
 #include <QDir>

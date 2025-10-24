@@ -1,5 +1,5 @@
 #include "playlist_table.h"
-#include "ui_playlisttable.h"
+#include "ui_playlist_table.h"
 #include "playlist_delegates.h"
 #include "utility.h"
 #include <QFileInfo>

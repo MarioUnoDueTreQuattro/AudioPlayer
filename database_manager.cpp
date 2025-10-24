@@ -328,3 +328,134 @@ QList<AudioTagInfo> DatabaseManager::topPlayed(int limit)
     }
     return list;
 }
+bool DatabaseManager::trackExists(const QString &fullFilePath)
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COUNT(*) FROM Tracks WHERE FullFilePath = ?");
+    query.addBindValue(fullFilePath);
+    if (!query.exec()) return false;
+    if (query.next()) return query.value(0).toInt() > 0;
+    return false;
+}
+
+bool DatabaseManager::loadTrack(const QString &fullFilePath, AudioTagInfo &info)
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT * FROM Tracks WHERE FullFilePath = ?");
+    query.addBindValue(fullFilePath);
+    if (!query.exec()) return false;
+    if (!query.next()) return false;
+
+    info.sFileName = query.value("FileName").toString();
+    info.sBaseFileName = query.value("BaseFileName").toString();
+    info.sExtension = query.value("Extension").toString();
+    info.sPath = query.value("Path").toString();
+    info.iDuration = query.value("Duration").toInt();
+    info.sArtist = query.value("Artist").toString();
+    info.sTitle = query.value("Title").toString();
+    info.sAlbum = query.value("Album").toString();
+    info.sGenre = query.value("Genre").toString();
+    info.iTrackNum = query.value("TrackNum").toInt();
+    info.iYear = query.value("Year").toInt();
+    info.sComment = query.value("Comment").toString();
+    info.iBitrate = query.value("Bitrate").toInt();
+    info.iSamplerate = query.value("Samplerate").toInt();
+    info.iChannels = query.value("Channels").toInt();
+    info.iBits = query.value("Bits").toInt();
+    info.sFormat = query.value("Format").toString();
+    info.sCoverSize = query.value("CoverSize").toString();
+    info.iFileSize = query.value("FileSize").toInt();
+    info.iRating = query.value("Rating").toInt();
+    info.iPlayCount = query.value("PlayCount").toInt();
+
+    return true;
+}
+
+bool DatabaseManager::insertTrack(const QString &fullFilePath, const AudioTagInfo &info)
+{
+    QFileInfo fi(fullFilePath);
+    QSqlQuery query(m_db);
+    query.prepare("INSERT INTO Tracks (FullFilePath, FileName, BaseFileName, Extension, Path, Duration, "
+                  "Artist, Title, Album, Genre, TrackNum, Year, Comment, Bitrate, Samplerate, Channels, Bits, "
+                  "Format, CoverSize, FileSize, LastModified, Rating, PlayCount) "
+                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    query.addBindValue(fullFilePath);
+    query.addBindValue(info.sFileName);
+    query.addBindValue(info.sBaseFileName);
+    query.addBindValue(info.sExtension);
+    query.addBindValue(info.sPath);
+    query.addBindValue(info.iDuration);
+    query.addBindValue(info.sArtist);
+    query.addBindValue(info.sTitle);
+    query.addBindValue(info.sAlbum);
+    query.addBindValue(info.sGenre);
+    query.addBindValue(info.iTrackNum);
+    query.addBindValue(info.iYear);
+    query.addBindValue(info.sComment);
+    query.addBindValue(info.iBitrate);
+    query.addBindValue(info.iSamplerate);
+    query.addBindValue(info.iChannels);
+    query.addBindValue(info.iBits);
+    query.addBindValue(info.sFormat);
+    query.addBindValue(info.sCoverSize);
+    query.addBindValue(info.iFileSize);
+    query.addBindValue(fi.lastModified().toSecsSinceEpoch());
+    query.addBindValue(info.iRating);
+    query.addBindValue(info.iPlayCount);
+
+    if (!query.exec()) {
+        qDebug() << "Insert error:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+bool DatabaseManager::updateTrack(const QString &fullFilePath, const AudioTagInfo &info)
+{
+    QFileInfo fi(fullFilePath);
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE Tracks SET "
+                  "FileName=?, BaseFileName=?, Extension=?, Path=?, Duration=?, Artist=?, Title=?, Album=?, Genre=?, "
+                  "TrackNum=?, Year=?, Comment=?, Bitrate=?, Samplerate=?, Channels=?, Bits=?, Format=?, CoverSize=?, "
+                  "FileSize=?, LastModified=?, Rating=?, PlayCount=? "
+                  "WHERE FullFilePath=?");
+
+    query.addBindValue(info.sFileName);
+    query.addBindValue(info.sBaseFileName);
+    query.addBindValue(info.sExtension);
+    query.addBindValue(info.sPath);
+    query.addBindValue(info.iDuration);
+    query.addBindValue(info.sArtist);
+    query.addBindValue(info.sTitle);
+    query.addBindValue(info.sAlbum);
+    query.addBindValue(info.sGenre);
+    query.addBindValue(info.iTrackNum);
+    query.addBindValue(info.iYear);
+    query.addBindValue(info.sComment);
+    query.addBindValue(info.iBitrate);
+    query.addBindValue(info.iSamplerate);
+    query.addBindValue(info.iChannels);
+    query.addBindValue(info.iBits);
+    query.addBindValue(info.sFormat);
+    query.addBindValue(info.sCoverSize);
+    query.addBindValue(info.iFileSize);
+    query.addBindValue(fi.lastModified().toSecsSinceEpoch());
+    query.addBindValue(info.iRating);
+    query.addBindValue(info.iPlayCount);
+    query.addBindValue(fullFilePath);
+
+    if (!query.exec()) {
+        qDebug() << "Update error:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+bool DatabaseManager::incrementPlayCount(const QString &fullFilePath)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE Tracks SET PlayCount = PlayCount + 1 WHERE FullFilePath = ?");
+    query.addBindValue(fullFilePath);
+    return query.exec();
+}
