@@ -37,6 +37,8 @@
 #include <QElapsedTimer>
 #include <windows.h>
 #include <shlobj.h>
+#include "database_manager.h"
+
 //#include <fileref.h>
 //#include <tag.h>
 
@@ -59,6 +61,13 @@ Widget::Widget(QWidget *parent)
 {
     ui->setupUi(this);
     settingsMgr = SettingsManager::instance();
+    DatabaseManager &db = DatabaseManager::instance();
+    // Apri o crea il database
+    if (!db.openDatabase("playlist.db"))
+    {
+        qWarning() << "Could not open database!";
+        return;
+    }
     ui->labelFilter->setVisible(false);
     ui->lineEditFilter->setVisible(false);
     ui->pushButtonResetFilter->setVisible(false);

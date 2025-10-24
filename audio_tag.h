@@ -46,6 +46,7 @@ public:
     int iBits;
     int iRating;
     int iPlayCount;
+    int iLastModified;
 };
 
 Q_DECLARE_METATYPE(AudioTagInfo)

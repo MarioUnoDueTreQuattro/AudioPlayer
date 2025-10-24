@@ -459,3 +459,26 @@ bool DatabaseManager::incrementPlayCount(const QString &fullFilePath)
     query.addBindValue(fullFilePath);
     return query.exec();
 }
+
+bool DatabaseManager::loadOrUpdateTrack(const QString &fullFilePath, AudioTagInfo &info)
+{
+    QFileInfo fi(fullFilePath);
+    qint64 fileModified = fi.lastModified().toSecsSinceEpoch();
+
+    if(trackExists(fullFilePath)) {
+        loadTrack(fullFilePath, info);
+        // Controllo se il file è stato modificato dopo l'ultima lettura
+        if(fileModified != info.iLastModified) {
+            AudioTag tag(fullFilePath);
+            info = tag.tagInfo();
+            updateTrack(fullFilePath, info); // Aggiorna DB
+        }
+        return true;
+    } else {
+        // Nuovo file
+        AudioTag tag(fullFilePath);
+        info = tag.tagInfo();
+        insertTrack(fullFilePath, info);
+        return true;
+    }
+}

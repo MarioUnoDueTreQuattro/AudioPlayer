@@ -753,4 +753,5 @@ void AudioTagInfo::reset()
     iBits = -1;
     iRating = -1;
     iPlayCount = -1;
+    iLastModified = -1;
 }
