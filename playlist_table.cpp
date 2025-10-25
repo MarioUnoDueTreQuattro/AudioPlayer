@@ -1034,9 +1034,17 @@ void PlaylistTable::addTrack(const QString &filePath)
     }
     // --- Add to playlist ---
     m_playlist->addMedia(QUrl::fromLocalFile(filePath));
-    //    // --- Align duration column (index 3) ---
-    m_model->item(m_model->rowCount() - 1, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(m_model->rowCount() - 1, 17)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    int iLastRow = m_model->rowCount() - 1;
+    //    // --- Align columns
+    m_model->item(iLastRow, ColumnIndex::Duration)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::FileSize)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Bitrate)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Bits)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Channels)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Samplerate)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Track)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Year)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::PlayCount)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 }
 
 void PlaylistTable::setSectionsResizeMode()
@@ -1094,7 +1102,50 @@ QString PlaylistTable::extractFileName(const QString &filePath)
 
 void PlaylistTable::onDoubleClicked(const QModelIndex &index)
 {
-    // qDebug() << __PRETTY_FUNCTION__ << "index.row()" << index.row();
+   if (!index.isValid())
+        return;
+
+    int proxyRow = index.row();
+    // Map proxy row to source row
+    QModelIndex sourceIndex = m_sortModel->mapToSource(index);
+    int sourceRow = sourceIndex.row();
+
+  // Controlla se il brano selezionato è già in riproduzione
+    if (m_playlist->currentIndex() == proxyRow)
+    {
+    qDebug()<<"new row";
+        // Aggiorna playlist e playcount solo se è un nuovo brano
+        m_playlist->setCurrentIndex(proxyRow);
+        emit trackActivated(proxyRow);
+
+        // Incrementa playcount nel modello
+        QStandardItem* playCountItem = m_model->item(sourceRow, ColumnIndex::PlayCount);
+        if (playCountItem) {
+            int playCount = playCountItem->text().toInt();
+            playCount++;
+            playCountItem->setText(QString::number(playCount));
+            playCountItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+            emit m_model->dataChanged(playCountItem->index(), playCountItem->index(), {Qt::DisplayRole});
+        }
+
+        // Incrementa playcount nel database
+        QStandardItem* fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
+        if (fileItem) {
+            QString path = fileItem->data(Qt::UserRole + 1).toString();
+            if (!path.isEmpty())
+                DatabaseManager::instance().incrementPlayCount(path);
+        }
+    }
+    else
+    {
+        qDebug()<<"same row";
+        m_playlist->setCurrentIndex(proxyRow);
+        emit trackActivated(proxyRow);
+
+    }
+    /*
+          // qDebug() << __PRETTY_FUNCTION__ << "index.row()" << index.row();
     int row = index.row();
     m_playlist->setCurrentIndex(row);
     //m_player->play();
@@ -1112,6 +1163,8 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     // onCurrentTrackChanged(sourceRow);
     //    //m_player->play();
     // emit trackActivated(sourceRow);
+
+*/
 }
 
 void PlaylistTable::onClicked(const QModelIndex &index)
@@ -1220,6 +1273,66 @@ void PlaylistTable::setCurrentItemIcon(bool bPlaying)
 // m_view->selectionModel()->clearSelection();
 // }
 //}
+void PlaylistTable::incrementPlayCount(int sourceRow)
+{
+    if (sourceRow < 0 || sourceRow >= m_model->rowCount())
+        return;
+
+    // Aggiorna modello
+    QStandardItem* playCountItem = m_model->item(sourceRow, ColumnIndex::PlayCount);
+    if (playCountItem) {
+        int playCount = playCountItem->text().toInt();
+        playCount++;
+        playCountItem->setText(QString::number(playCount));
+        playCountItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        emit m_model->dataChanged(playCountItem->index(), playCountItem->index(), {Qt::DisplayRole});
+    }
+
+    // Aggiorna database
+    QStandardItem* fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
+    if (fileItem) {
+        QString path = fileItem->data(Qt::UserRole + 1).toString();
+        if (!path.isEmpty())
+            DatabaseManager::instance().incrementPlayCount(path);
+    }
+}
+
+void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
+{
+    if (playlistIndex < 0 || !m_playlist)
+        return;
+
+    QModelIndex sourceIndex = m_sortModel->mapToSource(m_sortModel->index(playlistIndex, 0));
+    int sourceRow = sourceIndex.row();
+
+    // Aggiorna icone e selezione come prima...
+    // ...
+
+    // Incrementa il play count
+    incrementPlayCount(sourceRow);
+}
+
+void PlaylistTable::onDoubleClicked(const QModelIndex &index)
+{
+    if (!index.isValid())
+        return;
+
+    int proxyRow = index.row();
+    QModelIndex sourceIndex = m_sortModel->mapToSource(index);
+    int sourceRow = sourceIndex.row();
+
+    // Se è un nuovo brano, aggiorna indice e incrementa play count
+    if (m_playlist->currentIndex() != proxyRow) {
+        m_playlist->setCurrentIndex(proxyRow);
+        emit trackActivated(proxyRow);
+        incrementPlayCount(sourceRow);
+    } else {
+        // Brano già in riproduzione
+        m_playlist->setCurrentIndex(proxyRow);
+        emit trackActivated(proxyRow);
+    }
+}
+
 void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
 {
     qDebug() << __PRETTY_FUNCTION__ << "playlistIndex:" << playlistIndex;
@@ -1285,6 +1398,21 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
         currentItem->setIcon(playingIcon);
         m_CurrentItem = currentItem;
     }
+    // --- Increment in the model ---
+    QStandardItem* playCountItem = m_model->item(matchSourceRow, ColumnIndex::PlayCount);
+    if (playCountItem)
+    {
+        int playCount = playCountItem->text().toInt();
+        playCount++;
+        playCountItem->setText(QString::number(playCount));
+        playCountItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        // Notify views (including proxy) that the data changed
+        QModelIndex index = m_model->index(matchSourceRow, ColumnIndex::PlayCount);
+        emit m_model->dataChanged(index, index, {Qt::DisplayRole});
+    }
+    // --- Increment in the database ---
+    DatabaseManager &db = DatabaseManager::instance();
+    db.incrementPlayCount(currentPath);
     // Map SOURCE row to PROXY row for view operations
     QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
     QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);

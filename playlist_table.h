@@ -175,7 +175,8 @@ private:
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
     QStandardItem *m_CurrentItem;
-    void setSignalsConnections();
+     void incrementPlayCount(int sourceRow);
+     void setSignalsConnections();
     void syncPlaylistOrder(int sortCol, Qt::SortOrder sortOrder);
     int m_iSortCol;
     Qt::SortOrder m_SortOrder;

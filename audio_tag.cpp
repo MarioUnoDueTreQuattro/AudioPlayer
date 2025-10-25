@@ -791,8 +791,8 @@ QList<QStandardItem *> AudioTagInfo::toStandardItems() const
     items.append(new QStandardItem(sCoverSize));
     items.append(new QStandardItem(QString::number(iFileSize)));
     // Additional info
-    // items.append(new QStandardItem(QString::number(iLastModified)));
-    // items.append(new QStandardItem(QString::number(iRating)));
-    // items.append(new QStandardItem(QString::number(iPlayCount)));
+     items.append(new QStandardItem(QString::number(iLastModified)));
+     items.append(new QStandardItem(QString::number(iRating)));
+     items.append(new QStandardItem(QString::number(iPlayCount)));
     return items;
 }
