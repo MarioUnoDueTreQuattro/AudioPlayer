@@ -205,6 +205,7 @@ private:
     void loadFilterHistory();
     void saveFilterHistory(const QStringList &history);
     // Widget *m_target;
+    void setRating(const QModelIndex &index, int newRating);
 };
 
 #endif // PLAYLISTTABLE_H

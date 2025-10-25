@@ -117,6 +117,9 @@ void PlaylistDelegate::paint(QPainter *painter,
     const QStyleOptionViewItem &option,
     const QModelIndex &index) const
 {
+    // QStyleOptionViewItem opt(option);
+    // initStyleOption(&opt, index);
+    // opt.textElideMode = Qt::ElideNone;
     // Normal painting first
     QStyledItemDelegate::paint(painter, option, index);
     // Check custom highlight flag (Qt::UserRole + 10)
@@ -243,3 +246,157 @@ void PlaylistDelegate::paint(QPainter *painter,
 }
 
 */
+
+// Define the static resource path here. Adjust this if your QRC path is different.
+const QString PlaylistRatingDelegate::STAR_RESOURCE_PATH = ":/img/img/icons8-star-48.png";
+const int STAR_SPACING = 0;
+static const int DEFAULT_STAR_SIZE = 24;
+const int MAX_RATING = 5;
+
+#include <QDebug>
+#include <QStyleOptionViewItem>
+#include <QStyle>
+#include <QApplication>
+#include <QLocale> // Necessario per una conversione pulita
+
+PlaylistRatingDelegate::PlaylistRatingDelegate(QObject *parent)
+    : QStyledItemDelegate(parent),
+      m_iconSize(DEFAULT_STAR_SIZE, DEFAULT_STAR_SIZE)
+{
+    // --- ICON LOADING (Internal) ---
+    m_fullStarIcon.addFile(STAR_RESOURCE_PATH);
+    QSize sizeHint = m_fullStarIcon.actualSize(m_iconSize, QIcon::Normal, QIcon::On);
+    if (sizeHint.isValid() && sizeHint.width() > 0)
+    {
+        m_iconSize = sizeHint;
+    }
+}
+
+//void PlaylistRatingDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
+// const QModelIndex &index) const
+//{
+//    // 1. Retrieve the data using the standard DisplayRole
+// QVariant data = index.data(Qt::DisplayRole);
+
+// if (!data.isValid()) {
+//        // Fallback to default painting if no data is present
+// QStyledItemDelegate::paint(painter, option, index);
+// return;
+// }
+
+//    // 2. Convert the cell content (QString) to an integer
+// bool ok = false;
+//    // We use QLocale().toInt() to handle potential localization differences if needed,
+//    // but QString::toInt() is usually sufficient for simple integers.
+// int rating = data.toString().toInt(&ok);
+
+// if (!ok) {
+//        // If conversion fails (e.g., cell contains "N/A" or "Rating"),
+//        // draw the original text using the default delegate behavior.
+// QStyledItemDelegate::paint(painter, option, index);
+// return;
+// }
+
+//    // 3. Clamp the rating and proceed with drawing
+// rating = qBound(0, rating, MAX_RATING);
+
+// const int iconWidth = m_iconSize.width();
+// const int iconHeight = m_iconSize.height();
+
+// const int totalWidth = MAX_RATING * iconWidth + (MAX_RATING - 1) * STAR_SPACING;
+
+// int currentX = option.rect.left() + (option.rect.width() - totalWidth) / 2;
+// int currentY = option.rect.center().y() - iconHeight / 2;
+
+// painter->save();
+
+//    // Handle cell background and selection state
+// painter->fillRect(option.rect, option.state & QStyle::State_Selected ? option.palette.highlight() : option.palette.base());
+
+// for (int i = 0; i < MAX_RATING; ++i) {
+// QRect iconRect(currentX, currentY, iconWidth, iconHeight);
+
+// if (i < rating) {
+// m_fullStarIcon.paint(painter, iconRect, Qt::AlignCenter, QIcon::Normal, QIcon::On);
+// }
+
+// currentX += iconWidth + STAR_SPACING;
+// }
+
+// painter->restore();
+//}
+
+void PlaylistRatingDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
+    const QModelIndex &index) const
+{
+    QVariant data = index.data(Qt::DisplayRole);
+    // 1. Lettura e conversione del Rating
+    bool ok = false;
+    int rating = data.toString().toInt(&ok);
+    // Se la conversione fallisce, usiamo il comportamento predefinito.
+    if (!ok | rating < 0)
+    {
+        QStyleOptionViewItem opt_base = option;
+        opt_base.text.clear();
+        opt_base.rect.setWidth(0);
+        QStyledItemDelegate::paint(painter, opt_base, index);
+        return;
+    }
+    QStyleOptionViewItem opt_custom = option;
+    // Rimuovi i dati di testo e icona, forzando il delegato base a disegnare solo
+    // lo sfondo, la selezione e la cornice di focus.
+    opt_custom.text.clear();
+    opt_custom.rect.setWidth(0);
+    QStyledItemDelegate::paint(painter, opt_custom, index);
+    // 2. Preparazione per il disegno
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    // Gestione dello stato di selezione/sfondo della cella
+    //painter->fillRect(option.rect, option.state & QStyle::State_Selected ? option.palette.highlight() : option.palette.base());
+    const int iconWidth = m_iconSize.width();
+    const int iconHeight = m_iconSize.height();
+    // Calcoliamo la metrica del font per centrare il testo
+    QFont font = option.font;
+    font.setBold(true); // Rendi il numero più leggibile
+    painter->setFont(font);
+    QFontMetrics fm = painter->fontMetrics();
+    QString ratingText = QString::number(rating);
+    int textWidth = fm.width(ratingText);
+    int textHeight = fm.height();
+    // 3. Calcolo delle posizioni (Centrato nella cella)
+    // Larghezza totale necessaria (Icona + Piccolo spazio + Testo)
+    const int totalWidth = iconWidth + STAR_SPACING + textWidth;
+    // Punto di partenza X per centrare il blocco combinato (Icona + Testo)
+    // int startX = option.rect.left() + (option.rect.width() - totalWidth) / 2;
+    int startX = option.rect.center().x() - iconWidth / 2;
+    // Posizione Y per l'icona (centrata verticalmente)
+    int iconY = option.rect.center().y() - iconHeight / 2;
+    // Posizione Y per il testo (centrata verticalmente)
+    //int textY = option.rect.center().y() + textHeight / 2 - fm.descent(); // Allinea il testo con la base dell'icona (approssimazione)
+    int textY = option.rect.center().y() + textHeight / 2 - fm.descent();
+    // 4. Disegno dell'Icona (Stella)
+    QRect iconRect(startX, iconY, iconWidth, iconHeight);
+    if (!m_fullStarIcon.isNull())
+    {
+        m_fullStarIcon.paint(painter, iconRect, Qt::AlignCenter, QIcon::Normal, QIcon::On);
+    }
+    // 5. Disegno del Testo (Rating)
+    // Posizione X del testo
+    //int textX = startX + iconWidth + STAR_SPACING;
+    int textX = startX - textWidth / 2 + iconWidth / 2;
+    // Imposta il colore del testo (es. Bianco o Colore di Primo Piano)
+    // painter->setPen(option.state & QStyle::State_Selected ? option.palette.highlightedText().color() : option.palette.text().color());
+    painter->setPen(Qt::black);
+    painter->drawText(textX, textY + 1, ratingText);
+    painter->restore();
+}
+
+QSize PlaylistRatingDelegate::sizeHint(const QStyleOptionViewItem &option,
+    const QModelIndex &index) const
+{
+    // Size logic remains the same
+    const int totalWidth = MAX_RATING * m_iconSize.width() + (MAX_RATING - 1) * STAR_SPACING + 10;
+    const int totalHeight = m_iconSize.height() + 4;
+    int defaultHeight = QStyledItemDelegate::sizeHint(option, index).height();
+    return QSize(totalWidth, qMax(totalHeight, defaultHeight));
+}

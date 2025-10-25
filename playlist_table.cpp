@@ -73,6 +73,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_view->setModel(m_sortModel);
     m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_view->setWordWrap(false);
     //m_view->setSortingEnabled(true);
     //m_view->horizontalHeader()->setSortIndicatorShown(true);
     m_view->setShowGrid(false);
@@ -91,6 +92,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_view->setItemDelegateForColumn(3, durationDelegate);
     PlaylistFileSizeDelegate *FileSizeDelegate = new PlaylistFileSizeDelegate(this);
     m_view->setItemDelegateForColumn(17, FileSizeDelegate);
+    PlaylistRatingDelegate *ratingDelegate = new PlaylistRatingDelegate(this);
+    m_view->setItemDelegateForColumn(ColumnIndex::Rating, ratingDelegate);
     // QHeaderView *header = m_view->horizontalHeader();
     // header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     // header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
@@ -1079,6 +1082,17 @@ void PlaylistTable::clear()
     // << "Title" << "Album" << "Track" << "Year" << "Genre"
     // << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
     // << "Format" << "Cover size" << "File size"); m_playlist->clear();
+    /*
+      // Prima imposta il resize mode
+    m_view->verticalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+
+    // Poi imposta i limiti
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+
+    // Opzionale: imposta anche minimum
+    m_view->verticalHeader()->setMinimumSectionSize(16);
+    */
     m_view->verticalHeader()->setDefaultSectionSize(16);
     m_view->verticalHeader()->setMaximumSectionSize(32);
     restoreColumnWidths();
@@ -1102,36 +1116,33 @@ QString PlaylistTable::extractFileName(const QString &filePath)
 
 void PlaylistTable::onDoubleClicked(const QModelIndex &index)
 {
-   if (!index.isValid())
+    if (!index.isValid())
         return;
-
     int proxyRow = index.row();
     // Map proxy row to source row
     QModelIndex sourceIndex = m_sortModel->mapToSource(index);
     int sourceRow = sourceIndex.row();
-
-  // Controlla se il brano selezionato è già in riproduzione
+    // Controlla se il brano selezionato è già in riproduzione
     if (m_playlist->currentIndex() == proxyRow)
     {
-    qDebug()<<"new row";
+        qDebug() << "new row";
         // Aggiorna playlist e playcount solo se è un nuovo brano
         m_playlist->setCurrentIndex(proxyRow);
         emit trackActivated(proxyRow);
-
         // Incrementa playcount nel modello
         QStandardItem* playCountItem = m_model->item(sourceRow, ColumnIndex::PlayCount);
-        if (playCountItem) {
+        if (playCountItem)
+        {
             int playCount = playCountItem->text().toInt();
             playCount++;
             playCountItem->setText(QString::number(playCount));
             playCountItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-
             emit m_model->dataChanged(playCountItem->index(), playCountItem->index(), {Qt::DisplayRole});
         }
-
         // Incrementa playcount nel database
         QStandardItem* fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
-        if (fileItem) {
+        if (fileItem)
+        {
             QString path = fileItem->data(Qt::UserRole + 1).toString();
             if (!path.isEmpty())
                 DatabaseManager::instance().incrementPlayCount(path);
@@ -1139,10 +1150,9 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     }
     else
     {
-        qDebug()<<"same row";
+        qDebug() << "same row";
         m_playlist->setCurrentIndex(proxyRow);
         emit trackActivated(proxyRow);
-
     }
     /*
           // qDebug() << __PRETTY_FUNCTION__ << "index.row()" << index.row();
@@ -1164,8 +1174,29 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     //    //m_player->play();
     // emit trackActivated(sourceRow);
 
-*/
+    */
 }
+
+//void PlaylistTable::onDoubleClicked(const QModelIndex &index)
+//{
+// if (!index.isValid())
+// return;
+
+// int proxyRow = index.row();
+// QModelIndex sourceIndex = m_sortModel->mapToSource(index);
+// int sourceRow = sourceIndex.row();
+
+//    // Se è un nuovo brano, aggiorna indice e incrementa play count
+// if (m_playlist->currentIndex() != proxyRow) {
+// m_playlist->setCurrentIndex(proxyRow);
+// emit trackActivated(proxyRow);
+// incrementPlayCount(sourceRow);
+// } else {
+//        // Brano già in riproduzione
+// m_playlist->setCurrentIndex(proxyRow);
+// emit trackActivated(proxyRow);
+// }
+//}
 
 void PlaylistTable::onClicked(const QModelIndex &index)
 {
@@ -1273,24 +1304,27 @@ void PlaylistTable::setCurrentItemIcon(bool bPlaying)
 // m_view->selectionModel()->clearSelection();
 // }
 //}
+
 void PlaylistTable::incrementPlayCount(int sourceRow)
 {
     if (sourceRow < 0 || sourceRow >= m_model->rowCount())
         return;
-
-    // Aggiorna modello
-    QStandardItem* playCountItem = m_model->item(sourceRow, ColumnIndex::PlayCount);
-    if (playCountItem) {
+    // Increment in model
+    QStandardItem *playCountItem = m_model->item(sourceRow, ColumnIndex::PlayCount);
+    if (playCountItem)
+    {
         int playCount = playCountItem->text().toInt();
         playCount++;
         playCountItem->setText(QString::number(playCount));
         playCountItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        emit m_model->dataChanged(playCountItem->index(), playCountItem->index(), {Qt::DisplayRole});
+        emit m_model->dataChanged(playCountItem->index(),
+            playCountItem->index(),
+        {Qt::DisplayRole});
     }
-
-    // Aggiorna database
-    QStandardItem* fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
-    if (fileItem) {
+    // Increment in database
+    QStandardItem *fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
+    if (fileItem)
+    {
         QString path = fileItem->data(Qt::UserRole + 1).toString();
         if (!path.isEmpty())
             DatabaseManager::instance().incrementPlayCount(path);
@@ -1299,45 +1333,11 @@ void PlaylistTable::incrementPlayCount(int sourceRow)
 
 void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
 {
-    if (playlistIndex < 0 || !m_playlist)
-        return;
-
-    QModelIndex sourceIndex = m_sortModel->mapToSource(m_sortModel->index(playlistIndex, 0));
-    int sourceRow = sourceIndex.row();
-
-    // Aggiorna icone e selezione come prima...
-    // ...
-
-    // Incrementa il play count
-    incrementPlayCount(sourceRow);
-}
-
-void PlaylistTable::onDoubleClicked(const QModelIndex &index)
-{
-    if (!index.isValid())
-        return;
-
-    int proxyRow = index.row();
-    QModelIndex sourceIndex = m_sortModel->mapToSource(index);
-    int sourceRow = sourceIndex.row();
-
-    // Se è un nuovo brano, aggiorna indice e incrementa play count
-    if (m_playlist->currentIndex() != proxyRow) {
-        m_playlist->setCurrentIndex(proxyRow);
-        emit trackActivated(proxyRow);
-        incrementPlayCount(sourceRow);
-    } else {
-        // Brano già in riproduzione
-        m_playlist->setCurrentIndex(proxyRow);
-        emit trackActivated(proxyRow);
-    }
-}
-
-void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
-{
     qDebug() << __PRETTY_FUNCTION__ << "playlistIndex:" << playlistIndex;
     if (playlistIndex < 0 || !m_playlist)
         return;
+    QModelIndex sourceIndexInc = m_sortModel->mapToSource(m_sortModel->index(playlistIndex, 0));
+    int sourceRow = sourceIndexInc.row();
     // Get current playing file path from playlist
     QMediaContent media = m_playlist->media(playlistIndex);
     if (media.isNull())
@@ -1398,22 +1398,7 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
         currentItem->setIcon(playingIcon);
         m_CurrentItem = currentItem;
     }
-    // --- Increment in the model ---
-    QStandardItem* playCountItem = m_model->item(matchSourceRow, ColumnIndex::PlayCount);
-    if (playCountItem)
-    {
-        int playCount = playCountItem->text().toInt();
-        playCount++;
-        playCountItem->setText(QString::number(playCount));
-        playCountItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        // Notify views (including proxy) that the data changed
-        QModelIndex index = m_model->index(matchSourceRow, ColumnIndex::PlayCount);
-        emit m_model->dataChanged(index, index, {Qt::DisplayRole});
-    }
-    // --- Increment in the database ---
-    DatabaseManager &db = DatabaseManager::instance();
-    db.incrementPlayCount(currentPath);
-    // Map SOURCE row to PROXY row for view operations
+    incrementPlayCount(sourceRow);    // Map SOURCE row to PROXY row for view operations
     QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
     QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);
     if (proxyIndex.isValid())
@@ -1833,6 +1818,41 @@ void PlaylistTable::findInTable(const QString &searchText)
 // }
 //}
 
+void PlaylistTable::setRating(const QModelIndex &index, int newRating)
+{
+    // Dobbiamo aggiornare il modello.
+    // Il rating si trova nella COLONNA RATING (supponiamo sia la colonna 2)
+
+    // Crea l'indice per la colonna del rating sulla riga selezionata
+    QModelIndex ratingIndex = index.sibling(index.row(), ColumnIndex::Rating);
+
+    // Nel tuo delegato stai leggendo il DisplayRole, quindi impostiamo quello.
+    // L'uso di QString::number(newRating) è cruciale per la logica attuale.
+    QString ratingValue = QString::number(newRating);
+
+    // Se la nuova valutazione è 0, puoi scegliere di usare -1 (Rating non assegnato)
+    // per coerenza con la tua precedente logica, se necessario.
+    if (newRating == 0)
+    {
+        // Se vuoi usare -1 per "Clear Rating", altrimenti usa "0".
+        // ratingValue = "-1";
+    }
+
+    // Supponendo che tu stia usando QStandardItemModel o simile:
+    m_view->model()->setData(ratingIndex, ratingValue, Qt::DisplayRole);
+
+    // Nota: Se la tua classe ha un modello personalizzato, assicurati che
+    // setData() sia implementato correttamente.
+    QStandardItem *fileItem = m_model->item(index.row (), ColumnIndex::Filename);
+    if (fileItem)
+    {
+        QString path = fileItem->data(Qt::UserRole + 1).toString();
+        if (!path.isEmpty())
+            DatabaseManager::instance().setRating (path, newRating);
+    }
+
+}
+
 void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
 {
     QModelIndex index = m_view->indexAt(pos);
@@ -1840,6 +1860,23 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     QMenu contextMenu(this);
     QAction *scrollToCurrentAction = contextMenu.addAction(tr("Scroll to current"));
     scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
+    QMenu *ratingMenu = contextMenu.addMenu(tr("Set Rating"));
+    // Aggiungi un'icona alla voce del sottomenu (opzionale, ma consigliato)
+    ratingMenu->setIcon(QIcon(":/img/img/icons8-star-48.png"));
+    // Creazione delle azioni di Rating (da 0 a 5)
+    for (int rating = 0; rating <= 5; ++rating)
+    {
+        // 2a. Crea il testo dell'azione
+        QString actionText = QString::number(rating) + " stars";
+        // 2b. Crea l'azione e impostala (il nome dell'oggetto QAction è RatingAction_N)
+        QAction *ratingAction = new QAction(actionText, this);
+        ratingAction->setObjectName(QString("RatingAction_%1").arg(rating));
+        // 2c. Associa i dati: memorizza il valore del rating nell'azione stessa
+        // Questo ci servirà per sapere quale valore applicare in setRatingFromMenu
+        ratingAction->setData(rating);
+        // 2d. Aggiungi l'azione al sottomenu
+        ratingMenu->addAction(ratingAction);
+    }
     // QAction *forgetPlayedAction = contextMenu.addAction(tr("Forget played"));
     // forgetPlayedAction->setIcon(QIcon(":/img/img/icons8-reload-48.png"));
     // QString sText = "Forget played (" + QString::number(m_playedList.count()) + " of " + QString::number(m_model->rowCount()) + ")";
@@ -1883,6 +1920,11 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
             m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
         }
     }
+    else if (selectedAction->objectName().startsWith("RatingAction_"))
+        {
+            int newRating = selectedAction->data().toInt();
+            setRating(index, newRating);
+        }
     // if (selectedAction == saveAction) handleSavePlaylist();
     // else if (selectedAction == forgetPlayedAction) forgetPlayed();
     // else if (selectedAction == playlistTableAction) showPlaylistTable();

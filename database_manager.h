@@ -102,6 +102,7 @@ public:
      * @return true if successful.
      */
     bool incrementPlayCount(const QString &fullFilePath);
+    bool setRating(const QString &fullFilePath, int iRating);
 
     /**
      * @brief Loads or updates a track from the database or the file system.

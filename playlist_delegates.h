@@ -35,9 +35,35 @@ public:
         QAbstractItemView *view,
         const QStyleOptionViewItem &option,
         const QModelIndex &index) override;
-void paint(QPainter *painter,
-               const QStyleOptionViewItem &option,
-               const QModelIndex &index) const override;
+    void paint(QPainter *painter,
+        const QStyleOptionViewItem &option,
+        const QModelIndex &index) const override;
 };
 
+class PlaylistRatingDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+
+public:
+
+    // Constructor now only takes the QObject parent
+    PlaylistRatingDelegate(QObject *parent = nullptr);
+
+    // Override the paint method to draw icons
+    void paint(QPainter *painter, const QStyleOptionViewItem &option,
+        const QModelIndex &index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem &option,
+        const QModelIndex &index) const override;
+
+private:
+    QIcon m_fullStarIcon;
+    QSize m_iconSize;
+
+    // Define the resource path internally
+    static const QString STAR_RESOURCE_PATH;
+
+    //static const int MAX_RATING = 5;
+    //static const int STAR_SPACING = 4;
+};
 #endif // PLAYLISTDELEGATES_H

@@ -439,6 +439,15 @@ bool DatabaseManager::incrementPlayCount(const QString &fullFilePath)
     return query.exec();
 }
 
+bool DatabaseManager::setRating(const QString &fullFilePath, int iRating)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE Tracks SET Rating = ? WHERE FullFilePath = ?");
+    query.addBindValue(iRating);
+    query.addBindValue(fullFilePath);
+    return query.exec();
+}
+
 //bool DatabaseManager::loadOrUpdateTrack(const QString &fullFilePath, AudioTagInfo &info)
 //{
 // QFileInfo fi(fullFilePath);
