@@ -13,6 +13,105 @@
 #include "settings_manager.h"
 #include "tag_loader_worker.h"
 
+namespace ColumnIndex
+{
+
+enum Value
+{
+    Filename = 0,
+    Ext,
+    Path,
+    Duration,
+    Artist,
+    Title,
+    Album,
+    Track,
+    Year,
+    Genre,
+    Comment,
+    Bitrate,
+    Samplerate,
+    Bits,
+    Channels,
+    Format,
+    CoverSize,
+    FileSize,
+    LastModified,
+    Rating,
+    PlayCount,
+    ColumnCount
+};
+
+// Definiamo un alias
+// using Value = EnumValue;
+
+// Array of column names (must match order of enum)
+static const QStringList Headers =
+{
+    "File name",
+    "Extension",
+    "Path",
+    "Duration",
+    "Artist",
+    "Title",
+    "Album",
+    "Track",
+    "Year",
+    "Genre",
+    "Comment",
+    "Bitrate",
+    "Samplerate",
+    "Bits",
+    "Channels",
+    "Format",
+    "Cover size",
+    "File size",
+    "Last modified",
+    "Rating",
+    "Play count"
+};
+
+static const QList<int> DefaultWidths =
+{
+    250, // Filename
+    30,  // Ext
+    120, // Path
+    50,  // Duration
+    120, // Artist
+    120, // Title
+    120, // Album
+    30,  // Track
+    40,  // Year
+    100, // Genre
+    100, // Comment
+    30,  // Bitrate
+    40,  // Samplerate
+    30,  // Bits
+    30,  // Channels
+    100, // Format
+    60, // Cover size
+    60,  // File size
+    80, // Last modified
+    40,  // Rating
+    40   // Play count
+};
+
+// Helper functions
+inline QString headerName(int index)
+{
+    if (index >= 0 && index < Headers.size())
+        return Headers.at(index);
+    return QString("Unknown(%1)").arg(index);
+}
+
+inline int defaultWidth(int index)
+{
+    if (index >= 0 && index < DefaultWidths.size())
+        return DefaultWidths.at(index);
+    return 100; // fallback width
+}
+}
+
 //class Widget;
 
 namespace Ui
@@ -75,7 +174,7 @@ private:
     Ui::PlaylistTable *ui;
     QStandardItem *m_CurrentItem;
     void setSignalsConnections();
-    void syncPlaylistOrder(int sortCol,Qt::SortOrder sortOrder  );
+    void syncPlaylistOrder(int sortCol, Qt::SortOrder sortOrder);
     int m_iSortCol;
     Qt::SortOrder m_SortOrder;
     bool m_bHasBeenSorted;

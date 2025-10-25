@@ -31,112 +31,113 @@ void DatabaseManager::closeDatabase()
         m_db.close();
 }
 
-bool DatabaseManager::createTables()
-{
-    QSqlQuery query(m_db);
-    // Tracks
-    QString tracksSql = QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS Tracks ("
-            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "FullFilePath TEXT UNIQUE NOT NULL,"
-            "FileName TEXT,"
-            "BaseFileName TEXT,"
-            "Extension TEXT,"
-            "Path TEXT,"
-            "Duration INTEGER,"
-            "Artist TEXT,"
-            "Title TEXT,"
-            "Album TEXT,"
-            "Genre TEXT,"
-            "TrackNum INTEGER,"
-            "Year INTEGER,"
-            "Comment TEXT,"
-            "Bitrate INTEGER,"
-            "Samplerate INTEGER,"
-            "Channels INTEGER,"
-            "Bits INTEGER,"
-            "Format TEXT,"
-            "CoverSize TEXT,"
-            "FileSize INTEGER,"
-            "LastModified INTEGER,"
-            "Rating INTEGER DEFAULT 0,"
-            "PlayCount INTEGER DEFAULT 0);"
-        );
-    if (!query.exec(tracksSql))
-    {
-        qDebug() << "Error creating Tracks:" << query.lastError().text();
-        return false;
-    }
-    // Playlists
-    QString playlistsSql = QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS Playlists ("
-            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "Name TEXT UNIQUE NOT NULL,"
-            "Created DATETIME DEFAULT CURRENT_TIMESTAMP,"
-            "PlayCount INTEGER DEFAULT 0);"
-        );
-    if (!query.exec(playlistsSql))
-    {
-        qDebug() << "Error creating Playlists:" << query.lastError().text();
-        return false;
-    }
-    // PlaylistItems
-    QString playlistItemsSql = QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS PlaylistItems ("
-            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "PlaylistId INTEGER NOT NULL,"
-            "TrackId INTEGER NOT NULL,"
-            "Position INTEGER,"
-            "FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id),"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
-        );
-    if (!query.exec(playlistItemsSql))
-    {
-        qDebug() << "Error creating PlaylistItems:" << query.lastError().text();
-        return false;
-    }
-    // History
-    QString historySql = QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS History ("
-            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "TrackId INTEGER NOT NULL,"
-            "PlayDate INTEGER,"
-            "PlayPosition INTEGER,"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
-        );
-    if (!query.exec(historySql))
-    {
-        qDebug() << "Error creating History:" << query.lastError().text();
-        return false;
-    }
-    // Favorites
-    QString favoritesSql = QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS Favorites ("
-            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "TrackId INTEGER NOT NULL,"
-            "DateAdded INTEGER,"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
-        );
-    if (!query.exec(favoritesSql))
-    {
-        qDebug() << "Error creating Favorites:" << query.lastError().text();
-        return false;
-    }
-    // SessionPlaylist
-    QString sessionSql = QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS SessionPlaylist ("
-            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "TrackId INTEGER NOT NULL,"
-            "Position INTEGER,"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
-        );
-    if (!query.exec(sessionSql))
-    {
-        qDebug() << "Error creating SessionPlaylist:" << query.lastError().text();
-        return false;
-    }
-    return true;
-}
+//bool DatabaseManager::createTables()
+//{
+// QSqlQuery query(m_db);
+//    // Tracks
+// QString tracksSql = QStringLiteral(
+// "CREATE TABLE IF NOT EXISTS Tracks ("
+// "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+// "FullFilePath TEXT UNIQUE NOT NULL,"
+////            "FileName TEXT,"
+// "BaseFileName TEXT,"
+// "Extension TEXT,"
+// "Path TEXT,"
+// "Duration INTEGER,"
+// "Artist TEXT,"
+// "Title TEXT,"
+// "Album TEXT,"
+// "Genre TEXT,"
+// "TrackNum INTEGER,"
+// "Year INTEGER,"
+// "Comment TEXT,"
+// "Bitrate INTEGER,"
+// "Samplerate INTEGER,"
+// "Channels INTEGER,"
+// "Bits INTEGER,"
+// "Format TEXT,"
+// "CoverSize TEXT,"
+// "FileSize INTEGER,"
+// "LastModified INTEGER,"
+// "Rating INTEGER DEFAULT 0,"
+// "PlayCount INTEGER DEFAULT 0);"
+// );
+// if (!query.exec(tracksSql))
+// {
+// qDebug() << "Error creating Tracks:" << query.lastError().text();
+// return false;
+// }
+//    // Playlists
+// QString playlistsSql = QStringLiteral(
+// "CREATE TABLE IF NOT EXISTS Playlists ("
+// "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+// "Name TEXT UNIQUE NOT NULL,"
+// "Created DATETIME DEFAULT CURRENT_TIMESTAMP,"
+// "PlayCount INTEGER DEFAULT 0);"
+// );
+// if (!query.exec(playlistsSql))
+// {
+// qDebug() << "Error creating Playlists:" << query.lastError().text();
+// return false;
+// }
+//    // PlaylistItems
+// QString playlistItemsSql = QStringLiteral(
+// "CREATE TABLE IF NOT EXISTS PlaylistItems ("
+// "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+// "PlaylistId INTEGER NOT NULL,"
+// "TrackId INTEGER NOT NULL,"
+// "Position INTEGER,"
+// "FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id),"
+// "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+// );
+// if (!query.exec(playlistItemsSql))
+// {
+// qDebug() << "Error creating PlaylistItems:" << query.lastError().text();
+// return false;
+// }
+//    // History
+// QString historySql = QStringLiteral(
+// "CREATE TABLE IF NOT EXISTS History ("
+// "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+// "TrackId INTEGER NOT NULL,"
+// "PlayDate INTEGER,"
+// "PlayPosition INTEGER,"
+// "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+// );
+// if (!query.exec(historySql))
+// {
+// qDebug() << "Error creating History:" << query.lastError().text();
+// return false;
+// }
+//    // Favorites
+// QString favoritesSql = QStringLiteral(
+// "CREATE TABLE IF NOT EXISTS Favorites ("
+// "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+// "TrackId INTEGER NOT NULL,"
+// "DateAdded INTEGER,"
+// "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+// );
+// if (!query.exec(favoritesSql))
+// {
+// qDebug() << "Error creating Favorites:" << query.lastError().text();
+// return false;
+// }
+//    // SessionPlaylist
+// QString sessionSql = QStringLiteral(
+// "CREATE TABLE IF NOT EXISTS SessionPlaylist ("
+// "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+// "TrackId INTEGER NOT NULL,"
+// "Position INTEGER,"
+// "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+// );
+// if (!query.exec(sessionSql))
+// {
+// qDebug() << "Error creating SessionPlaylist:" << query.lastError().text();
+// return false;
+// }
+// return true;
+//}
+
 bool DatabaseManager::addToFavorites(const QString &fullFilePath)
 {
     QSqlQuery query(m_db);
@@ -328,25 +329,268 @@ QList<AudioTagInfo> DatabaseManager::topPlayed(int limit)
     }
     return list;
 }
+//bool DatabaseManager::trackExists(const QString &fullFilePath)
+//{
+// QSqlQuery query(m_db);
+// query.prepare("SELECT COUNT(*) FROM Tracks WHERE FullFilePath = ?");
+// query.addBindValue(fullFilePath);
+// if (!query.exec()) return false;
+// if (query.next()) return query.value(0).toInt() > 0;
+// return false;
+//}
+
+//bool DatabaseManager::loadTrack(const QString &fullFilePath, AudioTagInfo &info)
+//{
+// QSqlQuery query(m_db);
+// query.prepare("SELECT * FROM Tracks WHERE FullFilePath = ?");
+// query.addBindValue(fullFilePath);
+// if (!query.exec()) return false;
+// if (!query.next()) return false;
+
+// info.sFileName = query.value("FileName").toString();
+// info.sBaseFileName = query.value("BaseFileName").toString();
+// info.sExtension = query.value("Extension").toString();
+// info.sPath = query.value("Path").toString();
+// info.iDuration = query.value("Duration").toInt();
+// info.sArtist = query.value("Artist").toString();
+// info.sTitle = query.value("Title").toString();
+// info.sAlbum = query.value("Album").toString();
+// info.sGenre = query.value("Genre").toString();
+// info.iTrackNum = query.value("TrackNum").toInt();
+// info.iYear = query.value("Year").toInt();
+// info.sComment = query.value("Comment").toString();
+// info.iBitrate = query.value("Bitrate").toInt();
+// info.iSamplerate = query.value("Samplerate").toInt();
+// info.iChannels = query.value("Channels").toInt();
+// info.iBits = query.value("Bits").toInt();
+// info.sFormat = query.value("Format").toString();
+// info.sCoverSize = query.value("CoverSize").toString();
+// info.iFileSize = query.value("FileSize").toInt();
+// info.iRating = query.value("Rating").toInt();
+// info.iPlayCount = query.value("PlayCount").toInt();
+
+// return true;
+//}
+
+//bool DatabaseManager::insertTrack(const QString &fullFilePath, const AudioTagInfo &info)
+//{
+// if (!m_db.isOpen()) {
+// qDebug() << "Database not open";
+// return false;
+// }
+
+// QFileInfo fi(fullFilePath);
+
+// QSqlQuery query(m_db);
+// query.prepare(
+// "INSERT INTO Tracks ("
+// "FullFilePath, BaseFileName, Extension, Path, Duration, "
+// "Artist, Title, Album, Genre, TrackNum, Year, Comment, "
+// "Bitrate, Samplerate, Bits, Channels, Format, CoverSize, "
+// "FileSize, LastModified, Rating, PlayCount"
+// ") VALUES ("
+// "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+// );
+
+//    // Full file information
+// query.addBindValue(fullFilePath);
+// query.addBindValue(fi.completeBaseName());   // BaseFileName
+// query.addBindValue(fi.suffix());             // Extension
+// query.addBindValue(fi.path());               // Path
+
+//    // Tag info
+// query.addBindValue(info.iDuration);
+// query.addBindValue(info.sArtist);
+// query.addBindValue(info.sTitle);
+// query.addBindValue(info.sAlbum);
+// query.addBindValue(info.sGenre);
+// query.addBindValue(info.iTrackNum);
+// query.addBindValue(info.iYear);
+// query.addBindValue(info.sComment);
+
+//    // Technical info
+// query.addBindValue(info.iBitrate);
+// query.addBindValue(info.iSamplerate);
+// query.addBindValue(info.iBits);
+// query.addBindValue(info.iChannels);
+// query.addBindValue(info.sFormat);
+// query.addBindValue(info.sCoverSize);
+// query.addBindValue(info.iFileSize);
+// query.addBindValue(fi.lastModified().toSecsSinceEpoch());
+
+//    // Player data (default 0 if empty)
+// query.addBindValue(info.iRating);
+// query.addBindValue(info.iPlayCount);
+
+// if (!query.exec()) {
+// qDebug() << "Insert error:" << query.lastError().text();
+// qDebug() << "Query:" << query.lastQuery();
+// return false;
+// }
+
+// return true;
+//}
+
+bool DatabaseManager::incrementPlayCount(const QString &fullFilePath)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE Tracks SET PlayCount = PlayCount + 1 WHERE FullFilePath = ?");
+    query.addBindValue(fullFilePath);
+    return query.exec();
+}
+
+//bool DatabaseManager::loadOrUpdateTrack(const QString &fullFilePath, AudioTagInfo &info)
+//{
+// QFileInfo fi(fullFilePath);
+// qint64 fileModified = fi.lastModified().toSecsSinceEpoch();
+
+// if(trackExists(fullFilePath)) {
+// loadTrack(fullFilePath, info);
+//        // Controllo se il file è stato modificato dopo l'ultima lettura
+// if(fileModified != info.iLastModified) {
+// AudioTag tag(fullFilePath);
+// info = tag.tagInfo();
+// updateTrack(fullFilePath, info); // Aggiorna DB
+// }
+// return true;
+// } else {
+//        // Nuovo file
+// AudioTag tag(fullFilePath);
+// info = tag.tagInfo();
+// insertTrack(fullFilePath, info);
+// return true;
+// }
+//}
+
+bool DatabaseManager::createTables()
+{
+    QSqlQuery query(m_db);
+    // Tracks
+    QString tracksSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS Tracks ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "FullFilePath TEXT UNIQUE NOT NULL,"
+            "BaseFileName TEXT,"
+            "Extension TEXT,"
+            "Path TEXT,"
+            "Duration INTEGER,"
+            "Artist TEXT,"
+            "Title TEXT,"
+            "Album TEXT,"
+            "Genre TEXT,"
+            "TrackNum INTEGER,"
+            "Year INTEGER,"
+            "Comment TEXT,"
+            "Bitrate INTEGER,"
+            "Samplerate INTEGER,"
+            "Channels INTEGER,"
+            "Bits INTEGER,"
+            "Format TEXT,"
+            "CoverSize TEXT,"
+            "FileSize INTEGER,"
+            "LastModified INTEGER,"
+            "Rating INTEGER DEFAULT 0,"
+            "PlayCount INTEGER DEFAULT 0);"
+        );
+    if (!query.exec(tracksSql))
+    {
+        qDebug() << "Error creating Tracks:" << query.lastError().text();
+        return false;
+    }
+    // Playlists
+    QString playlistsSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS Playlists ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "Name TEXT UNIQUE NOT NULL,"
+            "Created DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "PlayCount INTEGER DEFAULT 0);"
+        );
+    if (!query.exec(playlistsSql))
+    {
+        qDebug() << "Error creating Playlists:" << query.lastError().text();
+        return false;
+    }
+    // PlaylistItems
+    QString playlistItemsSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS PlaylistItems ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "PlaylistId INTEGER NOT NULL,"
+            "TrackId INTEGER NOT NULL,"
+            "Position INTEGER,"
+            "FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id),"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(playlistItemsSql))
+    {
+        qDebug() << "Error creating PlaylistItems:" << query.lastError().text();
+        return false;
+    }
+    // History
+    QString historySql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS History ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "PlayDate INTEGER,"
+            "PlayPosition INTEGER,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(historySql))
+    {
+        qDebug() << "Error creating History:" << query.lastError().text();
+        return false;
+    }
+    // Favorites
+    QString favoritesSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS Favorites ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "DateAdded INTEGER,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(favoritesSql))
+    {
+        qDebug() << "Error creating Favorites:" << query.lastError().text();
+        return false;
+    }
+    // SessionPlaylist
+    QString sessionSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS SessionPlaylist ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "Position INTEGER,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+        );
+    if (!query.exec(sessionSql))
+    {
+        qDebug() << "Error creating SessionPlaylist:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 bool DatabaseManager::trackExists(const QString &fullFilePath)
 {
+    if (!m_db.isOpen())
+        return false;
     QSqlQuery query(m_db);
     query.prepare("SELECT COUNT(*) FROM Tracks WHERE FullFilePath = ?");
     query.addBindValue(fullFilePath);
-    if (!query.exec()) return false;
-    if (query.next()) return query.value(0).toInt() > 0;
-    return false;
+    if (!query.exec())
+        return false;
+    return (query.next() && query.value(0).toInt() > 0);
 }
 
 bool DatabaseManager::loadTrack(const QString &fullFilePath, AudioTagInfo &info)
 {
+    if (!m_db.isOpen())
+        return false;
     QSqlQuery query(m_db);
     query.prepare("SELECT * FROM Tracks WHERE FullFilePath = ?");
     query.addBindValue(fullFilePath);
-    if (!query.exec()) return false;
-    if (!query.next()) return false;
+    if (!query.exec() || !query.next())
+        return false;
 
-    info.sFileName = query.value("FileName").toString();
+    info.sFileName = fullFilePath;
     info.sBaseFileName = query.value("BaseFileName").toString();
     info.sExtension = query.value("Extension").toString();
     info.sPath = query.value("Path").toString();
@@ -367,24 +611,31 @@ bool DatabaseManager::loadTrack(const QString &fullFilePath, AudioTagInfo &info)
     info.iFileSize = query.value("FileSize").toInt();
     info.iRating = query.value("Rating").toInt();
     info.iPlayCount = query.value("PlayCount").toInt();
-
+    info.iLastModified = query.value("LastModified").toLongLong();
     return true;
 }
 
 bool DatabaseManager::insertTrack(const QString &fullFilePath, const AudioTagInfo &info)
 {
+    if (!m_db.isOpen())
+    {
+        qDebug() << "Database not open";
+        return false;
+    }
     QFileInfo fi(fullFilePath);
     QSqlQuery query(m_db);
-    query.prepare("INSERT INTO Tracks (FullFilePath, FileName, BaseFileName, Extension, Path, Duration, "
-                  "Artist, Title, Album, Genre, TrackNum, Year, Comment, Bitrate, Samplerate, Channels, Bits, "
-                  "Format, CoverSize, FileSize, LastModified, Rating, PlayCount) "
-                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
+    query.prepare(
+        "INSERT INTO Tracks ("
+        "FullFilePath, BaseFileName, Extension, Path, Duration, "
+        "Artist, Title, Album, Genre, TrackNum, Year, Comment, "
+        "Bitrate, Samplerate, Bits, Channels, Format, CoverSize, "
+        "FileSize, LastModified, Rating, PlayCount"
+        ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    );
     query.addBindValue(fullFilePath);
-    query.addBindValue(info.sFileName);
-    query.addBindValue(info.sBaseFileName);
-    query.addBindValue(info.sExtension);
-    query.addBindValue(info.sPath);
+    query.addBindValue(fi.completeBaseName());
+    query.addBindValue(fi.suffix());
+    query.addBindValue(fi.path());
     query.addBindValue(info.iDuration);
     query.addBindValue(info.sArtist);
     query.addBindValue(info.sTitle);
@@ -395,17 +646,18 @@ bool DatabaseManager::insertTrack(const QString &fullFilePath, const AudioTagInf
     query.addBindValue(info.sComment);
     query.addBindValue(info.iBitrate);
     query.addBindValue(info.iSamplerate);
-    query.addBindValue(info.iChannels);
     query.addBindValue(info.iBits);
+    query.addBindValue(info.iChannels);
     query.addBindValue(info.sFormat);
     query.addBindValue(info.sCoverSize);
     query.addBindValue(info.iFileSize);
     query.addBindValue(fi.lastModified().toSecsSinceEpoch());
     query.addBindValue(info.iRating);
     query.addBindValue(info.iPlayCount);
-
-    if (!query.exec()) {
+    if (!query.exec())
+    {
         qDebug() << "Insert error:" << query.lastError().text();
+        qDebug() << "Query:" << query.lastQuery();
         return false;
     }
     return true;
@@ -413,15 +665,21 @@ bool DatabaseManager::insertTrack(const QString &fullFilePath, const AudioTagInf
 
 bool DatabaseManager::updateTrack(const QString &fullFilePath, const AudioTagInfo &info)
 {
+    if (!m_db.isOpen())
+    {
+        qDebug() << "Database not open";
+        return false;
+    }
     QFileInfo fi(fullFilePath);
     QSqlQuery query(m_db);
-    query.prepare("UPDATE Tracks SET "
-                  "FileName=?, BaseFileName=?, Extension=?, Path=?, Duration=?, Artist=?, Title=?, Album=?, Genre=?, "
-                  "TrackNum=?, Year=?, Comment=?, Bitrate=?, Samplerate=?, Channels=?, Bits=?, Format=?, CoverSize=?, "
-                  "FileSize=?, LastModified=?, Rating=?, PlayCount=? "
-                  "WHERE FullFilePath=?");
-
-    query.addBindValue(info.sFileName);
+    query.prepare(
+        "UPDATE Tracks SET "
+        "BaseFileName=?, Extension=?, Path=?, Duration=?, "
+        "Artist=?, Title=?, Album=?, Genre=?, TrackNum=?, Year=?, Comment=?, "
+        "Bitrate=?, Samplerate=?, Bits=?, Channels=?, Format=?, CoverSize=?, "
+        "FileSize=?, LastModified=?, Rating=?, PlayCount=? "
+        "WHERE FullFilePath=?"
+    );
     query.addBindValue(info.sBaseFileName);
     query.addBindValue(info.sExtension);
     query.addBindValue(info.sPath);
@@ -435,8 +693,8 @@ bool DatabaseManager::updateTrack(const QString &fullFilePath, const AudioTagInf
     query.addBindValue(info.sComment);
     query.addBindValue(info.iBitrate);
     query.addBindValue(info.iSamplerate);
-    query.addBindValue(info.iChannels);
     query.addBindValue(info.iBits);
+    query.addBindValue(info.iChannels);
     query.addBindValue(info.sFormat);
     query.addBindValue(info.sCoverSize);
     query.addBindValue(info.iFileSize);
@@ -444,41 +702,38 @@ bool DatabaseManager::updateTrack(const QString &fullFilePath, const AudioTagInf
     query.addBindValue(info.iRating);
     query.addBindValue(info.iPlayCount);
     query.addBindValue(fullFilePath);
-
-    if (!query.exec()) {
+    if (!query.exec())
+    {
         qDebug() << "Update error:" << query.lastError().text();
+        qDebug() << "Query:" << query.lastQuery();
         return false;
     }
     return true;
-}
-
-bool DatabaseManager::incrementPlayCount(const QString &fullFilePath)
-{
-    QSqlQuery query(m_db);
-    query.prepare("UPDATE Tracks SET PlayCount = PlayCount + 1 WHERE FullFilePath = ?");
-    query.addBindValue(fullFilePath);
-    return query.exec();
 }
 
 bool DatabaseManager::loadOrUpdateTrack(const QString &fullFilePath, AudioTagInfo &info)
 {
     QFileInfo fi(fullFilePath);
     qint64 fileModified = fi.lastModified().toSecsSinceEpoch();
-
-    if(trackExists(fullFilePath)) {
+    if (trackExists(fullFilePath))
+    {
         loadTrack(fullFilePath, info);
-        // Controllo se il file è stato modificato dopo l'ultima lettura
-        if(fileModified != info.iLastModified) {
+        // File changed since last read?
+        if (fileModified != info.iLastModified)
+        {
             AudioTag tag(fullFilePath);
             info = tag.tagInfo();
-            updateTrack(fullFilePath, info); // Aggiorna DB
+            info.iLastModified = fileModified;
+            updateTrack(fullFilePath, info);
         }
-        return true;
-    } else {
-        // Nuovo file
+    }
+    else
+    {
+        // New file
         AudioTag tag(fullFilePath);
         info = tag.tagInfo();
+        info.iLastModified = fileModified;
         insertTrack(fullFilePath, info);
-        return true;
     }
+    return true;
 }

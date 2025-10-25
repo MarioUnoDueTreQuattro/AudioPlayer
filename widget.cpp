@@ -60,14 +60,17 @@ Widget::Widget(QWidget *parent)
       m_bTablePlaylist(false)
 {
     ui->setupUi(this);
-    settingsMgr = SettingsManager::instance();
+    QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first ();
+    sDatabasePath.append("/playlist.db");
     DatabaseManager &db = DatabaseManager::instance();
-    // Apri o crea il database
-    if (!db.openDatabase("playlist.db"))
+    if (!db.openDatabase(sDatabasePath))
     {
         qWarning() << "Could not open database!";
-        return;
+        // return;
     }
+    else
+        LOG_MSG_SHORT("Database opened.");
+    settingsMgr = SettingsManager::instance();
     ui->labelFilter->setVisible(false);
     ui->lineEditFilter->setVisible(false);
     ui->pushButtonResetFilter->setVisible(false);

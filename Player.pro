@@ -17,6 +17,7 @@ SOURCES += \
     clickable_label.cpp \
     clickable_slider.cpp \
     database_manager.cpp \
+    elided_header_view.cpp \
     esc_aware_lineedit.cpp \
     info_widget.cpp \
     main.cpp \
@@ -39,6 +40,7 @@ HEADERS += \
     clickable_label.h \
     clickable_slider.h \
     database_manager.h \
+    elided_header_view.h \
     esc_aware_lineedit.h \
     info_widget.h \
     playlist_delegates.h \

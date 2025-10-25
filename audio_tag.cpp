@@ -3,7 +3,6 @@
 #include <QByteArray>
 #include <QFileInfo>
 #include <QDir>
-
 //// TagLib includes
 ////#include <fileref.h>
 ////#include <tfile.h>
@@ -48,6 +47,11 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
     m_pix = QPixmap(); //empty
     if (!localFile.isEmpty())
     {
+        // QFileInfo info(nativePath);
+        m_TagInfo.sFileName = nativePath; //QString::fromStdWString (wpath);
+        // m_TagInfo.sBaseFileName = info.completeBaseName();
+        // m_TagInfo.sExtension = info.suffix();
+        // m_TagInfo.sPath = info.canonicalPath();
         // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
         std::wstring wpath = localFile.toStdWString();
         //qDebug() << "wpath->" << wpath;
@@ -170,7 +174,6 @@ void AudioTag::setFile(const QString &localFile, bool bExtractCover)
             // info.append ("Channels: ");
             // info.append (QString::number (channels));
             //delete properties;
-            m_TagInfo.sFileName = localFile; //QString::fromStdWString (wpath);
             m_TagInfo.sTitle = title;
             m_TagInfo.sArtist = artist;
             m_TagInfo.sAlbum = album;
@@ -751,7 +754,45 @@ void AudioTagInfo::reset()
     iFileSize = -1;
     iTrackNum = -1;
     iBits = -1;
-    iRating = -1;
-    iPlayCount = -1;
+    iRating = -1; // -1 = has not been yet rated
+    iPlayCount = 0; // 0 = never played
     iLastModified = -1;
+}
+
+QList<QStandardItem *> AudioTagInfo::toStandardItems() const
+{
+    QList<QStandardItem *> items;
+    static const QIcon icon(":/img/img/icons8-music-48.png"); // static, allocata una volta sola
+    //QIcon icon(":/img/img/icons8-music-48.png");
+    // File info
+    //items.append(new QStandardItem(sFileName));
+    //qDebug()<< sFileName;
+    QStandardItem* fileItem = new QStandardItem(icon, sBaseFileName);
+    fileItem->setData(sFileName, Qt::UserRole + 1); // store full path
+    fileItem->setData(true, Qt::UserRole + 2);
+    items.append(fileItem);
+    items.append(new QStandardItem(sExtension));
+    items.append(new QStandardItem(QDir::toNativeSeparators(sPath)));
+    // Tag info
+    items.append(new QStandardItem(QString::number(iDuration)));
+    items.append(new QStandardItem(sArtist));
+    items.append(new QStandardItem(sTitle));
+    items.append(new QStandardItem(sAlbum));
+    items.append(new QStandardItem(QString::number(iTrackNum)));
+    items.append(new QStandardItem(QString::number(iYear)));
+    items.append(new QStandardItem(sGenre));
+    items.append(new QStandardItem(sComment));
+    // Technical info
+    items.append(new QStandardItem(QString::number(iBitrate)));
+    items.append(new QStandardItem(QString::number(iSamplerate)));
+    items.append(new QStandardItem(QString::number(iBits)));
+    items.append(new QStandardItem(QString::number(iChannels)));
+    items.append(new QStandardItem(sFormat));
+    items.append(new QStandardItem(sCoverSize));
+    items.append(new QStandardItem(QString::number(iFileSize)));
+    // Additional info
+    // items.append(new QStandardItem(QString::number(iLastModified)));
+    // items.append(new QStandardItem(QString::number(iRating)));
+    // items.append(new QStandardItem(QString::number(iPlayCount)));
+    return items;
 }

@@ -2,6 +2,8 @@
 #include "ui_playlist_table.h"
 #include "playlist_delegates.h"
 #include "utility.h"
+#include "database_manager.h"
+#include "elided_header_view.h"
 #include <QFileInfo>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -48,17 +50,22 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_player->setPlaylist(m_playlist);
     // --- Create source model ---
     m_model = new QStandardItemModel(this);
-    m_model->setHorizontalHeaderLabels(QStringList()
-        << "Filename" << "Ext" << "Path" << "Duration" << "Artist"
-        << "Title" << "Album" << "Track" << "Year" << "Genre"
-        << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
-        << "Format" << "Cover size" << "File size");
+    m_model->setColumnCount(ColumnIndex::ColumnCount);
+    for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
+        m_model->setHeaderData(i, Qt::Horizontal, ColumnIndex::headerName(i));
+    // m_model->setHorizontalHeaderLabels(QStringList()
+    // << "Filename" << "Ext" << "Path" << "Duration" << "Artist"
+    // << "Title" << "Album" << "Track" << "Year" << "Genre"
+    // << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
+    // << "Format" << "Cover size" << "File size");
     // --- Create sort proxy ---
     m_sortModel = new PlaylistSortModel(this);
     m_sortModel->setSourceModel(m_model);
     m_sortModel->setFilterColumns(QSet<int> {0, 2, 4, 5, 6});
     m_view = ui->tableView;
+    m_view->setHorizontalHeader(new ElidedHeaderView(Qt::Horizontal, m_view));
     m_view->horizontalHeader()->setHighlightSections(false);
+    m_view->horizontalHeader()->setTextElideMode(Qt::ElideRight);
     m_view->setModel(m_sortModel);
     m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -129,7 +136,8 @@ PlaylistTable::~PlaylistTable()
 
 void PlaylistTable::closeEvent(QCloseEvent *event)
 {
-    if (m_tagWorker)
+    /*
+          if (m_tagWorker)
     {
         m_tagWorker->stop(); // signal worker to abort
         if (m_FutureWatcher)
@@ -137,6 +145,8 @@ void PlaylistTable::closeEvent(QCloseEvent *event)
             m_FutureWatcher->waitForFinished(); // wait for thread to finish
         }
     }
+
+    */
     // if (m_FutureWatcher != nullptr)
     // {
     // if (m_FutureWatcher->isRunning())
@@ -151,7 +161,8 @@ void PlaylistTable::closeEvent(QCloseEvent *event)
     // m_tagWorker = nullptr;
     // }
     // if (m_tagWorker != nullptr) delete m_tagWorker;
-    if (m_tagWorker)
+    /*
+          if (m_tagWorker)
     {
         disconnect(m_tagWorker, nullptr, this, nullptr);
         m_tagWorker->deleteLater();
@@ -162,6 +173,8 @@ void PlaylistTable::closeEvent(QCloseEvent *event)
         m_FutureWatcher->deleteLater();
         m_FutureWatcher = nullptr;
     }
+
+    */
     emit windowClosed();
     event->accept();
     QWidget::closeEvent(event);
@@ -311,7 +324,8 @@ void PlaylistTable::restoreColumnWidths()
     for (int col = 0; col < m_model->columnCount(); ++col)
     {
         // settingsMgr->beginGroup("Table");
-        int width = settingsMgr->value(QString("Table/Column_Width_%1").arg(col), -1).toInt();
+        int width = settingsMgr->value(QString("Table/Column_Width_%1").arg(col), ColumnIndex::defaultWidth(col)).toInt();
+        //int width = settingsMgr->value(QString("Table/Column_Width_%1").arg(col), -1).toInt();
         if (width > 0)
             m_view->setColumnWidth(col, width);
         // settingsMgr->endGroup();
@@ -421,9 +435,9 @@ void PlaylistTable::syncPlaylistOrder(int sortColumn, Qt::SortOrder order)
     // delete m_playlist;
     // m_playlist = newPlaylist;
     // m_player->setPlaylist(m_playlist);
-      connect(m_playlist, SIGNAL(currentIndexChanged(int)),
+    connect(m_playlist, SIGNAL(currentIndexChanged(int)),
         this, SLOT(onCurrentTrackChanged(int)));
-  // TODO uncomment?
+    // TODO uncomment?
     /*
     if (oldIndex >= 0 && oldIndex < newCount)
     m_playlist->setCurrentIndex(oldIndex);
@@ -441,10 +455,15 @@ void PlaylistTable::syncPlaylistOrder(int sortColumn, Qt::SortOrder order)
     */
     // align
     //m_view->setColumnWidth(3, 80);
-    m_view->horizontalHeader()->setDefaultAlignment(Qt::AlignRight);
+    m_view->horizontalHeader()->setDefaultAlignment(Qt::AlignHCenter);
     m_view->setTextElideMode(Qt::ElideRight);
     for (int row = 0; row < m_model->rowCount(); ++row)
-        m_model->item(row, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    {
+        // m_model->item(row, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        // m_model->item(row, 17)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        m_model->item(row, ColumnIndex::Duration)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        m_model->item(row, ColumnIndex::FileSize)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    }
     //m_view->setModel (m_model);
     emit playlistUpdated(m_playlist);
     int matchIndex = -1;
@@ -644,22 +663,32 @@ void PlaylistTable::readTags()
             }
         }
     }
-    // Start tag loader worker thread
-    m_tagWorker = new TagLoaderWorker();
-    QFuture<void> future = QtConcurrent::run(m_tagWorker,
-            &TagLoaderWorker::processFiles,
-            fileList);
-    m_FutureWatcher = new QFutureWatcher<void>(this);
-    m_FutureWatcher->setFuture(future);
-    connect(m_tagWorker, SIGNAL(finished()),
-        this, SLOT(onTagLoadingFinished()));
-    connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
-        this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+    if (m_FilePathToRow.count() == 0)
+    {
+        ui->pushButton->setEnabled(true);
+        m_bHasBeenSorted = true;
+        m_view->setSortingEnabled(true);
+    }
+    else
+    {
+        // Start tag loader worker thread
+        m_tagWorker = new TagLoaderWorker();
+        QFuture<void> future = QtConcurrent::run(m_tagWorker,
+                &TagLoaderWorker::processFiles,
+                fileList);
+        m_FutureWatcher = new QFutureWatcher<void>(this);
+        m_FutureWatcher->setFuture(future);
+        connect(m_tagWorker, SIGNAL(finished()),
+            this, SLOT(onTagLoadingFinished()));
+        connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
+            this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+    }
 }
 
 void PlaylistTable::on_pushButton_clicked()
 {
     readPlaylistTags();
+    //readTags ();
 }
 
 void PlaylistTable::readPlaylistTags()
@@ -693,32 +722,44 @@ void PlaylistTable::readPlaylistTags()
             fileList.append(fullPath);
         }
     }
-    // Start tag loader worker thread
-    m_tagWorker = new TagLoaderWorker();
-    QFuture<void> future = QtConcurrent::run(m_tagWorker,
-            &TagLoaderWorker::processFiles,
-            fileList);
-    m_FutureWatcher = new QFutureWatcher<void>(this);
-    m_FutureWatcher->setFuture(future);
-    connect(m_tagWorker, SIGNAL(finished()),
-        this, SLOT(onTagLoadingFinished()));
-    connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
-        this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+    if (m_FilePathToRow.count() == 0)
+    {
+        ui->pushButton->setEnabled(true);
+        m_bHasBeenSorted = true;
+        m_view->setSortingEnabled(true);
+    }
+    else
+    {
+        // Start tag loader worker thread
+        m_tagWorker = new TagLoaderWorker();
+        QFuture<void> future = QtConcurrent::run(m_tagWorker,
+                &TagLoaderWorker::processFiles,
+                fileList);
+        m_FutureWatcher = new QFutureWatcher<void>(this);
+        m_FutureWatcher->setFuture(future);
+        connect(m_tagWorker, SIGNAL(finished()),
+            this, SLOT(onTagLoadingFinished()));
+        connect(m_tagWorker, SIGNAL(tagLoaded(QString, AudioTagInfo)),
+            this, SLOT(onTagLoaded(QString, AudioTagInfo)));
+    }
 }
 
 void PlaylistTable::onTagLoadingFinished()
 {
     LOG_MSG_SHORT("Read" << m_FilePathToRow.count() << "tags");
-    m_FilePathToRow.clear();
-    delete m_tagWorker;
-    m_tagWorker = nullptr;
-    delete m_FutureWatcher;
-    m_FutureWatcher = nullptr;
     ui->pushButton->setEnabled(true);
     //qDebug() << "All tags loaded.";
     // disconnect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
     m_bHasBeenSorted = true;
     m_view->setSortingEnabled(true);
+    if (m_FilePathToRow.count() > 0)
+    {
+        delete m_tagWorker;
+        m_tagWorker = nullptr;
+        delete m_FutureWatcher;
+        m_FutureWatcher = nullptr;
+    }
+    m_FilePathToRow.clear();
     // m_view->horizontalHeader()->setSortIndicator(m_iSortCol, m_SortOrder);
     // m_view->horizontalHeader()->setSortIndicatorShown(true);
     // connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
@@ -871,6 +912,10 @@ void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& inf
     m_model->setData(m_model->index(sourceRow, 15), info.sFormat);
     m_model->setData(m_model->index(sourceRow, 16), info.sCoverSize);
     m_model->setData(m_model->index(sourceRow, 17), info.iFileSize);
+    DatabaseManager &db = DatabaseManager::instance();
+    AudioTagInfo updateInfo = info;
+    // bool bUpdate = db.updateTrack(filePath, updateInfo);
+    bool bUpdate = db.loadOrUpdateTrack(filePath, updateInfo);
     // Note: setData() automatically emits dataChanged signal
     // No need to manually emit dataChanged
 }
@@ -879,7 +924,8 @@ void PlaylistTable::playlistLoadFinished()
 {
     restoreColumnWidths();
     restoreColumnVisibility();
-    on_pushButton_clicked();
+    // on_pushButton_clicked();
+    readTags();
     //on_pushButton_2_clicked ();
     //setSectionsResizeMode();
     int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
@@ -887,8 +933,8 @@ void PlaylistTable::playlistLoadFinished()
     //m_sortModel->sort(iSortCol, order);
     //if (m_view->horizontalHeader()->isSortIndicatorShown())
     onHeaderSortChanged(iSortCol, order);
-    // m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
-    // m_view->horizontalHeader()->setSortIndicatorShown(true);
+    m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
+    m_view->horizontalHeader()->setSortIndicatorShown(true);
 }
 
 void PlaylistTable::addFilesFinished()
@@ -906,39 +952,84 @@ void PlaylistTable::addTrack(const QString &filePath)
     QFileInfo info(filePath);
     // --- Default icon ---
     QIcon icon(":/img/img/icons8-music-48.png");
-    // --- Create standard items for each column ---
-    QStandardItem* fileItem = new QStandardItem(icon, fileName);
-    fileItem->setData(info.canonicalFilePath(), Qt::UserRole + 1); // store full path
-    fileItem->setData(false, Qt::UserRole + 2);
-    QStandardItem* extensionItem = new QStandardItem(info.suffix());
-    QStandardItem* pathItem = new QStandardItem(QDir::toNativeSeparators(info.canonicalPath()));
-    QStandardItem* durationItem = new QStandardItem(QString::number(0));
-    QStandardItem* artistItem = new QStandardItem("");
-    QStandardItem* titleItem = new QStandardItem("");
-    QStandardItem* albumItem = new QStandardItem("");
-    QStandardItem* trackItem = new QStandardItem("");
-    QStandardItem* yearItem = new QStandardItem("");
-    QStandardItem* genreItem = new QStandardItem("");
-    QStandardItem* commentItem = new QStandardItem("");
-    QStandardItem* bitrateItem = new QStandardItem("");
-    QStandardItem* samplerateItem = new QStandardItem("");
-    QStandardItem* bitsItem = new QStandardItem("");
-    QStandardItem* channelsItem = new QStandardItem("");
-    QStandardItem* formatItem = new QStandardItem("");
-    QStandardItem* coverSizeItem = new QStandardItem("");
-    QStandardItem* fileSizeItem = new QStandardItem("");
-    // Build row
-    QList<QStandardItem *> rowItems;
-    rowItems << fileItem << extensionItem << pathItem << durationItem
-        << artistItem << titleItem << albumItem << trackItem
-        << yearItem << genreItem << commentItem << bitrateItem
-        << samplerateItem << bitsItem << channelsItem << formatItem
-        << coverSizeItem << fileSizeItem;
-    m_model->appendRow(rowItems);
+    DatabaseManager &db = DatabaseManager::instance();
+    AudioTagInfo tagInfo;
+    //bool bUpdate = db.updateTrack(filePath, updateInfo);
+    // bool bUpdate= db.loadOrUpdateTrack (filePath,updateInfo);
+    bool b_DB_HasTag = db.loadTrack(filePath, tagInfo);
+    if (b_DB_HasTag)
+    {
+        /*
+               // --- Create standard items for each column ---
+        QStandardItem* fileItem = new QStandardItem(icon, fileName);
+        fileItem->setData(info.canonicalFilePath(), Qt::UserRole + 1); // store full path
+        fileItem->setData(true, Qt::UserRole + 2);
+        QStandardItem* extensionItem = new QStandardItem(tagInfo.sExtension);
+        QStandardItem* pathItem = new QStandardItem(tagInfo.sPath);
+        QStandardItem* durationItem = new QStandardItem(tagInfo.iDuration);
+        QStandardItem* artistItem = new QStandardItem(tagInfo.sArtist);
+        QStandardItem* titleItem = new QStandardItem(tagInfo.sTitle);
+        QStandardItem* albumItem = new QStandardItem(tagInfo.sAlbum);
+        QStandardItem* trackItem = new QStandardItem(tagInfo.iTrackNum);
+        QStandardItem* yearItem = new QStandardItem(tagInfo.iYear);
+        QStandardItem* genreItem = new QStandardItem(tagInfo.sGenre);
+        QStandardItem* commentItem = new QStandardItem(tagInfo.sComment);
+        QStandardItem* bitrateItem = new QStandardItem(tagInfo.iBitrate);
+        QStandardItem* samplerateItem = new QStandardItem(tagInfo.iSamplerate);
+        QStandardItem* bitsItem = new QStandardItem(tagInfo.iBits);
+        QStandardItem* channelsItem = new QStandardItem(tagInfo.iChannels);
+        QStandardItem* formatItem = new QStandardItem(tagInfo.sFormat);
+        QStandardItem* coverSizeItem = new QStandardItem(tagInfo.sCoverSize);
+        QStandardItem* fileSizeItem = new QStandardItem(tagInfo.iFileSize);
+        // Build row
+        QList<QStandardItem *> rowItems;
+        rowItems << fileItem << extensionItem << pathItem << durationItem
+           << artistItem << titleItem << albumItem << trackItem
+           << yearItem << genreItem << commentItem << bitrateItem
+           << samplerateItem << bitsItem << channelsItem << formatItem
+           << coverSizeItem << fileSizeItem;
+
+        */
+        QList<QStandardItem *> rowItems = tagInfo.toStandardItems();
+        m_model->appendRow(rowItems);
+    }
+    else
+    {
+        // --- Create standard items for each column ---
+        QStandardItem* fileItem = new QStandardItem(icon, fileName);
+        fileItem->setData(info.canonicalFilePath(), Qt::UserRole + 1); // store full path
+        fileItem->setData(false, Qt::UserRole + 2);
+        QStandardItem* extensionItem = new QStandardItem(info.suffix());
+        QStandardItem* pathItem = new QStandardItem(QDir::toNativeSeparators(info.canonicalPath()));
+        QStandardItem* durationItem = new QStandardItem(QString::number(0));
+        QStandardItem* artistItem = new QStandardItem("");
+        QStandardItem* titleItem = new QStandardItem("");
+        QStandardItem* albumItem = new QStandardItem("");
+        QStandardItem* trackItem = new QStandardItem("");
+        QStandardItem* yearItem = new QStandardItem("");
+        QStandardItem* genreItem = new QStandardItem("");
+        QStandardItem* commentItem = new QStandardItem("");
+        QStandardItem* bitrateItem = new QStandardItem("");
+        QStandardItem* samplerateItem = new QStandardItem("");
+        QStandardItem* bitsItem = new QStandardItem("");
+        QStandardItem* channelsItem = new QStandardItem("");
+        QStandardItem* formatItem = new QStandardItem("");
+        QStandardItem* coverSizeItem = new QStandardItem("");
+        QStandardItem* fileSizeItem = new QStandardItem("");
+        // Build row
+        QList<QStandardItem *> rowItems;
+        rowItems << fileItem << extensionItem << pathItem << durationItem
+            << artistItem << titleItem << albumItem << trackItem
+            << yearItem << genreItem << commentItem << bitrateItem
+            << samplerateItem << bitsItem << channelsItem << formatItem
+            << coverSizeItem << fileSizeItem;
+        m_model->appendRow(rowItems);
+    }
     // --- Add to playlist ---
     m_playlist->addMedia(QUrl::fromLocalFile(filePath));
     //    // --- Align duration column (index 3) ---
-    // m_model->item(m_model->rowCount() - 1, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(m_model->rowCount() - 1, 3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(m_model->rowCount() - 1, 17)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 }
 
 void PlaylistTable::setSectionsResizeMode()
@@ -965,11 +1056,14 @@ void PlaylistTable::setSectionsResizeMode()
 void PlaylistTable::clear()
 {
     m_model->clear();
-    m_model->setHorizontalHeaderLabels(QStringList()
-        << "Filename" << "Ext" << "Path" << "Duration" << "Artist"
-        << "Title" << "Album" << "Track" << "Year" << "Genre"
-        << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
-        << "Format" << "Cover size" << "File size"); m_playlist->clear();
+    m_model->setColumnCount(ColumnIndex::ColumnCount);
+    for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
+        m_model->setHeaderData(i, Qt::Horizontal, ColumnIndex::headerName(i));
+    // m_model->setHorizontalHeaderLabels(QStringList()
+    // << "Filename" << "Ext" << "Path" << "Duration" << "Artist"
+    // << "Title" << "Album" << "Track" << "Year" << "Genre"
+    // << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
+    // << "Format" << "Cover size" << "File size"); m_playlist->clear();
     m_view->verticalHeader()->setDefaultSectionSize(16);
     m_view->verticalHeader()->setMaximumSectionSize(32);
     restoreColumnWidths();

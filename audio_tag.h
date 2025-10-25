@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QPixmap>
+#include <QStandardItem>
 #include <QObject>
 #include <fileref.h>
 #include <flacfile.h>
@@ -47,6 +48,7 @@ public:
     int iRating;
     int iPlayCount;
     int iLastModified;
+    QList<QStandardItem *> toStandardItems() const;
 };
 
 Q_DECLARE_METATYPE(AudioTagInfo)
