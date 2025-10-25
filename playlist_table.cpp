@@ -3,7 +3,6 @@
 #include "playlist_delegates.h"
 #include "utility.h"
 #include "database_manager.h"
-#include "elided_header_view.h"
 #include <QFileInfo>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -63,9 +62,14 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     m_sortModel->setSourceModel(m_model);
     m_sortModel->setFilterColumns(QSet<int> {0, 2, 4, 5, 6});
     m_view = ui->tableView;
-    m_view->setHorizontalHeader(new ElidedHeaderView(Qt::Horizontal, m_view));
-    m_view->horizontalHeader()->setHighlightSections(false);
-    m_view->horizontalHeader()->setTextElideMode(Qt::ElideRight);
+    m_HorizontalHeader = new ElidedHeaderView(Qt::Horizontal, m_view);
+    m_view->setHorizontalHeader(m_HorizontalHeader);
+    // m_view->horizontalHeader()->setHighlightSections(false);
+    // m_view->horizontalHeader()->setTextElideMode(Qt::ElideRight);
+    m_HorizontalHeader->setSectionsClickable(true);
+    m_HorizontalHeader->setHighlightSections(false);
+    m_HorizontalHeader->setTextElideMode(Qt::ElideRight);
+    m_HorizontalHeader->setDefaultAlignment(Qt::AlignHCenter);
     m_view->setModel(m_sortModel);
     m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -95,7 +99,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
     // header->setSectionResizeMode(4, QHeaderView::ResizeToContents);
     // header->setSectionResizeMode(5, QHeaderView::ResizeToContents);
     m_view->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_view->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_HorizontalHeader->setContextMenuPolicy(Qt::CustomContextMenu);
     loadSearchHistory();
     loadFilterHistory();
     setSignalsConnections();
@@ -120,9 +124,12 @@ void PlaylistTable::setSignalsConnections()
     connect(ui->comboBoxFilter, &QComboBox::currentTextChanged, m_sortModel, &PlaylistSortModel::setFilterText);
     connect(ui->comboBoxFind->lineEdit(), &QLineEdit::returnPressed, this, &PlaylistTable::handleNewSearchInput);
     connect(ui->comboBoxFilter->lineEdit(), &QLineEdit::returnPressed, this, &PlaylistTable::handleNewFilterInput);
-    connect(m_view->horizontalHeader(), &QHeaderView::sectionResized, this, &PlaylistTable::onColumnResized);
-    connect(m_view->horizontalHeader(), &QHeaderView::customContextMenuRequested, this, &PlaylistTable::onHeaderContextMenu);
-    connect(m_view->horizontalHeader(), SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)), this, SLOT(onHeaderSortChanged(int, Qt::SortOrder)));
+    // connect(m_view->horizontalHeader(), &QHeaderView::sectionResized, this, &PlaylistTable::onColumnResized);
+    // connect(m_view->horizontalHeader(), &QHeaderView::customContextMenuRequested, this, &PlaylistTable::onHeaderContextMenu);
+    // connect(m_view->horizontalHeader(), SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)), this, SLOT(onHeaderSortChanged(int, Qt::SortOrder)));
+    connect(m_HorizontalHeader, &QHeaderView::sectionResized, this, &PlaylistTable::onColumnResized);
+    connect(m_HorizontalHeader, &QHeaderView::customContextMenuRequested, this, &PlaylistTable::onHeaderContextMenu);
+    connect(m_HorizontalHeader, SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)), this, SLOT(onHeaderSortChanged(int, Qt::SortOrder)));
     connect(m_view, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(onDoubleClicked(const QModelIndex &)));
     connect(m_view, SIGNAL(clicked(const QModelIndex &)), this, SLOT(onClicked(const QModelIndex &)));
     connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
@@ -360,8 +367,8 @@ void PlaylistTable::syncPlaylistOrder(int sortColumn, Qt::SortOrder order)
     //qDebug() << "syncPlaylistOrder";
     LOG_MSG_SHORT("");
     m_view->setModel(m_sortModel);
-    int sortCol = m_view->horizontalHeader()->sortIndicatorSection();
-    Qt::SortOrder sortOrder = m_view->horizontalHeader()->sortIndicatorOrder();
+    int sortCol = m_HorizontalHeader->sortIndicatorSection();
+    Qt::SortOrder sortOrder = m_HorizontalHeader->sortIndicatorOrder();
     // Force re-sort now
     // m_view->horizontalHeader ()->setSortIndicator (sortCol,sortOrder);
     // m_view->horizontalHeader ()->setSortIndicatorShown (true);
@@ -455,7 +462,7 @@ void PlaylistTable::syncPlaylistOrder(int sortColumn, Qt::SortOrder order)
     */
     // align
     //m_view->setColumnWidth(3, 80);
-    m_view->horizontalHeader()->setDefaultAlignment(Qt::AlignHCenter);
+    //m_HorizontalHeader->setDefaultAlignment(Qt::AlignHCenter);
     m_view->setTextElideMode(Qt::ElideRight);
     for (int row = 0; row < m_model->rowCount(); ++row)
     {
@@ -933,8 +940,8 @@ void PlaylistTable::playlistLoadFinished()
     //m_sortModel->sort(iSortCol, order);
     //if (m_view->horizontalHeader()->isSortIndicatorShown())
     onHeaderSortChanged(iSortCol, order);
-    m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
-    m_view->horizontalHeader()->setSortIndicatorShown(true);
+    m_HorizontalHeader->setSortIndicator(iSortCol, order);
+    m_HorizontalHeader->setSortIndicatorShown(true);
 }
 
 void PlaylistTable::addFilesFinished()

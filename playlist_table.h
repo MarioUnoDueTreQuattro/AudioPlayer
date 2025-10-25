@@ -12,6 +12,7 @@
 #include "playlist_sortmodel.h"
 #include "settings_manager.h"
 #include "tag_loader_worker.h"
+#include "elided_header_view.h"
 
 namespace ColumnIndex
 {
@@ -170,6 +171,7 @@ private slots:
     void clearSearchHighlight();
     void delayedFindInTable();
 private:
+ ElidedHeaderView *m_HorizontalHeader;
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
     QStandardItem *m_CurrentItem;
