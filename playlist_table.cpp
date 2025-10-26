@@ -926,6 +926,7 @@ void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& inf
     AudioTagInfo updateInfo = info;
     // bool bUpdate = db.updateTrack(filePath, updateInfo);
     bool bUpdate = db.loadOrUpdateTrack(filePath, updateInfo);
+    if (sourceRow % 100 == 0) qApp->processEvents();
     // Note: setData() automatically emits dataChanged signal
     // No need to manually emit dataChanged
 }
@@ -1026,13 +1027,16 @@ void PlaylistTable::addTrack(const QString &filePath)
         QStandardItem* formatItem = new QStandardItem("");
         QStandardItem* coverSizeItem = new QStandardItem("");
         QStandardItem* fileSizeItem = new QStandardItem("");
+        QStandardItem* lastModifiedItem = new QStandardItem("");
+        QStandardItem* ratingItem = new QStandardItem("");
+        QStandardItem* playCountItem = new QStandardItem("");
         // Build row
         QList<QStandardItem *> rowItems;
         rowItems << fileItem << extensionItem << pathItem << durationItem
             << artistItem << titleItem << albumItem << trackItem
             << yearItem << genreItem << commentItem << bitrateItem
             << samplerateItem << bitsItem << channelsItem << formatItem
-            << coverSizeItem << fileSizeItem;
+            << coverSizeItem << fileSizeItem << lastModifiedItem << ratingItem << playCountItem;
         m_model->appendRow(rowItems);
     }
     // --- Add to playlist ---
