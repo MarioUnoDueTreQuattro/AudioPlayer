@@ -1856,7 +1856,7 @@ void PlaylistTable::findInTable(const QString &searchText)
 
 void PlaylistTable::setRating(const QModelIndex &index, int newRating)
 {
-    if (!index.isValid() || newRating < 0)
+    if (!index.isValid() || newRating < -1)
         return;
     // Map from proxy to source if sorting/filtering is active
     QModelIndex sourceIndex = m_sortModel->mapToSource(index);
@@ -1913,6 +1913,8 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     // Aggiungi un'icona alla voce del sottomenu (opzionale, ma consigliato)
     ratingMenu->setIcon(QIcon(":/img/img/icons8-star-48.png"));
     // Creazione delle azioni di Rating (da 0 a 5)
+    QAction *ratingRemoveAction = new QAction("Remove rating", this);
+    ratingMenu->addAction(ratingRemoveAction);
     for (int rating = 0; rating <= 5; ++rating)
     {
         // 2a. Crea il testo dell'azione
@@ -1969,6 +1971,10 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
             QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
             m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
         }
+    }
+    else if (selectedAction == ratingRemoveAction)
+    {
+        setRating(index, -1);
     }
     else if (selectedAction->objectName().startsWith("RatingAction_"))
     {
