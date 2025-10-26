@@ -336,18 +336,15 @@ void PlaylistRatingDelegate::paint(QPainter *painter, const QStyleOptionViewItem
     // Se la conversione fallisce, usiamo il comportamento predefinito.
     if (!ok | rating < 0)
     {
-        QStyleOptionViewItem opt_base = option;
-        opt_base.text.clear();
-        opt_base.rect.setWidth(0);
-        QStyledItemDelegate::paint(painter, opt_base, index);
+        QStyleOptionViewItem opt_bg = option;
+        QStyle *style = opt_bg.widget ? opt_bg.widget->style() : QApplication::style();
+        style->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt_bg, painter, opt_bg.widget);
+        // QStyledItemDelegate::paint(painter, opt_base, index);
         return;
     }
-    QStyleOptionViewItem opt_custom = option;
-    // Rimuovi i dati di testo e icona, forzando il delegato base a disegnare solo
-    // lo sfondo, la selezione e la cornice di focus.
-    opt_custom.text.clear();
-    opt_custom.rect.setWidth(0);
-    QStyledItemDelegate::paint(painter, opt_custom, index);
+    QStyleOptionViewItem opt_bg = option;
+    QStyle *style = opt_bg.widget ? opt_bg.widget->style() : QApplication::style();
+    style->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt_bg, painter, opt_bg.widget);
     // 2. Preparazione per il disegno
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
