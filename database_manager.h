@@ -142,6 +142,7 @@ public:
      * @return List of AudioTagInfo objects in the favorites.
      */
     QList<AudioTagInfo> favoriteTracks();
+    QList<AudioTagInfo> historyTracks();
 
     // =======================
     // History management
@@ -196,6 +197,8 @@ public:
      */
     QList<AudioTagInfo> topPlayed(int limit = 10);
 
+    bool isTrackInFavorites(int trackId) const;
+    int getTrackId(const QString &fullFilePath) const;
 private:
     /**
      * @brief Private constructor for singleton.

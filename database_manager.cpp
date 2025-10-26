@@ -138,6 +138,24 @@ void DatabaseManager::closeDatabase()
 // return true;
 //}
 
+bool DatabaseManager::isTrackInFavorites(int trackId) const
+{
+    if (!m_db.isOpen())
+        return false;
+
+    QSqlQuery query(m_db);
+    query.prepare("SELECT 1 FROM Favorites WHERE TrackId = ? LIMIT 1");
+    query.addBindValue(trackId);
+
+    if (!query.exec())
+    {
+        qWarning() << "DatabaseManager::isTrackInFavorites failed:" << query.lastError().text();
+        return false;
+    }
+
+    return query.next(); // se c'è almeno una riga, il track è nei favorites
+}
+
 bool DatabaseManager::addToFavorites(const QString &fullFilePath)
 {
     QSqlQuery query(m_db);
@@ -191,15 +209,124 @@ QList<AudioTagInfo> DatabaseManager::favoriteTracks()
     return list;
 }
 
+QList<AudioTagInfo> DatabaseManager::historyTracks()
+{
+    QList<AudioTagInfo> list;
+    QSqlQuery query(m_db);
+    query.prepare("SELECT T.* FROM Tracks T JOIN History F ON T.Id = F.TrackId ORDER BY F.PlayDate DESC");
+    if (!query.exec()) return list;
+    while (query.next())
+    {
+        AudioTagInfo info;
+        info.sFileName = query.value("FileName").toString();
+        info.sBaseFileName = query.value("BaseFileName").toString();
+        info.sExtension = query.value("Extension").toString();
+        info.sPath = query.value("Path").toString();
+        info.iDuration = query.value("Duration").toInt();
+        info.sArtist = query.value("Artist").toString();
+        info.sTitle = query.value("Title").toString();
+        info.sAlbum = query.value("Album").toString();
+        info.sGenre = query.value("Genre").toString();
+        info.iTrackNum = query.value("TrackNum").toInt();
+        info.iYear = query.value("Year").toInt();
+        info.sComment = query.value("Comment").toString();
+        info.iBitrate = query.value("Bitrate").toInt();
+        info.iSamplerate = query.value("Samplerate").toInt();
+        info.iChannels = query.value("Channels").toInt();
+        info.iBits = query.value("Bits").toInt();
+        info.sFormat = query.value("Format").toString();
+        info.sCoverSize = query.value("CoverSize").toString();
+        info.iFileSize = query.value("FileSize").toInt();
+        info.iRating = query.value("Rating").toInt();
+        info.iPlayCount = query.value("PlayCount").toInt();
+        list.append(info);
+    }
+    return list;
+}
+
+//bool DatabaseManager::addToHistory(const QString &fullFilePath, int playPosition)
+//{
+// QSqlQuery query(m_db);
+// query.prepare("INSERT INTO History (TrackId, PlayDate, PlayPosition) "
+// "SELECT Id, ?, ? FROM Tracks WHERE FullFilePath = ?");
+// query.addBindValue(QDateTime::currentSecsSinceEpoch());
+// query.addBindValue(playPosition);
+// query.addBindValue(fullFilePath);
+// return query.exec();
+//}
+
+//bool DatabaseManager::addToHistory(const QString &fullFilePath, int playPosition)
+//{
+// if (!m_db.isOpen())
+// {
+// qWarning() << "DatabaseManager::addToHistory - database not open";
+// return false;
+// }
+
+//    // Prepare query
+// QSqlQuery query(m_db);
+// query.prepare(
+// "INSERT INTO History (TrackId, PlayDate, PlayPosition) "
+// "SELECT Id, ?, ? FROM Tracks WHERE FullFilePath = ?"
+// );
+
+// const qint64 playDate = QDateTime::currentSecsSinceEpoch();
+// query.addBindValue(playDate);      // PlayDate
+// query.addBindValue(playPosition);  // PlayPosition (in seconds)
+// query.addBindValue(fullFilePath);  // Track identification
+
+// if (!query.exec())
+// {
+// qWarning() << "DatabaseManager::addToHistory failed:"
+// << query.lastError().text()
+// << "SQL:" << query.lastQuery()
+// << "File:" << fullFilePath;
+// return false;
+// }
+
+// if (query.numRowsAffected() == 0)
+// {
+// qWarning() << "DatabaseManager::addToHistory - no matching track for"
+// << fullFilePath;
+// return false;
+// }
+
+// return true;
+//}
+
 bool DatabaseManager::addToHistory(const QString &fullFilePath, int playPosition)
 {
+    if (!m_db.isOpen())
+    {
+        qWarning() << "DatabaseManager::addToHistory - database not open";
+        return false;
+    }
+    // Prepare query: PlayDate as TEXT (DATETIME readable)
     QSqlQuery query(m_db);
-    query.prepare("INSERT INTO History (TrackId, PlayDate, PlayPosition) "
-                  "SELECT Id, ?, ? FROM Tracks WHERE FullFilePath = ?");
-    query.addBindValue(QDateTime::currentSecsSinceEpoch());
-    query.addBindValue(playPosition);
-    query.addBindValue(fullFilePath);
-    return query.exec();
+    query.prepare(
+        "INSERT INTO History (TrackId, PlayDate, PlayPosition) "
+        "SELECT Id, ?, ? FROM Tracks WHERE FullFilePath = ?"
+    );
+    // Current date-time as ISO 8601 string: "YYYY-MM-DD HH:MM:SS"
+    QString playDateStr = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    query.addBindValue(playDateStr);  // PlayDate as readable text
+    query.addBindValue(playPosition);  // PlayPosition (in seconds)
+    query.addBindValue(fullFilePath);  // Track identification
+    if (!query.exec())
+    {
+        qWarning() << "DatabaseManager::addToHistory failed:"
+            << query.lastError().text()
+            << "SQL:" << query.lastQuery()
+            << "File:" << fullFilePath;
+        return false;
+    }
+    if (query.numRowsAffected() == 0)
+    {
+        qWarning() << "DatabaseManager::addToHistory - no matching track for"
+            << fullFilePath;
+        return false;
+    }
+    return true;
 }
 
 QList<AudioTagInfo> DatabaseManager::recentHistory(int limit)
@@ -539,9 +666,10 @@ bool DatabaseManager::createTables()
             "CREATE TABLE IF NOT EXISTS History ("
             "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "TrackId INTEGER NOT NULL,"
-            "PlayDate INTEGER,"
+            "PlayDate TEXT,"           // <-- salvata come DATETIME leggibile
             "PlayPosition INTEGER,"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id)"
+            ");"
         );
     if (!query.exec(historySql))
     {
@@ -577,6 +705,31 @@ bool DatabaseManager::createTables()
     return true;
 }
 
+int DatabaseManager::getTrackId(const QString &fullFilePath) const
+{
+    if (!m_db.isOpen())
+    {
+        qWarning() << "DatabaseManager::getTrackId - database not open";
+        return -1;
+    }
+
+    QSqlQuery query(m_db);
+    query.prepare("SELECT Id FROM Tracks WHERE FullFilePath = ?");
+    query.addBindValue(fullFilePath);
+
+    if (!query.exec())
+    {
+        qWarning() << "DatabaseManager::getTrackId failed:" << query.lastError().text()
+                   << "File:" << fullFilePath;
+        return -1;
+    }
+
+    if (query.next())
+        return query.value(0).toInt();  // Id trovato
+
+    return -1; // traccia non trovata
+}
+
 bool DatabaseManager::trackExists(const QString &fullFilePath)
 {
     if (!m_db.isOpen())
@@ -598,7 +751,6 @@ bool DatabaseManager::loadTrack(const QString &fullFilePath, AudioTagInfo &info)
     query.addBindValue(fullFilePath);
     if (!query.exec() || !query.next())
         return false;
-
     info.sFileName = fullFilePath;
     info.sBaseFileName = query.value("BaseFileName").toString();
     info.sExtension = query.value("Extension").toString();

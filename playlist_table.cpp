@@ -1145,7 +1145,10 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
         {
             QString path = fileItem->data(Qt::UserRole + 1).toString();
             if (!path.isEmpty())
+            {
                 DatabaseManager::instance().incrementPlayCount(path);
+                DatabaseManager::instance().addToHistory(path, 0);
+            }
         }
     }
     else
@@ -1327,7 +1330,9 @@ void PlaylistTable::incrementPlayCount(int sourceRow)
     {
         QString path = fileItem->data(Qt::UserRole + 1).toString();
         if (!path.isEmpty())
+        {
             DatabaseManager::instance().incrementPlayCount(path);
+        }
     }
 }
 
@@ -1399,6 +1404,7 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
         m_CurrentItem = currentItem;
     }
     incrementPlayCount(sourceRow);    // Map SOURCE row to PROXY row for view operations
+    DatabaseManager::instance().addToHistory(currentCanon, 0);
     QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
     QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);
     if (proxyIndex.isValid())
@@ -1818,48 +1824,91 @@ void PlaylistTable::findInTable(const QString &searchText)
 // }
 //}
 
+//void PlaylistTable::setRating(const QModelIndex &index, int newRating)
+//{
+//    // Dobbiamo aggiornare il modello.
+//    // Il rating si trova nella COLONNA RATING (supponiamo sia la colonna 2)
+//    // Crea l'indice per la colonna del rating sulla riga selezionata
+// QModelIndex ratingIndex = index.sibling(index.row(), ColumnIndex::Rating);
+//    // Nel tuo delegato stai leggendo il DisplayRole, quindi impostiamo quello.
+//    // L'uso di QString::number(newRating) è cruciale per la logica attuale.
+// QString ratingValue = QString::number(newRating);
+//    // Se la nuova valutazione è 0, puoi scegliere di usare -1 (Rating non assegnato)
+//    // per coerenza con la tua precedente logica, se necessario.
+// if (newRating == 0)
+// {
+//        // Se vuoi usare -1 per "Clear Rating", altrimenti usa "0".
+//        // ratingValue = "-1";
+// }
+//    // Supponendo che tu stia usando QStandardItemModel o simile:
+// m_view->model()->setData(ratingIndex, ratingValue, Qt::DisplayRole);
+//    // Nota: Se la tua classe ha un modello personalizzato, assicurati che
+//    // setData() sia implementato correttamente.
+// QStandardItem *fileItem = m_model->item(index.row(), ColumnIndex::Filename);
+// if (fileItem)
+// {
+// QString path = fileItem->data(Qt::UserRole + 1).toString();
+// if (!path.isEmpty())
+// DatabaseManager::instance().setRating(path, newRating);
+// LOG_MSG_SHORT("path" << path << "row" << index.row());
+// }
+//}
+
 void PlaylistTable::setRating(const QModelIndex &index, int newRating)
 {
-    // Dobbiamo aggiornare il modello.
-    // Il rating si trova nella COLONNA RATING (supponiamo sia la colonna 2)
-
-    // Crea l'indice per la colonna del rating sulla riga selezionata
-    QModelIndex ratingIndex = index.sibling(index.row(), ColumnIndex::Rating);
-
-    // Nel tuo delegato stai leggendo il DisplayRole, quindi impostiamo quello.
-    // L'uso di QString::number(newRating) è cruciale per la logica attuale.
+    if (!index.isValid() || newRating < 0)
+        return;
+    // Map from proxy to source if sorting/filtering is active
+    QModelIndex sourceIndex = m_sortModel->mapToSource(index);
+    int sourceRow = sourceIndex.row();
+    if (sourceRow < 0 || sourceRow >= m_model->rowCount())
+        return;
+    // Update the model's rating column
+    QModelIndex ratingIndex = m_model->index(sourceRow, ColumnIndex::Rating);
     QString ratingValue = QString::number(newRating);
-
-    // Se la nuova valutazione è 0, puoi scegliere di usare -1 (Rating non assegnato)
-    // per coerenza con la tua precedente logica, se necessario.
-    if (newRating == 0)
-    {
-        // Se vuoi usare -1 per "Clear Rating", altrimenti usa "0".
-        // ratingValue = "-1";
-    }
-
-    // Supponendo che tu stia usando QStandardItemModel o simile:
-    m_view->model()->setData(ratingIndex, ratingValue, Qt::DisplayRole);
-
-    // Nota: Se la tua classe ha un modello personalizzato, assicurati che
-    // setData() sia implementato correttamente.
-    QStandardItem *fileItem = m_model->item(index.row (), ColumnIndex::Filename);
+    m_model->setData(ratingIndex, ratingValue, Qt::DisplayRole);
+    // Emit dataChanged manually if needed
+    emit m_model->dataChanged(ratingIndex, ratingIndex, { Qt::DisplayRole });
+    // Update database
+    QStandardItem *fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
     if (fileItem)
     {
         QString path = fileItem->data(Qt::UserRole + 1).toString();
         if (!path.isEmpty())
-            DatabaseManager::instance().setRating (path, newRating);
+        {
+            if (!DatabaseManager::instance().setRating(path, newRating))
+                qWarning() << "Failed to update rating for" << path;
+        }
     }
-
+    LOG_MSG_SHORT("Updated rating:" << newRating << "row:" << sourceRow);
 }
 
 void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
 {
     QModelIndex index = m_view->indexAt(pos);
     if (!index.isValid()) return;
+    QModelIndex sourceIndex = m_sortModel->mapToSource(index);
+    int sourceRow = sourceIndex.row();
+    QStandardItem* item = m_model->item(sourceRow, 0);
+    QString fullPath = item->data(Qt::UserRole + 1).toString();
+    int trackId = DatabaseManager::instance().getTrackId(fullPath);
+    bool inFavorites = DatabaseManager::instance().isTrackInFavorites(trackId);
+    LOG_VAR(inFavorites);
+    LOG_VAR(trackId);
     QMenu contextMenu(this);
     QAction *scrollToCurrentAction = contextMenu.addAction(tr("Scroll to current"));
     scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));
+    QAction *favoriteAction;
+    if (inFavorites)
+    {
+        favoriteAction = contextMenu.addAction(tr("Remove from favorites"));
+        favoriteAction->setIcon(QIcon(":/img/img/icons8-love-not-48.png"));
+    }
+    else
+    {
+        favoriteAction = contextMenu.addAction(tr("Add to favorites"));
+        favoriteAction->setIcon(QIcon(":/img/img/icons8-love-48.png"));
+    }
     QMenu *ratingMenu = contextMenu.addMenu(tr("Set Rating"));
     // Aggiungi un'icona alla voce del sottomenu (opzionale, ma consigliato)
     ratingMenu->setIcon(QIcon(":/img/img/icons8-star-48.png"));
@@ -1911,6 +1960,7 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     // clearExceptSelectedAction->setIcon(QIcon(":/img/img/icons8-list_keep1-48.png"));
     // removeSelectedAction->setIcon(QIcon(":/img/img/icons8-list_delete1-48.png"));
     QAction *selectedAction = contextMenu.exec(m_view->viewport()->mapToGlobal(pos));
+    if (!selectedAction) return;
     if (selectedAction == scrollToCurrentAction)
     {
         if (m_CurrentItem)
@@ -1921,10 +1971,25 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
         }
     }
     else if (selectedAction->objectName().startsWith("RatingAction_"))
+    {
+        int newRating = selectedAction->data().toInt();
+        setRating(index, newRating);
+    }
+    else if (selectedAction == favoriteAction)
+    {
+        QModelIndex sourceIndex = m_sortModel->mapToSource(index);
+        int sourceRow = sourceIndex.row();
+        QStandardItem* item = m_model->item(sourceRow, 0);
+        QString fullPath = item->data(Qt::UserRole + 1).toString();
+        if (inFavorites)
         {
-            int newRating = selectedAction->data().toInt();
-            setRating(index, newRating);
+            DatabaseManager::instance().removeFromFavorites(fullPath);
         }
+        else
+        {
+            DatabaseManager::instance().addToFavorites(fullPath);
+        }
+    }
     // if (selectedAction == saveAction) handleSavePlaylist();
     // else if (selectedAction == forgetPlayedAction) forgetPlayed();
     // else if (selectedAction == playlistTableAction) showPlaylistTable();
@@ -1985,3 +2050,110 @@ void PlaylistTable::keyPressEvent(QKeyEvent *event)
 }
 
 */
+
+void PlaylistTable::on_pushButtonFav_clicked()
+{
+    m_model->clear();
+    m_model->setColumnCount(ColumnIndex::ColumnCount);
+    for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
+        m_model->setHeaderData(i, Qt::Horizontal, ColumnIndex::headerName(i));
+    // m_model->setHorizontalHeaderLabels(QStringList()
+    // << "Filename" << "Ext" << "Path" << "Duration" << "Artist"
+    // << "Title" << "Album" << "Track" << "Year" << "Genre"
+    // << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
+    // << "Format" << "Cover size" << "File size"); m_playlist->clear();
+    /*
+      // Prima imposta il resize mode
+    m_view->verticalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+
+    // Poi imposta i limiti
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+
+    // Opzionale: imposta anche minimum
+    m_view->verticalHeader()->setMinimumSectionSize(16);
+    */
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+    restoreColumnWidths();
+    restoreColumnVisibility();
+    m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
+    m_HorizontalHeader->setSortIndicatorShown(false);
+    //on_pushButton_clicked();
+    //on_pushButton_2_clicked ();
+    //setSectionsResizeMode();
+    int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
+    Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
+    // m_sortModel->sort(iSortCol, order);
+    if (m_model->rowCount() > 0) onHeaderSortChanged(iSortCol, order);
+    //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
+    // setSectionsResizeMode();
+    QList<AudioTagInfo> favList = DatabaseManager::instance().favoriteTracks();
+    for (AudioTagInfo tagInfo : favList)
+    {
+        QList<QStandardItem *> rowItems = tagInfo.toStandardItems();
+        m_model->appendRow(rowItems);
+    }
+    if (!favList.isEmpty())
+    {
+        QModelIndex topIndex = m_model->index(0, 0);
+        m_view->scrollTo(topIndex, QAbstractItemView::PositionAtTop);
+        m_view->selectRow(0);
+    }
+}
+
+void PlaylistTable::on_pushButtonHistory_clicked()
+{
+    m_model->clear();
+    m_model->setColumnCount(ColumnIndex::ColumnCount);
+    for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
+        m_model->setHeaderData(i, Qt::Horizontal, ColumnIndex::headerName(i));
+    // m_model->setHorizontalHeaderLabels(QStringList()
+    // << "Filename" << "Ext" << "Path" << "Duration" << "Artist"
+    // << "Title" << "Album" << "Track" << "Year" << "Genre"
+    // << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
+    // << "Format" << "Cover size" << "File size"); m_playlist->clear();
+    /*
+      // Prima imposta il resize mode
+    m_view->verticalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+
+    // Poi imposta i limiti
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+
+    // Opzionale: imposta anche minimum
+    m_view->verticalHeader()->setMinimumSectionSize(16);
+    */
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+    restoreColumnWidths();
+    restoreColumnVisibility();
+    m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
+    m_HorizontalHeader->setSortIndicatorShown(false);
+    //on_pushButton_clicked();
+    //on_pushButton_2_clicked ();
+    //setSectionsResizeMode();
+    int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
+    Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
+    // m_sortModel->sort(iSortCol, order);
+    //if (m_model->rowCount() > 0) onHeaderSortChanged(iSortCol, order);
+    //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
+    // setSectionsResizeMode();
+    QList<AudioTagInfo> historyList = DatabaseManager::instance().historyTracks();
+    for (AudioTagInfo tagInfo : historyList)
+    {
+        QList<QStandardItem *> rowItems = tagInfo.toStandardItems();
+        m_model->appendRow(rowItems);
+    }
+    if (!historyList.isEmpty())
+    {
+        QModelIndex topIndex = m_model->index(0, 0);
+        m_view->scrollTo(topIndex, QAbstractItemView::PositionAtTop);
+        m_view->selectRow(0);
+    }
+    // if (m_model->rowCount() == 0 || m_model->columnCount() == 0)
+    // return;
+    // QModelIndex topLeft = m_model->index(0, 0);
+    // QModelIndex bottomRight = m_model->index(m_model->rowCount() - 1, m_model->columnCount() - 1);
+    // emit m_model->dataChanged(topLeft, bottomRight);
+}

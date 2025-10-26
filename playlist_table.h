@@ -170,6 +170,10 @@ private slots:
     void showPlaylistContextMenu(const QPoint &pos);
     void clearSearchHighlight();
     void delayedFindInTable();
+    void on_pushButtonFav_clicked();
+
+    void on_pushButtonHistory_clicked();
+
 private:
  ElidedHeaderView *m_HorizontalHeader;
     SettingsManager *settingsMgr;

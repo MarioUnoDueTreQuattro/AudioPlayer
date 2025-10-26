@@ -32,5 +32,7 @@
         <file>img/icons8-next-48.png</file>
         <file>img/icons8-previous-48.png</file>
         <file>img/icons8-star-48.png</file>
+        <file>img/icons8-love-48.png</file>
+        <file>img/icons8-love-not-48.png</file>
     </qresource>
 </RCC>
