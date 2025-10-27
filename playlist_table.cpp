@@ -1132,7 +1132,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     // Controlla se il brano selezionato è già in riproduzione
     if (m_playlist->currentIndex() == proxyRow)
     {
-        qDebug() << "new row";
+        //qDebug() << "new row";
         // Aggiorna playlist e playcount solo se è un nuovo brano
         m_playlist->setCurrentIndex(proxyRow);
         emit trackActivated(proxyRow);
@@ -1160,7 +1160,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
     }
     else
     {
-        qDebug() << "same row";
+        //qDebug() << "same row";
         m_playlist->setCurrentIndex(proxyRow);
         emit trackActivated(proxyRow);
     }
@@ -1211,7 +1211,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex &index)
 void PlaylistTable::onClicked(const QModelIndex &index)
 {
     int row = mapProxyRowToSource(m_sortModel, index.row());
-    LOG_MSG_SHORT("index.row()= proxy:" << index.row() << " - Model:" << row);
+    //LOG_MSG_SHORT("index.row()= proxy:" << index.row() << " - Model:" << row);
     //m_view->setModel (m_model);
     //m_view->verticalHeader ()->setModel (m_sortModel);
 }

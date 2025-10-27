@@ -1015,22 +1015,23 @@ void Widget::handleItemDoubleClicked()
 
 void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 {
-    qDebug() << __FUNCTION__ << "Line:" << __LINE__;
+    bool b_Debug = false;
+    if (b_Debug) qDebug() << __FUNCTION__ << "Line:" << __LINE__ << state;
     switch (state)
     {
         case QMediaPlayer::PlayingState:
-            qDebug() << "PlayingState";
+            if (b_Debug) qDebug() << "PlayingState";
             ui->playButton->setEnabled(true);
             ui->stopButton->setEnabled(true);
             ui->pauseButton->setEnabled(true);
             break;
         case QMediaPlayer::PausedState:
-            qDebug() << "PausedState";
+            if (b_Debug) qDebug() << "PausedState";
             ui->pauseButton->setEnabled(false);
             ui->stopButton->setEnabled(true);
             break;
         case QMediaPlayer::StoppedState:
-            qDebug() << "StoppedState";
+            if (b_Debug) qDebug() << "StoppedState";
             ui->pauseButton->setEnabled(false);
             ui->stopButton->setEnabled(false);
             break;
