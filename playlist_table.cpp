@@ -922,6 +922,9 @@ void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& inf
     m_model->setData(m_model->index(sourceRow, 15), info.sFormat);
     m_model->setData(m_model->index(sourceRow, 16), info.sCoverSize);
     m_model->setData(m_model->index(sourceRow, 17), info.iFileSize);
+    m_model->setData(m_model->index(sourceRow, ColumnIndex::LastModified), info.sLastModified);
+    m_model->setData(m_model->index(sourceRow, ColumnIndex::Rating), info.iRating);
+    m_model->setData(m_model->index(sourceRow, ColumnIndex::PlayCount), info.iPlayCount);
     DatabaseManager &db = DatabaseManager::instance();
     AudioTagInfo updateInfo = info;
     // bool bUpdate = db.updateTrack(filePath, updateInfo);
@@ -1897,8 +1900,6 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     QString fullPath = item->data(Qt::UserRole + 1).toString();
     int trackId = DatabaseManager::instance().getTrackId(fullPath);
     bool inFavorites = DatabaseManager::instance().isTrackInFavorites(trackId);
-    LOG_VAR(inFavorites);
-    LOG_VAR(trackId);
     QMenu contextMenu(this);
     QAction *scrollToCurrentAction = contextMenu.addAction(tr("Scroll to current"));
     scrollToCurrentAction->setIcon(QIcon(":/img/img/icons8-search-in-list-48.png"));

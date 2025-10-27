@@ -41,17 +41,18 @@ void AudioTag::setInfo(QString sInfo)
 void AudioTag::setFile(const QString &localFile, bool bExtractCover)
 {
     m_TagInfo.reset();
-    QString nativePath = QDir::toNativeSeparators(localFile);
+    //QString nativePath = QDir::toNativeSeparators(localFile);
     bool bFomatFound = false;
     m_Info = "Info is empty.";
     m_pix = QPixmap(); //empty
     if (!localFile.isEmpty())
     {
-        // QFileInfo info(nativePath);
-        m_TagInfo.sFileName = nativePath; //QString::fromStdWString (wpath);
-        // m_TagInfo.sBaseFileName = info.completeBaseName();
-        // m_TagInfo.sExtension = info.suffix();
-        // m_TagInfo.sPath = info.canonicalPath();
+        QFileInfo info(localFile);
+        m_TagInfo.sFileName = localFile; //QString::fromStdWString (wpath);
+        m_TagInfo.sBaseFileName = info.completeBaseName();
+        m_TagInfo.sExtension = info.suffix();
+        m_TagInfo.sPath = info.canonicalPath();
+        m_TagInfo.sLastModified=info.lastModified ().toString ("yyyy-MM-dd HH:mm:ss");
         // TagLib::FileRef f(TagLib::FileName(localFile.toUtf8().constData()));
         std::wstring wpath = localFile.toStdWString();
         //qDebug() << "wpath->" << wpath;
@@ -745,6 +746,7 @@ void AudioTagInfo::reset()
     sFormat = "";
     sCoverSize = "";
     sGenre = "";
+    sLastModified = "";
     // Resetta tutte le variabili intere a -1
     iDuration = -1;
     iYear = -1;
@@ -756,7 +758,7 @@ void AudioTagInfo::reset()
     iBits = -1;
     iRating = -1; // -1 = has not been yet rated
     iPlayCount = 0; // 0 = never played
-    iLastModified = -1;
+    //iLastModified = -1;
 }
 
 QList<QStandardItem *> AudioTagInfo::toStandardItems() const
@@ -791,8 +793,8 @@ QList<QStandardItem *> AudioTagInfo::toStandardItems() const
     items.append(new QStandardItem(sCoverSize));
     items.append(new QStandardItem(QString::number(iFileSize)));
     // Additional info
-     items.append(new QStandardItem(QString::number(iLastModified)));
-     items.append(new QStandardItem(QString::number(iRating)));
-     items.append(new QStandardItem(QString::number(iPlayCount)));
+    items.append(new QStandardItem(sLastModified));
+    items.append(new QStandardItem(QString::number(iRating)));
+    items.append(new QStandardItem(QString::number(iPlayCount)));
     return items;
 }

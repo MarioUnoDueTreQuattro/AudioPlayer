@@ -47,7 +47,8 @@ public:
     int iBits;
     int iRating;
     int iPlayCount;
-    int iLastModified;
+    //int iLastModified;
+    QString sLastModified;
     QList<QStandardItem *> toStandardItems() const;
 };
 
@@ -62,7 +63,7 @@ public:
     AudioTag(QString sFileName, QObject *parent = nullptr);
     QPixmap extractCover(const QString &filePath);
     void setFile(const QString &localFile, bool bExtractCover = true);
-//    QString formatFileSize(qint64 bytes);
+    // QString formatFileSize(qint64 bytes);
     void setInfo(QString);
     AudioTagInfo tagInfo() const;
     void resetTag();
