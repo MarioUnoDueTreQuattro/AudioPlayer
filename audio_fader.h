@@ -36,6 +36,10 @@ private:
     void startFade(int targetVolume, int durationMs);
     void finishFade();
     bool m_bEnableLog;
+signals:
+    void fadeProgressChanged(int volume);
+    void fadeFinished();
+
 };
 
 #endif // AUDIOFADER_H

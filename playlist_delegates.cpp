@@ -248,9 +248,9 @@ void PlaylistDelegate::paint(QPainter *painter,
 */
 
 // Define the static resource path here. Adjust this if your QRC path is different.
-const QString PlaylistRatingDelegate::STAR_RESOURCE_PATH = ":/img/img/icons8-star-48.png";
+//const QString PlaylistRatingDelegate::STAR_RESOURCE_PATH = ":/img/img/icons8-star-48.png";
 const int STAR_SPACING = 0;
-static const int DEFAULT_STAR_SIZE = 24;
+static const int DEFAULT_STAR_SIZE = 20;
 const int MAX_RATING = 5;
 
 #include <QDebug>
@@ -264,7 +264,7 @@ PlaylistRatingDelegate::PlaylistRatingDelegate(QObject *parent)
       m_iconSize(DEFAULT_STAR_SIZE, DEFAULT_STAR_SIZE)
 {
     // --- ICON LOADING (Internal) ---
-    m_fullStarIcon.addFile(STAR_RESOURCE_PATH);
+    m_fullStarIcon.addFile(":/img/img/icons8-star-48.png");
     QSize sizeHint = m_fullStarIcon.actualSize(m_iconSize, QIcon::Normal, QIcon::On);
     if (sizeHint.isValid() && sizeHint.width() > 0)
     {

@@ -60,7 +60,7 @@ Widget::Widget(QWidget *parent)
       m_bTablePlaylist(false)
 {
     ui->setupUi(this);
-    QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first ();
+    QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first();
     sDatabasePath.append("/playlist.db");
     DatabaseManager &db = DatabaseManager::instance();
     if (!db.openDatabase(sDatabasePath))
@@ -248,6 +248,9 @@ void Widget::setSignalsConnections()
         connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
         connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
     }
+    connect(musicFader, SIGNAL(fadeProgressChanged(int)), ui->volumeSlider, SLOT(setFadeProgress(int)));
+    connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(hideFadeProgress()));
+
     connect(ui->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(filterList(QString))); connect(ui->lineEditFilter, &EscAwareLineEdit::escapePressed, this, &Widget::on_pushButtonResetFilter_clicked);
     connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
     connect(m_infoWidget, SIGNAL(focusReceived()), this, SLOT(infoWindowFocusReceived()));
@@ -1044,41 +1047,42 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 
 void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
+    bool b_Debug = false;
     // qDebug() << __FUNCTION__ << "Line:" << __LINE__ << status;
-    LOG_MSG_SHORT(status);
+    if (b_Debug) LOG_MSG_SHORT(status);
     switch (status)
     {
         case QMediaPlayer::NoMedia:
-            LOG_MSG_SHORT("Status: No media loaded.");
+            if (b_Debug) LOG_MSG_SHORT("Status: No media loaded.");
             // For example, disable play/pause buttons
             // m_playButton->setEnabled(false);
             break;
         case QMediaPlayer::LoadingMedia:
-            LOG_MSG_SHORT("Status: Loading media...");
+            if (b_Debug) LOG_MSG_SHORT("Status: Loading media...");
             break;
         case QMediaPlayer::LoadedMedia:
-            LOG_MSG_SHORT("Status: Media loaded and ready to play.");
+            if (b_Debug) LOG_MSG_SHORT("Status: Media loaded and ready to play.");
             // m_player->setVolume(0);
             // musicFader->fadeIn(ui->volumeSlider->value(), 5000);
             break;
         case QMediaPlayer::BufferingMedia:
-            LOG_MSG_SHORT("Status: Buffering in progress (e.g. streaming).");
+            if (b_Debug) LOG_MSG_SHORT("Status: Buffering in progress (e.g. streaming).");
             break;
         case QMediaPlayer::StalledMedia:
-            LOG_MSG_SHORT("Status: Buffer exhausted. Playback stalled.");
+            if (b_Debug) LOG_MSG_SHORT("Status: Buffer exhausted. Playback stalled.");
             break;
         case QMediaPlayer::EndOfMedia: // This is the crucial state!
-            LOG_MSG_SHORT("Status: Current media has ENDED.");
+            if (b_Debug) LOG_MSG_SHORT("Status: Current media has ENDED.");
             // Playback will continue automatically if linked to QMediaPlaylist
             // but this is the moment to clean up or notify the user.
             break;
         case QMediaPlayer::InvalidMedia:
-            LOG_MSG_SHORT("Status: Error. Media is invalid or unplayable.");
+            if (b_Debug) LOG_MSG_SHORT("Status: Error. Media is invalid or unplayable.");
             QMessageBox::critical(this, tr("Media Error"), tr("Unable to play the file."));
             break;
         case QMediaPlayer::UnknownMediaStatus:
         default:
-            LOG_MSG_SHORT("Status: Unknown.");
+            if (b_Debug) LOG_MSG_SHORT("Status: Unknown.");
             // musicFader->fadeIn(ui->volumeSlider->value(), 5000);
             break;
     }

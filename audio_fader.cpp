@@ -54,6 +54,7 @@ void AudioFader::fadeIn(int targetVol, int durationMs)
     // mediaPlayer->play();
     // }
     startFade(targetVol, durationMs);
+    emit fadeProgressChanged(0);
 }
 
 // Public method to start the fade-out effect
@@ -211,11 +212,13 @@ void AudioFader::updateFade()
         // Reached the target, set final precise volume
         mediaPlayer->setVolume((int)targetVolume); // Set the final integer target volume
         finishFade();
+        emit fadeFinished();
     }
     else
     {
         // Continue fading
         if (mediaPlayer != nullptr) mediaPlayer->setVolume(newVolume);
+        emit fadeProgressChanged(newVolume);
     }
     // qDebug() << "Fading... Current Volume:" << mediaPlayer->volume();
 }
@@ -236,6 +239,7 @@ void AudioFader::finishFade()
     // qDebug() << "Target Duration (ms):" << m_iDuration; // Stima della durata target
     // qDebug() << "Actual Duration (ms):" << actualDuration;
     if (m_bEnableLog) qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
+    emit fadeFinished();
 }
 
 void AudioFader::stopFadeImmediately()
@@ -247,6 +251,7 @@ void AudioFader::stopFadeImmediately()
     {
         fadeTimer->stop();
         if (m_bEnableLog) qDebug() << "Fade timer stopped by external request (shutdown).";
+        emit fadeFinished();
     }
     QObject::disconnect(fadeTimer, SIGNAL(timeout()), this, SLOT(updateFade()));
     // Sicurezza aggiuntiva: Rendiamo il puntatore nullo DOPO la disconnessione

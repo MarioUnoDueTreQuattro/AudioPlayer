@@ -19,6 +19,7 @@ SOURCES += \
     database_manager.cpp \
     elided_header_view.cpp \
     esc_aware_lineedit.cpp \
+    fading_slider.cpp \
     info_widget.cpp \
     main.cpp \
     playlist_delegates.cpp \
@@ -42,6 +43,7 @@ HEADERS += \
     database_manager.h \
     elided_header_view.h \
     esc_aware_lineedit.h \
+    fading_slider.h \
     info_widget.h \
     playlist_delegates.h \
     playlist_sortmodel.h \

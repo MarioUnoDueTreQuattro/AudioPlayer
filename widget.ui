@@ -98,7 +98,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QSlider" name="volumeSlider">
+        <widget class="FadingSlider" name="volumeSlider">
          <property name="minimumSize">
           <size>
            <width>50</width>
@@ -335,6 +335,11 @@
    <class>EscAwareLineEdit</class>
    <extends>QLineEdit</extends>
    <header>esc_aware_lineedit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>FadingSlider</class>
+   <extends>QSlider</extends>
+   <header>fading_slider.h</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -61,7 +61,7 @@ private:
     QSize m_iconSize;
 
     // Define the resource path internally
-    static const QString STAR_RESOURCE_PATH;
+    // static const QString STAR_RESOURCE_PATH;
 
     //static const int MAX_RATING = 5;
     //static const int STAR_SPACING = 4;
