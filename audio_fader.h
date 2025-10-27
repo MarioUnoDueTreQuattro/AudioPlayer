@@ -18,6 +18,8 @@ public:
     void fadeOut(int durationMs);
     void stopFadeImmediately();
     void fadeToTarget(int targetVolume, int durationMs);
+    bool isFading() const;
+
 private slots:
     // Slot connected to the QTimer timeout() signal
     void updateFade();
@@ -36,8 +38,11 @@ private:
     void startFade(int targetVolume, int durationMs);
     void finishFade();
     bool m_bEnableLog;
+    bool m_bIsFading;
+
 signals:
     void fadeProgressChanged(int volume);
+    void fadeStarted();
     void fadeFinished();
 
 };

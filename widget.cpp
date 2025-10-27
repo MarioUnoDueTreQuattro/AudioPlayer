@@ -98,6 +98,10 @@ Widget::Widget(QWidget *parent)
     m_player->setPlaylist(m_playlist);
     // ui->verticalLayout->addWidget (m_playlistView);
     // QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    connect(musicFader, SIGNAL(fadeProgressChanged(int)), ui->volumeSlider, SLOT(setFadeProgress(int)));
+    //connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(hideFadeProgress()));
+    connect(musicFader, SIGNAL(fadeStarted()), ui->volumeSlider, SLOT(startFadeIn()));
+    connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(startFadeOut()));
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     m_playlistView = nullptr;
     if (m_bTablePlaylist)
@@ -240,17 +244,6 @@ void Widget::playlistIsSorting(bool bIsSorting)
 
 void Widget::setSignalsConnections()
 {
-    if (m_bTablePlaylist && m_playlistView != nullptr)
-    {
-        connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
-        connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
-        connect(m_playlistView, &PlaylistTable::isSorting, this, &Widget::playlistIsSorting);
-        connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
-        connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
-    }
-    connect(musicFader, SIGNAL(fadeProgressChanged(int)), ui->volumeSlider, SLOT(setFadeProgress(int)));
-    connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(hideFadeProgress()));
-
     connect(ui->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(filterList(QString))); connect(ui->lineEditFilter, &EscAwareLineEdit::escapePressed, this, &Widget::on_pushButtonResetFilter_clicked);
     connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
     connect(m_infoWidget, SIGNAL(focusReceived()), this, SLOT(infoWindowFocusReceived()));
@@ -282,6 +275,14 @@ void Widget::setSignalsConnections()
         this, SLOT(onDeviceChanged(QString, QString)));
     connect(m_player, &QMediaPlayer::mediaStatusChanged,
         this, &Widget::handleMediaStatusChanged);
+    if (m_bTablePlaylist && m_playlistView != nullptr)
+    {
+        connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
+        connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
+        connect(m_playlistView, &PlaylistTable::isSorting, this, &Widget::playlistIsSorting);
+        connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
+        connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
+    }
 }
 
 Widget::~Widget()
@@ -2118,6 +2119,8 @@ void Widget::showVolumeSliderContextMenu(const QPoint &pos)
         qDebug() << "Current master volume:" << iVol;
         ui->volumeSlider->setValue(iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
+        if (musicFader->isFading()) ui->volumeSlider->startFadeOut();
+        ui->volumeSlider->setAnimationEnabled(false);
     }
     else if (selectedAction == playerVolumeAction)
     {
@@ -2125,6 +2128,7 @@ void Widget::showVolumeSliderContextMenu(const QPoint &pos)
         playerVolumeAction->setChecked(true);
         m_bSystemVolumeSlider = false;
         ui->volumeSlider->setValue(m_lastVolume);
+        ui->volumeSlider->setAnimationEnabled(true);
     }
     updateMuteButtonIcon();
 }

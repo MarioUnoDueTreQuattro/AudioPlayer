@@ -10,10 +10,11 @@ AudioFader::AudioFader(QMediaPlayer *player, QObject *parent)
       targetVolume(0),
       volumeStep(0),
       totalSteps(0),
-      currentStep(0)/*,
+      currentStep(0),
+      m_bIsFading(false)/*,
       durationTimer(new QElapsedTimer())*/
 {
-    m_bEnableLog = false;
+    m_bEnableLog = true;
     // Connect the timer's timeout signal to the updateFade slot
     // This is the classic SIGNAL/SLOT approach
     fadeTimer->setTimerType(Qt::PreciseTimer);
@@ -127,7 +128,18 @@ void AudioFader::startFade(int targetVol, int durationMs)
     // IMPORTANT: Cast to float for precision
     initialVolume = (float)mediaPlayer->volume();
     targetVolume = (float)targetVol;
-    currentStep = 0;
+    if (initialVolume==targetVol) return;
+       if (!m_bIsFading)
+    {
+        emit fadeStarted();
+        qDebug() << __PRETTY_FUNCTION__ << "fadeStarted ()";
+    }
+    else
+    {
+        qDebug() << __PRETTY_FUNCTION__ << "NOT fadeStarted ()";
+    }
+    m_bIsFading = true;
+ currentStep = 0;
     // --- Calculation for smooth fade ---
     const int updateIntervalMs = 20;
     totalSteps = durationMs / updateIntervalMs;
@@ -212,6 +224,7 @@ void AudioFader::updateFade()
         // Reached the target, set final precise volume
         mediaPlayer->setVolume((int)targetVolume); // Set the final integer target volume
         finishFade();
+        m_bIsFading = false;
         emit fadeFinished();
     }
     else
@@ -239,7 +252,13 @@ void AudioFader::finishFade()
     // qDebug() << "Target Duration (ms):" << m_iDuration; // Stima della durata target
     // qDebug() << "Actual Duration (ms):" << actualDuration;
     if (m_bEnableLog) qDebug() << "Fade finished. Final Volume:" << mediaPlayer->volume();
+    m_bIsFading = false;
     emit fadeFinished();
+}
+
+bool AudioFader::isFading() const
+{
+    return m_bIsFading;
 }
 
 void AudioFader::stopFadeImmediately()
@@ -251,6 +270,7 @@ void AudioFader::stopFadeImmediately()
     {
         fadeTimer->stop();
         if (m_bEnableLog) qDebug() << "Fade timer stopped by external request (shutdown).";
+        m_bIsFading = false;
         emit fadeFinished();
     }
     QObject::disconnect(fadeTimer, SIGNAL(timeout()), this, SLOT(updateFade()));
