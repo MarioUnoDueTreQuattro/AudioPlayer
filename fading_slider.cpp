@@ -9,9 +9,9 @@ FadingSlider::FadingSlider(QWidget *parent)
     setMinimum(0);
     setMaximum(100);
     fadeAnim = new QPropertyAnimation(this, "indicatorOpacity");
-    fadeAnim->setDuration(400); // 400ms fade
+    fadeAnim->setDuration(500);
     fadeAnim->setStartValue(0.0);
-    fadeAnim->setEndValue(1.0);
+    fadeAnim->setEndValue(0.50);
 }
 
 void FadingSlider::setFadeProgress(int percent)
@@ -33,7 +33,7 @@ void FadingSlider::setIndicatorOpacity(qreal value)
 
 void FadingSlider::startFadeIn()
 {
-    qDebug() << __PRETTY_FUNCTION__;
+//    qDebug() << __PRETTY_FUNCTION__;
     if (m_bAnimationEnabled)
     {
         fadeAnim->stop();
@@ -44,7 +44,7 @@ void FadingSlider::startFadeIn()
 
 void FadingSlider::startFadeOut()
 {
-    qDebug() << __PRETTY_FUNCTION__;
+//    qDebug() << __PRETTY_FUNCTION__;
     if (m_bAnimationEnabled)
     {
         fadeAnim->stop();
@@ -308,7 +308,8 @@ void FadingSlider::paintEvent(QPaintEvent *event)
     QPoint center = fadeHandleRect.center();
     int radius = 5;
     QRectF circleRect(center.x() - radius, center.y() - radius, radius * 2, radius * 2);
-    QColor fadeColor(0, 120, 255);
+    QColor fadeColor(3, 112, 200);
+    //QColor fadeColor(0, 120, 255);
     fadeColor.setAlphaF(opacity); // animatable
     painter.setBrush(fadeColor);
     painter.setPen(Qt::NoPen);

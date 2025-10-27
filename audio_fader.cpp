@@ -14,7 +14,7 @@ AudioFader::AudioFader(QMediaPlayer *player, QObject *parent)
       m_bIsFading(false)/*,
       durationTimer(new QElapsedTimer())*/
 {
-    m_bEnableLog = true;
+    m_bEnableLog = false;
     // Connect the timer's timeout signal to the updateFade slot
     // This is the classic SIGNAL/SLOT approach
     fadeTimer->setTimerType(Qt::PreciseTimer);
@@ -128,18 +128,18 @@ void AudioFader::startFade(int targetVol, int durationMs)
     // IMPORTANT: Cast to float for precision
     initialVolume = (float)mediaPlayer->volume();
     targetVolume = (float)targetVol;
-    if (initialVolume==targetVol) return;
-       if (!m_bIsFading)
+    if (initialVolume == targetVol) return;
+    if (!m_bIsFading)
     {
         emit fadeStarted();
-        qDebug() << __PRETTY_FUNCTION__ << "fadeStarted ()";
+        if (m_bEnableLog) qDebug() << __PRETTY_FUNCTION__ << "fadeStarted ()";
     }
     else
     {
-        qDebug() << __PRETTY_FUNCTION__ << "NOT fadeStarted ()";
+        if (m_bEnableLog) qDebug() << __PRETTY_FUNCTION__ << "NOT fadeStarted ()";
     }
     m_bIsFading = true;
- currentStep = 0;
+    currentStep = 0;
     // --- Calculation for smooth fade ---
     const int updateIntervalMs = 20;
     totalSteps = durationMs / updateIntervalMs;
