@@ -98,18 +98,9 @@ Widget::Widget(QWidget *parent)
     m_player->setPlaylist(m_playlist);
     // ui->verticalLayout->addWidget (m_playlistView);
     // QSettings settings(QApplication::organizationName(), QApplication::applicationName());
-    connect(musicFader, SIGNAL(fadeProgressChanged(int)), ui->volumeSlider, SLOT(setFadeProgress(int)));
-    //connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(hideFadeProgress()));
-    connect(musicFader, SIGNAL(fadeStarted()), ui->volumeSlider, SLOT(startFadeIn()));
-    connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(startFadeOut()));
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     m_playlistView = nullptr;
-    if (m_bTablePlaylist)
-    {
-        m_playlistView = new PlaylistTable(m_player, nullptr);
-        m_playlistView->show();
-        // m_playlistView->setKeyboardTargetWidget (this);
-    }
+    m_playlistView = new PlaylistTable(m_player, nullptr);
     loadSettings(); // Load volume/mute state before connecting slider
     //m_playlistView->setPlaylist (m_playlist);
     // Apply loaded volume
@@ -119,6 +110,12 @@ Widget::Widget(QWidget *parent)
     ui->listWidget -> setAlternatingRowColors(true);
     setSignalsConnections();
     setKeyboardShortcuts();
+    if (m_bTablePlaylist)
+    {
+        m_playlistView->show();
+        // m_playlistView->setKeyboardTargetWidget (this);
+    }
+    startUp();
     //ui->listWidget->hide ();
 }
 
@@ -244,7 +241,12 @@ void Widget::playlistIsSorting(bool bIsSorting)
 
 void Widget::setSignalsConnections()
 {
-    connect(ui->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(filterList(QString))); connect(ui->lineEditFilter, &EscAwareLineEdit::escapePressed, this, &Widget::on_pushButtonResetFilter_clicked);
+    connect(musicFader, SIGNAL(fadeProgressChanged(int)), ui->volumeSlider, SLOT(setFadeProgress(int)));
+    //connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(hideFadeProgress()));
+    connect(musicFader, SIGNAL(fadeStarted()), ui->volumeSlider, SLOT(startFadeIn()));
+    connect(musicFader, SIGNAL(fadeFinished()), ui->volumeSlider, SLOT(startFadeOut()));
+    connect(ui->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(filterList(QString)));
+    connect(ui->lineEditFilter, &EscAwareLineEdit::escapePressed, this, &Widget::on_pushButtonResetFilter_clicked);
     connect(m_infoWidget, SIGNAL(windowClosed()), this, SLOT(infoWindowClosed()));
     connect(m_infoWidget, SIGNAL(focusReceived()), this, SLOT(infoWindowFocusReceived()));
     connect(ui->playButton, SIGNAL(clicked()), this, SLOT(handlePlayButton()));
@@ -1238,6 +1240,36 @@ void Widget::reloadPlaylist()
         }
 }
 
+void Widget::startUp()
+{
+    // --- Last track & position ---
+    m_lastTrackIndex = settingsMgr->value("lastTrackIndex", 0).toInt();
+    m_lastTrackPosition = settingsMgr->value("lastTrackPosition", 0).toLongLong();
+    // --- Restore playlist ---
+    QString lastPlaylistPath = settingsMgr->value("lastPlaylistPath").toString();
+    QString filename = QCoreApplication::applicationDirPath();
+    filename.append("/");
+    filename.append("current_playlist.m3u");
+    //QApplication::setOverrideCursor(Qt::WaitCursor);
+    // QElapsedTimer timer;
+    // timer.start(); // Il timer inizia a contare
+    loadPlaylistFile(filename, true, false);
+    // Start playback if playlist not empty
+    if (m_playlist->mediaCount() > 0)
+        if (m_bAutoplay)
+        {
+            m_player->setVolume(m_lastVolume);
+            handlePlay();
+            handleDurationChanged(m_player->duration());
+        }
+    if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
+    {
+        m_shuffleHistory.clear(); // no history needed
+        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+        updateModeButtonIcon();
+    }
+}
+
 void Widget::loadSettings()
 {
     //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
@@ -1260,15 +1292,15 @@ void Widget::loadSettings()
     // --- Last track & position ---
     m_lastTrackIndex = settingsMgr->value("lastTrackIndex", 0).toInt();
     m_lastTrackPosition = settingsMgr->value("lastTrackPosition", 0).toLongLong();
-    // --- Restore playlist ---
-    QString lastPlaylistPath = settingsMgr->value("lastPlaylistPath").toString();
-    QString filename = QCoreApplication::applicationDirPath();
-    filename.append("/");
-    filename.append("current_playlist.m3u");
-    //QApplication::setOverrideCursor(Qt::WaitCursor);
-    // QElapsedTimer timer;
-    // timer.start(); // Il timer inizia a contare
-    loadPlaylistFile(filename, true, false);
+    //    // --- Restore playlist ---
+    // QString lastPlaylistPath = settingsMgr->value("lastPlaylistPath").toString();
+    // QString filename = QCoreApplication::applicationDirPath();
+    // filename.append("/");
+    // filename.append("current_playlist.m3u");
+    //    //QApplication::setOverrideCursor(Qt::WaitCursor);
+    //    // QElapsedTimer timer;
+    //    // timer.start(); // Il timer inizia a contare
+    // loadPlaylistFile(filename, true, false);
     //QApplication::restoreOverrideCursor();
     //QStringList playlistFiles = settings.value("playlistFiles").toStringList();
     // if (m_playlist->mediaCount() > 0)
@@ -1332,20 +1364,20 @@ void Widget::loadSettings()
         QRect primaryRect = QGuiApplication::primaryScreen()->availableGeometry();
         move(primaryRect.center() - winRect.center());
     }
-    // Start playback if playlist not empty
-    if (m_playlist->mediaCount() > 0)
-        if (m_bAutoplay)
-        {
-            m_player->setVolume(m_lastVolume);
-            handlePlay();
-            handleDurationChanged(m_player->duration());
-        }
-    if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
-    {
-        m_shuffleHistory.clear(); // no history needed
-        m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
-        updateModeButtonIcon();
-    }
+    //    // Start playback if playlist not empty
+    // if (m_playlist->mediaCount() > 0)
+    // if (m_bAutoplay)
+    // {
+    // m_player->setVolume(m_lastVolume);
+    // handlePlay();
+    // handleDurationChanged(m_player->duration());
+    // }
+    // if (m_playlist->mediaCount() <= 1 && m_playlist->playbackMode() == QMediaPlaylist::Random)
+    // {
+    // m_shuffleHistory.clear(); // no history needed
+    // m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
+    // updateModeButtonIcon();
+    // }
 }
 
 void Widget::saveSettings()
@@ -1692,7 +1724,7 @@ void Widget::settingsDialogAccepted()
     m_bVolumeFade = settingsMgr->value("VolumeFade", true).toBool();
     m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();;
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
-    ui->volumeSlider->updateIndicatorSettings ();
+    ui->volumeSlider->updateIndicatorSettings();
 }
 
 void Widget::handleModeButton()

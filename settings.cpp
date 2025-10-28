@@ -53,6 +53,7 @@ Settings::Settings(QWidget *parent) :
     ui->comboBoxColor->setCurrentText(m_sPalette);
     // Adjust the size of the dialog to fit its contents
     adjustSize();
+    connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(saveCurrentTabIndex(int)));
 }
 
 Settings::~Settings()
@@ -140,6 +141,11 @@ void Settings::on_Settings_accepted()
             widget->update();
         }
     }
+}
+
+void Settings::saveCurrentTabIndex(int)
+{
+    settingsMgr->setValue("SettingsTab", ui->tabWidget->currentIndex());
 }
 
 void Settings::saveSettings()

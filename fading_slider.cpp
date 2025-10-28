@@ -33,7 +33,9 @@ void FadingSlider::updateIndicatorSettings()
     QString colorName = SettingsManager::instance()->value("VolumeFadeIndicatorColor", "#0370C8").toString();
     m_Color = QColor(colorName);
     m_dTransparency = double(100 - m_iTransparency) / 100.0;
-   fadeAnim->setEndValue(m_dTransparency);
+    fadeAnim->setStartValue(0.0);
+    fadeAnim->setEndValue(m_dTransparency);
+    m_dTransparency = 0.0;
 }
 
 void FadingSlider::setFadeProgress(int percent)
@@ -44,14 +46,14 @@ void FadingSlider::setFadeProgress(int percent)
 
 qreal FadingSlider::indicatorOpacity() const
 {
-qDebug() << "Reading indicatorOpacity:" << m_dTransparency;
+    // qDebug() << "Reading indicatorOpacity:" << m_dTransparency;
     return m_dTransparency;
 }
 
 void FadingSlider::setIndicatorOpacity(qreal value)
 {
     opacity = value;
-    m_dTransparency=value;
+    m_dTransparency = value;
     update();
 }
 
@@ -326,11 +328,15 @@ void FadingSlider::paintEvent(QPaintEvent *event)
     QStyleOptionSlider fadeOpt = opt;
     int sliderMin = minimum();
     int sliderMax = maximum();
-    int valueForFade = sliderMin + (fadeProgress * (sliderMax - sliderMin)) / 100;
+    //int valueForFade = QStyle::sliderValueFromPosition(sliderMin, sliderMax, fadeProgress, 100);
+    int valueForFade = qRound(sliderMin + (fadeProgress * (sliderMax - sliderMin)) / 100.0);
+    if (valueForFade < fadeOpt.sliderValue) valueForFade += 1; /*else valueForFade -= 1;*/
     fadeOpt.sliderValue = valueForFade;
     fadeOpt.sliderPosition = valueForFade;
     QRect fadeHandleRect = style()->subControlRect(QStyle::CC_Slider, &fadeOpt, QStyle::SC_SliderHandle, this);
     QPoint center = fadeHandleRect.center();
+    // painter.setBrush(Qt::red);
+    //painter.drawEllipse(fadeHandleRect.center (), 2, 2); // piccolo punto di debug
     int radius = m_iRadius;
     QRectF circleRect(center.x() - radius, center.y() - radius, radius * 2, radius * 2);
     //QColor fadeColor(3, 112, 200);

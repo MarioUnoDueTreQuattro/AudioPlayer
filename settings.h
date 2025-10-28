@@ -27,9 +27,8 @@ private slots:
     void on_checkBoxScaleOriginalSizeMax_stateChanged(int arg1);
     void on_checkBoxFade_stateChanged(int arg1);
     void on_pushButtonFadeColor_clicked();
-
     void on_pushButtonResetFade_clicked();
-
+    void saveCurrentTabIndex(int);
 protected:
     void moveEvent(QMoveEvent *event) override;
 private:

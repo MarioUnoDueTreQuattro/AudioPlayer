@@ -102,7 +102,7 @@ DEFINES += TAGLIB_DLL
 #SOURCES += \
 #    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey.cpp \
 #    $$PWD/3rdparty/qhotkey/QHotkey/qhotkey_win.cpp
-    VERSION = 1.0.0.3
+    VERSION = 1.0.0.4
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 DEFINES += QT_MESSAGELOGCONTEXT
 # Imposta il livello di ottimizzazione a 0 (nessuna ottimizzazione) per il Debug

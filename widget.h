@@ -146,6 +146,7 @@ private:
     InfoWidget *m_infoWidget;
     // PlaylistView *m_playlistView;
     PlaylistTable *m_playlistView;
+    void startUp();
 };
 
 #endif // WIDGET_H
