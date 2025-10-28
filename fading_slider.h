@@ -17,7 +17,7 @@ public:
 
     bool animationIsEnabled() const;
     void setAnimationEnabled(bool bEnableAnimation);
-
+void updateIndicatorSettings();
 public slots:
     void hideFadeProgress();
     void startFadeIn();
@@ -32,6 +32,11 @@ private:
     qreal opacity;
     QPropertyAnimation *fadeAnim;
     bool m_bAnimationEnabled;
+    bool m_bIndicator;
+    int m_iRadius;
+    int m_iTransparency;
+    double m_dTransparency;
+    QColor m_Color;
 };
 
 #endif // FADINGSLIDER_H

@@ -1692,6 +1692,7 @@ void Widget::settingsDialogAccepted()
     m_bVolumeFade = settingsMgr->value("VolumeFade", true).toBool();
     m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();;
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
+    ui->volumeSlider->updateIndicatorSettings ();
 }
 
 void Widget::handleModeButton()

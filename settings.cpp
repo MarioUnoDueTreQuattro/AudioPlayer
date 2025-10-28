@@ -164,6 +164,11 @@ void Settings::saveSettings()
     settingsMgr->setValue("VolumeFadeTime", ui->spinBoxFade->value());
     settingsMgr->setValue("SettingsPosition", pos());
     settingsMgr->setValue("EnhancedPlaylist", ui->checkBoxEnhancedPlaylist->isChecked());
+    settingsMgr->setValue("SettingsTab", ui->tabWidget->currentIndex());
+    settingsMgr->setValue("VolumeFadeIndicator", ui->checkBoxFadeIndicator->isChecked());
+    settingsMgr->setValue("VolumeFadeIndicatorRadius", ui->spinBoxFadeRadius->value());
+    settingsMgr->setValue("VolumeFadeIndicatorTransparency", ui->spinBoxFadeTransparency->value());
+    settingsMgr->setValue("VolumeFadeIndicatorColor", m_FadeIndicatorColor.name());
     settingsMgr->sync();
 }
 
@@ -242,6 +247,18 @@ void Settings::loadSettings()
     ui->spinBoxFade->setValue(iFadeTime);
     bool bEnhancedPlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     ui->checkBoxEnhancedPlaylist->setChecked(bEnhancedPlaylist);
+    int iTab = settingsMgr->value("SettingsTab", 0).toInt();
+    ui->tabWidget->setCurrentIndex(iTab);
+    bool bIndicatorFade = settingsMgr->value("VolumeFadeIndicator", true).toBool();
+    ui->checkBoxFadeIndicator->setChecked(bIndicatorFade);
+    ui->spinBoxFadeRadius->setValue (settingsMgr->value("VolumeFadeIndicatorRadius", 5).toInt());
+    ui->spinBoxFadeTransparency->setValue(settingsMgr->value("VolumeFadeIndicatorTransparency", 50).toInt());
+    colorName = settingsMgr->value("VolumeFadeIndicatorColor", "#0370C8").toString();
+    m_FadeIndicatorColor = QColor(colorName);
+    palette = ui->pushButtonFadeColor->palette();
+    palette.setColor(QPalette::Button, m_FadeIndicatorColor);
+    ui->pushButtonFadeColor->setAutoFillBackground(true);
+    ui->pushButtonFadeColor->setPalette(palette);
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()
@@ -344,3 +361,28 @@ void Settings::moveEvent(QMoveEvent *event)
 // int y = (screenGeometry.height() - this->height()) / 2;
 // this->move(x, y);
 //}
+
+void Settings::on_pushButtonFadeColor_clicked()
+{
+    QColor chosenColor = QColorDialog::getColor(m_FadeIndicatorColor, this, "Select a color");
+    if (chosenColor.isValid())
+    {
+        m_FadeIndicatorColor = chosenColor;
+        QPalette palette = ui->pushButtonFadeColor->palette();
+        palette.setColor(QPalette::Button, m_FadeIndicatorColor);
+        ui->pushButtonFadeColor->setAutoFillBackground(true);
+        ui->pushButtonFadeColor->setPalette(palette);
+        //ui->pushButtonPlayedTextColor->update ();
+    }
+}
+
+void Settings::on_pushButtonResetFade_clicked()
+{
+    ui->spinBoxFade->setValue(1000);
+    ui->checkBoxFade->setChecked (true);
+    ui->checkBoxFadeIndicator->setChecked (true);
+    ui->spinBoxFadeRadius->setValue(5);
+    ui->spinBoxFadeTransparency->setValue(50);
+    ui->pushButtonFadeColor->setPalette(QColor(3, 112, 200));
+    m_FadeIndicatorColor = "#0370C8";
+}

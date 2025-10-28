@@ -26,6 +26,10 @@ private slots:
     void on_checkBoxScaleOriginalSize_stateChanged(int arg1);
     void on_checkBoxScaleOriginalSizeMax_stateChanged(int arg1);
     void on_checkBoxFade_stateChanged(int arg1);
+    void on_pushButtonFadeColor_clicked();
+
+    void on_pushButtonResetFade_clicked();
+
 protected:
     void moveEvent(QMoveEvent *event) override;
 private:
@@ -34,6 +38,7 @@ private:
     QString m_sTheme;
     QString m_sPalette;
     QColor m_playedTextColor;
+    QColor m_FadeIndicatorColor;
     QString m_sPictuePositionInInfo;
     void saveSettings();
     void loadSettings();
