@@ -39,6 +39,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QWidget *parent)
 {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
     ui->setupUi(this);
+    m_tagWorker = nullptr;
+    m_FutureWatcher = nullptr;
     ui->comboBoxFind->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     ui->comboBoxFilter->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     setWindowFlags(Qt::Tool);
@@ -146,8 +148,7 @@ PlaylistTable::~PlaylistTable()
 
 void PlaylistTable::closeEvent(QCloseEvent *event)
 {
-    /*
-          if (m_tagWorker)
+    if (m_tagWorker)
     {
         m_tagWorker->stop(); // signal worker to abort
         if (m_FutureWatcher)
@@ -155,8 +156,6 @@ void PlaylistTable::closeEvent(QCloseEvent *event)
             m_FutureWatcher->waitForFinished(); // wait for thread to finish
         }
     }
-
-    */
     // if (m_FutureWatcher != nullptr)
     // {
     // if (m_FutureWatcher->isRunning())
@@ -171,8 +170,7 @@ void PlaylistTable::closeEvent(QCloseEvent *event)
     // m_tagWorker = nullptr;
     // }
     // if (m_tagWorker != nullptr) delete m_tagWorker;
-    /*
-          if (m_tagWorker)
+    if (m_tagWorker)
     {
         disconnect(m_tagWorker, nullptr, this, nullptr);
         m_tagWorker->deleteLater();
@@ -183,8 +181,6 @@ void PlaylistTable::closeEvent(QCloseEvent *event)
         m_FutureWatcher->deleteLater();
         m_FutureWatcher = nullptr;
     }
-
-    */
     emit windowClosed();
     event->accept();
     QWidget::closeEvent(event);

@@ -223,6 +223,7 @@ void AudioFader::updateFade()
     {
         // Reached the target, set final precise volume
         mediaPlayer->setVolume((int)targetVolume); // Set the final integer target volume
+        //qDebug()<< __PRETTY_FUNCTION__ << targetVolume;
         finishFade();
         m_bIsFading = false;
         emit fadeFinished();

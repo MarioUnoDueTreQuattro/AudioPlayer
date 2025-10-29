@@ -319,7 +319,7 @@ void FadingSlider::paintEvent(QPaintEvent *event)
 {
     QSlider::paintEvent(event);
     if (m_bIndicator == false) return;
-    if (fadeProgress < 0 || m_dTransparency <= 0.01)
+    if (fadeProgress < 0 || m_dTransparency <= 0.001)
         return;
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -328,11 +328,15 @@ void FadingSlider::paintEvent(QPaintEvent *event)
     QStyleOptionSlider fadeOpt = opt;
     int sliderMin = minimum();
     int sliderMax = maximum();
-    //int valueForFade = QStyle::sliderValueFromPosition(sliderMin, sliderMax, fadeProgress, 100);
+    // int valueForFade = QStyle::sliderValueFromPosition(sliderMin, sliderMax, fadeProgress, 100);
     int valueForFade = qRound(sliderMin + (fadeProgress * (sliderMax - sliderMin)) / 100.0);
-    if (valueForFade < fadeOpt.sliderValue) valueForFade += 1; /*else valueForFade -= 1;*/
+    if (valueForFade < fadeOpt.sliderValue) valueForFade += 1; else valueForFade -= 1;
+    // qDebug() << "fadeOpt.sliderValue" <<fadeOpt.sliderValue;
+    // qDebug() << "fadeOpt.sliderPosition" <<fadeOpt.sliderPosition;
     fadeOpt.sliderValue = valueForFade;
     fadeOpt.sliderPosition = valueForFade;
+    // qDebug() << "fadeOpt.sliderValue" <<fadeOpt.sliderValue;
+    // qDebug() << "fadeOpt.sliderPosition" <<fadeOpt.sliderPosition;
     QRect fadeHandleRect = style()->subControlRect(QStyle::CC_Slider, &fadeOpt, QStyle::SC_SliderHandle, this);
     QPoint center = fadeHandleRect.center();
     // painter.setBrush(Qt::red);
