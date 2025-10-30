@@ -171,8 +171,8 @@ private slots:
     void clearSearchHighlight();
     void delayedFindInTable();
     void on_pushButtonFav_clicked();
-
     void on_pushButtonHistory_clicked();
+    void on_pushButtonPlaylist_clicked();
 
 private:
     ElidedHeaderView *m_HorizontalHeader;
@@ -186,6 +186,7 @@ private:
     int m_iSortCol;
     Qt::SortOrder m_SortOrder;
     bool m_bHasBeenSorted;
+    bool m_bSessionPlaylistIsShown;
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
@@ -201,6 +202,8 @@ private:
     // QList<QModelIndex> m_findMatches;    // indici sul proxy (visibili)
     // int m_findCurrentIndex = -1;
     QString m_lastSearchText;
+//        QString m_lastPlaylistFile;
+   int m_iLastPlaylistFile;
     QList<QPersistentModelIndex> m_findMatches;
     void updateSearchCount(int currentMatchIndex);
     const int MAX_SEARCH_HISTORY_SIZE = 20;

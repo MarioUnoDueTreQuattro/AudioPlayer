@@ -34,7 +34,8 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QMediaPlaylist *playlist, QWi
       m_player(player),
       m_playlist(playlist),
       m_CurrentItem(nullptr),
-      m_bHasBeenSorted(false)
+      m_bHasBeenSorted(false),
+      m_bSessionPlaylistIsShown(true)
       /*,
       m_findCurrentIndex (-1)*/
 {
@@ -631,8 +632,11 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
     //m_view->blockSignals(true);
     emit isSorting(true);
     //qDebug() << "onHeaderSortChanged logicalIndex" << logicalIndex;
-    settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
-    settingsMgr->setValue("PlaylistViewSortColumnOrder", order);
+    if (logicalIndex != -1)
+    {
+        settingsMgr->setValue("PlaylistViewSortColumn", logicalIndex);
+        settingsMgr->setValue("PlaylistViewSortColumnOrder", order);
+    }
     // m_view->horizontalHeader ()->setSortIndicator (logicalIndex,order);
     // m_view->horizontalHeader ()->setSortIndicatorShown (true);
     // After sorting the model, rebuild the QMediaPlaylist order.
@@ -1074,6 +1078,7 @@ void PlaylistTable::onTagLoaded(const QString & filePath, const AudioTagInfo & i
 
 void PlaylistTable::playlistLoadFinished()
 {
+    m_bSessionPlaylistIsShown = true;
     restoreColumnWidths();
     restoreColumnVisibility();
     // on_pushButton_clicked();
@@ -1568,11 +1573,13 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
             m_view->selectionModel()->clearSelection();
     }
 }
+
 void PlaylistTable::on_pushButton_2_clicked()
 {
     QHeaderView *header = m_view->horizontalHeader();
     header-> resizeSections(QHeaderView::ResizeToContents);
 }
+
 int PlaylistTable::mapSourceRowToProxy(QAbstractItemModel * sourceModel, QSortFilterProxyModel * proxyModel, int sourceRow)
 {
     QModelIndex sourceIndex = sourceModel->index(sourceRow, 0);
@@ -2167,7 +2174,10 @@ void PlaylistTable::keyPressEvent(QKeyEvent *event)
 */
 void PlaylistTable::on_pushButtonFav_clicked()
 {
-    saveSessionPlaylist();
+  m_iLastPlaylistFile= m_CurrentItem->row ();
+//   m_lastPlaylistFile = m_CurrentItem->data(Qt::UserRole + 1).toString();
+    if (m_bSessionPlaylistIsShown) saveSessionPlaylist();
+    m_bSessionPlaylistIsShown = false;
     m_model->clear();
     m_model->setColumnCount(ColumnIndex::ColumnCount);
     for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
@@ -2192,8 +2202,8 @@ void PlaylistTable::on_pushButtonFav_clicked()
     m_view->verticalHeader()->setMaximumSectionSize(32);
     restoreColumnWidths();
     restoreColumnVisibility();
-    m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
-    m_HorizontalHeader->setSortIndicatorShown(false);
+    // m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
+    // m_HorizontalHeader->setSortIndicatorShown(false);
     //on_pushButton_clicked();
     //on_pushButton_2_clicked ();
     //setSectionsResizeMode();
@@ -2241,9 +2251,13 @@ void PlaylistTable::on_pushButtonFav_clicked()
     m_view->setSortingEnabled(true);
     m_HorizontalHeader->setSortIndicatorShown(true);
 }
+
 void PlaylistTable::on_pushButtonHistory_clicked()
 {
-    saveSessionPlaylist();
+ m_iLastPlaylistFile= m_CurrentItem->row ();
+//    m_lastPlaylistFile = m_CurrentItem->data(Qt::UserRole + 1).toString();
+    if (m_bSessionPlaylistIsShown) saveSessionPlaylist();
+    m_bSessionPlaylistIsShown = false;
     m_model->clear();
     m_model->setColumnCount(ColumnIndex::ColumnCount);
     for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
@@ -2268,8 +2282,8 @@ void PlaylistTable::on_pushButtonHistory_clicked()
     m_view->verticalHeader()->setMaximumSectionSize(32);
     restoreColumnWidths();
     restoreColumnVisibility();
-    m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
-    m_HorizontalHeader->setSortIndicatorShown(false);
+    // m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
+    // m_HorizontalHeader->setSortIndicatorShown(false);
     //on_pushButton_clicked();
     //on_pushButton_2_clicked ();
     //setSectionsResizeMode();
@@ -2321,4 +2335,90 @@ void PlaylistTable::on_pushButtonHistory_clicked()
     emit playlistUpdated(m_playlist);
     m_view->setSortingEnabled(true);
     m_HorizontalHeader->setSortIndicatorShown(true);
+}
+
+void PlaylistTable::on_pushButtonPlaylist_clicked()
+{
+    //saveSessionPlaylist();
+    m_bSessionPlaylistIsShown = true;
+    m_model->clear();
+    m_model->setColumnCount(ColumnIndex::ColumnCount);
+    for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
+        m_model->setHeaderData(i, Qt::Horizontal, ColumnIndex::headerName(i));
+    // m_model->setHorizontalHeaderLabels(QStringList()
+    // << "Filename" << "Ext" << "Path" << "Duration" << "Artist"
+    // << "Title" << "Album" << "Track" << "Year" << "Genre"
+    // << "Comment" << "Bitrate" << "Samplerate" << "Bits" << "Channels"
+    // << "Format" << "Cover size" << "File size"); m_playlist->clear();
+    /*
+      // Prima imposta il resize mode
+    m_view->verticalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+
+    // Poi imposta i limiti
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+
+    // Opzionale: imposta anche minimum
+    m_view->verticalHeader()->setMinimumSectionSize(16);
+    */
+    m_view->verticalHeader()->setDefaultSectionSize(16);
+    m_view->verticalHeader()->setMaximumSectionSize(32);
+    restoreColumnWidths();
+    restoreColumnVisibility();
+    m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
+    m_HorizontalHeader->setSortIndicatorShown(false);
+    //on_pushButton_clicked();
+    //on_pushButton_2_clicked ();
+    //setSectionsResizeMode();
+    //if (m_model->rowCount() > 0) onHeaderSortChanged(iSortCol, order);
+    //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
+    // setSectionsResizeMode();
+    m_playlist->clear();
+    QList<AudioTagInfo> favList = DatabaseManager::instance().loadSessionPlaylist();
+    for (AudioTagInfo tagInfo : favList)
+    {
+        QList<QStandardItem *> rowItems = tagInfo.toStandardItems();
+        m_model->appendRow(rowItems);
+        //m_playlist->addMedia(QUrl::fromLocalFile(tagInfo.sPath + "/" + tagInfo.sBaseFileName + "." + tagInfo.sExtension));
+    }
+    if (!favList.isEmpty())
+    {
+        QModelIndex topIndex = m_model->index(0, 0);
+        m_view->scrollTo(topIndex, QAbstractItemView::PositionAtTop);
+        m_view->selectRow(0);
+    }
+    m_playlist->clear();
+    m_view->setModel(m_sortModel);
+    int proxyRowCount = m_sortModel->rowCount();
+    for (int proxyRow = 0; proxyRow < proxyRowCount; ++proxyRow)
+    {
+        // Get proxy index for column 0 (filename)
+        QModelIndex proxyIndex = m_sortModel->index(proxyRow, 0);
+        // Map proxy index to source index
+        QModelIndex sourceIndex = m_sortModel->mapToSource(proxyIndex);
+        if (!proxyIndex.isValid())
+            continue;
+        int sourceRow = sourceIndex.row();
+        // Read data from SOURCE model
+        QStandardItem* item = m_model->item(sourceRow, 0);
+        if (!item)
+            continue;
+        QString fullPath = item->data(Qt::UserRole + 1).toString();
+        //qDebug()<<"fullPath="<< fullPath;
+        m_playlist->addMedia(QUrl::fromLocalFile(fullPath));
+    }
+    //emit playlistUpdated(m_playlist);
+    int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
+    Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
+    m_sortModel->sort(iSortCol, order);
+    m_view->setSortingEnabled(true);
+    m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
+    m_HorizontalHeader->setSortIndicatorShown(true);
+    onCurrentTrackChanged (m_iLastPlaylistFile);
+    // if (m_CurrentItem)
+    // {
+    //            //QModelIndex sourceIndex = m_model->index(m_CurrentItem->row(), 0);
+    // QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
+    // m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
+    // }
 }
