@@ -209,7 +209,7 @@ QList<AudioTagInfo> DatabaseManager::favoriteTracks()
     while (query.next())
     {
         AudioTagInfo info;
-        info.sFileName = query.value("FileName").toString();
+        info.sFileName = query.value("FullFilePath").toString();
         info.sBaseFileName = query.value("BaseFileName").toString();
         info.sExtension = query.value("Extension").toString();
         info.sPath = query.value("Path").toString();
@@ -245,12 +245,13 @@ QList<AudioTagInfo> DatabaseManager::historyTracks()
         return list;
     }
     QSqlQuery query(m_db);
-    query.prepare("SELECT T.* FROM Tracks T JOIN History F ON T.Id = F.TrackId ORDER BY F.PlayDate DESC");
+    //query.prepare("SELECT T.* FROM Tracks T JOIN History F ON T.Id = F.TrackId ORDER BY F.PlayDate DESC");
+    query.prepare("WITH RankedHistory AS (SELECT F.TrackId, F.PlayDate,ROW_NUMBER() OVER (PARTITION BY F.TrackId ORDER BY F.PlayDate DESC) as rn FROM History F) SELECT T.* FROM Tracks T JOIN RankedHistory RH ON T.Id = RH.TrackId WHERE RH.rn = 1 ORDER BY RH.PlayDate DESC;");
     if (!query.exec()) return list;
     while (query.next())
     {
         AudioTagInfo info;
-        info.sFileName = query.value("FileName").toString();
+        info.sFileName = query.value("FullFilePath").toString();
         info.sBaseFileName = query.value("BaseFileName").toString();
         info.sExtension = query.value("Extension").toString();
         info.sPath = query.value("Path").toString();
@@ -374,7 +375,7 @@ QList<AudioTagInfo> DatabaseManager::recentHistory(int limit)
     while (query.next())
     {
         AudioTagInfo info;
-        info.sFileName = query.value("FileName").toString();
+        info.sFileName = query.value("FullFilePath").toString();
         info.sBaseFileName = query.value("BaseFileName").toString();
         info.sExtension = query.value("Extension").toString();
         info.sPath = query.value("Path").toString();
@@ -407,15 +408,35 @@ bool DatabaseManager::clearSessionPlaylist()
 
 bool DatabaseManager::saveSessionPlaylist(const QList<QString> &fullFilePaths)
 {
-    if (!clearSessionPlaylist()) return false;
+    if (!m_db.transaction())   // Inizia la transazione
+    {
+        qDebug() << "Impossibile avviare la transazione:" << m_db.lastError().text();
+        return false;
+    }
+    if (!clearSessionPlaylist())
+    {
+        m_db.rollback(); // Esegue il rollback in caso di fallimento
+        return false;
+    }
     QSqlQuery query(m_db);
+    // Prepara la query una sola volta
+    query.prepare("INSERT INTO SessionPlaylist (TrackId, Position) "
+                  "SELECT Id, ? FROM Tracks WHERE FullFilePath = ?");
     for (int pos = 0; pos < fullFilePaths.size(); ++pos)
     {
-        query.prepare("INSERT INTO SessionPlaylist (TrackId, Position) "
-                      "SELECT Id, ? FROM Tracks WHERE FullFilePath = ?");
         query.addBindValue(pos);
         query.addBindValue(fullFilePaths[pos]);
-        if (!query.exec()) return false;
+        if (!query.exec())
+        {
+            qDebug() << "Errore nell'esecuzione della query:" << query.lastError().text();
+            m_db.rollback(); // Esegue il rollback se l'INSERT fallisce
+            return false;
+        }
+    }
+    if (!m_db.commit())   // Conclude la transazione
+    {
+        qDebug() << "Impossibile eseguire il commit della transazione:" << m_db.lastError().text();
+        return false;
     }
     return true;
 }
@@ -430,7 +451,7 @@ QList<AudioTagInfo> DatabaseManager::loadSessionPlaylist()
     while (query.next())
     {
         AudioTagInfo info;
-        info.sFileName = query.value("FileName").toString();
+        info.sFileName = query.value("FullFilePath").toString();
         info.sBaseFileName = query.value("BaseFileName").toString();
         info.sExtension = query.value("Extension").toString();
         info.sPath = query.value("Path").toString();
@@ -464,7 +485,7 @@ QList<AudioTagInfo> DatabaseManager::topPlayed(int limit)
     while (query.next())
     {
         AudioTagInfo info;
-        info.sFileName = query.value("FileName").toString();
+        info.sFileName = query.value("FullFilePath").toString();
         info.sBaseFileName = query.value("BaseFileName").toString();
         info.sExtension = query.value("Extension").toString();
         info.sPath = query.value("Path").toString();

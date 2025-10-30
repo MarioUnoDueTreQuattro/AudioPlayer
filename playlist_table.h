@@ -125,7 +125,7 @@ class PlaylistTable : public QWidget
     Q_OBJECT
 
 public:
-    explicit PlaylistTable(QMediaPlayer *player, QWidget *parent = 0);
+    explicit PlaylistTable(QMediaPlayer *player, QMediaPlaylist *playlist, QWidget *parent = 0);
     ~PlaylistTable() override;
     void addTrack(const QString &filePath);
     void clear();
@@ -175,13 +175,14 @@ private slots:
     void on_pushButtonHistory_clicked();
 
 private:
- ElidedHeaderView *m_HorizontalHeader;
+    ElidedHeaderView *m_HorizontalHeader;
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
     QStandardItem *m_CurrentItem;
-     void incrementPlayCount(int sourceRow);
-     void setSignalsConnections();
+    void incrementPlayCount(int sourceRow);
+    void setSignalsConnections();
     void syncPlaylistOrder(int sortCol, Qt::SortOrder sortOrder);
+    void syncPlaylistOrder_(int sortColumn, Qt::SortOrder order);
     int m_iSortCol;
     Qt::SortOrder m_SortOrder;
     bool m_bHasBeenSorted;
@@ -210,6 +211,7 @@ private:
     void saveFilterHistory(const QStringList &history);
     // Widget *m_target;
     void setRating(const QModelIndex &index, int newRating);
+    void saveSessionPlaylist();
 };
 
 #endif // PLAYLISTTABLE_H

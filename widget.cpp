@@ -100,7 +100,7 @@ Widget::Widget(QWidget *parent)
     // QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     m_playlistView = nullptr;
-    m_playlistView = new PlaylistTable(m_player, nullptr);
+    m_playlistView = new PlaylistTable(m_player, m_playlist, nullptr);
     loadSettings(); // Load volume/mute state before connecting slider
     //m_playlistView->setPlaylist (m_playlist);
     // Apply loaded volume
