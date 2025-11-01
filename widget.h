@@ -87,6 +87,7 @@ private slots:
     void handleRemoveSelected();
     void on_pushButtonResetFilter_clicked();
     void playlistUpdated(QMediaPlaylist *playlist);
+    void playlistSorted(QMediaPlaylist *playlist);
     void handlePlaylistCurrentIndexChangedByTable(int index);
     void showPlaylistTable();
     void playlistIsSorting(bool bIsSorting);

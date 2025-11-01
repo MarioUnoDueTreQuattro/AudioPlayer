@@ -199,6 +199,8 @@ public:
 
     bool isTrackInFavorites(int trackId) const;
     int getTrackId(const QString &fullFilePath) const;
+    bool deleteInexistentFiles();
+    bool resetAllPlayCounts();
 private:
     /**
      * @brief Private constructor for singleton.

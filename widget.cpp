@@ -70,6 +70,7 @@ Widget::Widget(QWidget *parent)
     }
     else
         LOG_MSG_SHORT("Database opened.");
+    db.deleteInexistentFiles();
     settingsMgr = SettingsManager::instance();
     ui->labelFilter->setVisible(false);
     ui->lineEditFilter->setVisible(false);
@@ -124,12 +125,31 @@ void Widget::playlistUpdated(QMediaPlaylist *playlist)
     LOG_MSG("") ;
     m_playlist = playlist;
     ui->listWidget->clear();
-    for (int idx = 0; idx < playlist->mediaCount(); idx++)
+    int iCount = playlist->mediaCount();
+    for (int idx = 0; idx < iCount; idx++)
     {
         ui->listWidget->addItem(playlist->media(idx).canonicalUrl().fileName());
     }
     m_player->setPlaylist(m_playlist);
+    LOG_MSG_SHORT("m_playlist->mediaCount ()" << m_playlist->mediaCount());
     connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
+    // handleItemDoubleClicked
+}
+
+void Widget::playlistSorted(QMediaPlaylist *playlist)
+{
+    LOG_MSG("") ;
+    //m_playlist = playlist;
+    //ui->listWidget->clear();
+    int iCount = playlist->mediaCount();
+    for (int idx = 0; idx < iCount; idx++)
+    {
+        //ui->listWidget->addItem(playlist->media(idx).canonicalUrl().fileName());
+        ui->listWidget->item(idx)->setText(playlist->media(idx).canonicalUrl().fileName());
+    }
+    //m_player->setPlaylist(m_playlist);
+    LOG_MSG_SHORT("playlist->mediaCount ()" << playlist->mediaCount());
+    //connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
     // handleItemDoubleClicked
 }
 
@@ -281,6 +301,7 @@ void Widget::setSignalsConnections()
     {
         connect(m_playlistView, &PlaylistTable::trackActivated, this, &Widget::handlePlaylistCurrentIndexChangedByTable);
         connect(m_playlistView, &PlaylistTable::playlistUpdated, this, &Widget::playlistUpdated);
+        connect(m_playlistView, &PlaylistTable::playlistSorted, this, &Widget::playlistSorted);
         connect(m_playlistView, &PlaylistTable::isSorting, this, &Widget::playlistIsSorting);
         connect(m_playlistView, SIGNAL(windowClosed()), this, SLOT(playlistTableWindowClosed()));
         connect(m_playlistView, SIGNAL(focusReceived()), this, SLOT(playlistTableWindowFocusReceived()));
@@ -929,7 +950,11 @@ void Widget::handlePlay()
         item->setTextColor(m_playedTextColor);
         item->setIcon(QIcon(":/img/img/icons8-play-48.png"));
     }
-    if (m_bTablePlaylist && m_playlistView != nullptr) m_playlistView->setCurrentItemIcon(true);
+    if (m_bTablePlaylist && m_playlistView != nullptr)
+    {
+        m_playlistView->setCurrentItemIcon(true);
+        //m_playlistView->onCurrentTrackChanged(m_player->playlist()->currentIndex());
+    }
     setInfoWidgetTitle();
     QUrl mediaUrl;
     // If you are using a playlist:
@@ -1094,6 +1119,7 @@ void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
 
 void Widget::handlePlaylistCurrentIndexChangedByTable(int index)
 {
+    LOG_MSG_SHORT("index=" << index);
     m_bUserRequestedPlayback = true;
     m_player->stop();
     handlePlaylistCurrentIndexChanged(index);

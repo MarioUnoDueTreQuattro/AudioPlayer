@@ -614,9 +614,18 @@ QList<AudioTagInfo> DatabaseManager::topPlayed(int limit)
 
 bool DatabaseManager::incrementPlayCount(const QString &fullFilePath)
 {
+    qDebug() << __PRETTY_FUNCTION__ << fullFilePath;
     QSqlQuery query(m_db);
     query.prepare("UPDATE Tracks SET PlayCount = PlayCount + 1 WHERE FullFilePath = ?");
     query.addBindValue(fullFilePath);
+    return query.exec();
+}
+
+bool DatabaseManager::resetAllPlayCounts()
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE Tracks SET PlayCount = 0 WHERE PlayCount > 0");
+    //query.addBindValue(fullFilePath);
     return query.exec();
 }
 
@@ -946,5 +955,103 @@ bool DatabaseManager::loadOrUpdateTrack(const QString &fullFilePath, AudioTagInf
         info.sLastModified = fileModified;
         insertTrack(fullFilePath, info);
     }
+    return true;
+}
+
+bool DatabaseManager::deleteInexistentFiles()
+{
+    if (!m_db.isOpen())
+    {
+        qWarning() << "DatabaseManager::deleteInexistents - database not open";
+        return false;
+    }
+    // Get all tracks from database
+    QSqlQuery selectQuery(m_db);
+    if (!selectQuery.exec("SELECT Id, FullFilePath FROM Tracks"))
+    {
+        qWarning() << "Failed to query tracks:" << selectQuery.lastError().text();
+        return false;
+    }
+    QList<int> idsToDelete;
+    // Check which files don't exist on filesystem
+    while (selectQuery.next())
+    {
+        int id = selectQuery.value("Id").toInt();
+        QString filePath = selectQuery.value("FullFilePath").toString();
+        if (!QFile::exists(filePath))
+        {
+            idsToDelete.append(id);
+            qDebug() << "File not found, marking for deletion:" << filePath;
+        }
+    }
+    if (idsToDelete.isEmpty())
+    {
+        qDebug() << "No nonexistent files found in database";
+        return true;
+    }
+    qDebug() << "Found" << idsToDelete.size() << "nonexistent files";
+    // Start transaction for data integrity
+    if (!m_db.transaction())
+    {
+        qWarning() << "Failed to start transaction:" << m_db.lastError().text();
+        return false;
+    }
+    QSqlQuery deleteQuery(m_db);
+    // Delete from related tables first (due to foreign key constraints)
+    for (int id : idsToDelete)
+    {
+        // Delete from Favorites
+        deleteQuery.prepare("DELETE FROM Favorites WHERE TrackId = ?");
+        deleteQuery.addBindValue(id);
+        if (!deleteQuery.exec())
+        {
+            qWarning() << "Failed to delete from Favorites:" << deleteQuery.lastError().text();
+            m_db.rollback();
+            return false;
+        }
+        // Delete from History
+        deleteQuery.prepare("DELETE FROM History WHERE TrackId = ?");
+        deleteQuery.addBindValue(id);
+        if (!deleteQuery.exec())
+        {
+            qWarning() << "Failed to delete from History:" << deleteQuery.lastError().text();
+            m_db.rollback();
+            return false;
+        }
+        // Delete from SessionPlaylist
+        deleteQuery.prepare("DELETE FROM SessionPlaylist WHERE TrackId = ?");
+        deleteQuery.addBindValue(id);
+        if (!deleteQuery.exec())
+        {
+            qWarning() << "Failed to delete from SessionPlaylist:" << deleteQuery.lastError().text();
+            m_db.rollback();
+            return false;
+        }
+        // Delete from PlaylistItems
+        deleteQuery.prepare("DELETE FROM PlaylistItems WHERE TrackId = ?");
+        deleteQuery.addBindValue(id);
+        if (!deleteQuery.exec())
+        {
+            qWarning() << "Failed to delete from PlaylistItems:" << deleteQuery.lastError().text();
+            m_db.rollback();
+            return false;
+        }
+        // Finally delete from Tracks table
+        deleteQuery.prepare("DELETE FROM Tracks WHERE Id = ?");
+        deleteQuery.addBindValue(id);
+        if (!deleteQuery.exec())
+        {
+            qWarning() << "Failed to delete from Tracks:" << deleteQuery.lastError().text();
+            m_db.rollback();
+            return false;
+        }
+    }
+    // Commit transaction
+    if (!m_db.commit())
+    {
+        qWarning() << "Failed to commit transaction:" << m_db.lastError().text();
+        return false;
+    }
+    qDebug() << "Successfully deleted" << idsToDelete.size() << "nonexistent track(s)";
     return true;
 }

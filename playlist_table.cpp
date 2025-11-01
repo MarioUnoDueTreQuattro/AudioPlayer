@@ -1,20 +1,20 @@
 #include "playlist_table.h"
-#include "ui_playlist_table.h"
-#include "playlist_delegates.h"
-#include "utility.h"
 #include "database_manager.h"
-#include <QFileInfo>
-#include <QVBoxLayout>
+#include "playlist_delegates.h"
+#include "ui_playlist_table.h"
+#include "utility.h"
 #include <QDebug>
+#include <QFileInfo>
 #include <QHeaderView>
+#include <QVBoxLayout>
 //#include <QSettings>
 #include <QApplication>
-#include <QDesktopWidget>
-#include <QMouseEvent>
-#include <QMenu>
-#include <QTimer>
 #include <QBrush>
+#include <QDesktopWidget>
 #include <QLineEdit>
+#include <QMenu>
+#include <QMouseEvent>
+#include <QTimer>
 //#include "widget.h"
 
 //#include <QItemSelectionModel>
@@ -34,15 +34,18 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QMediaPlaylist *playlist, QWi
       m_player(player),
       m_playlist(playlist),
       m_CurrentItem(nullptr),
+      m_CurrentPlaylistItem(nullptr),
       m_bHasBeenSorted(false),
       m_bSessionPlaylistIsShown(true)
       /*,
-      m_findCurrentIndex (-1)*/
+                  m_findCurrentIndex (-1)*/
 {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
     ui->setupUi(this);
+    setupToolButton();
     m_tagWorker = nullptr;
     m_FutureWatcher = nullptr;
+    m_stagedPlaylist = new QMediaPlaylist(this);
     ui->comboBoxFind->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     ui->comboBoxFilter->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     setWindowFlags(Qt::Tool);
@@ -121,8 +124,35 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QMediaPlaylist *playlist, QWi
     // onHeaderSortChanged (iSortCol,order);
 }
 
+void PlaylistTable::onTrackFinishedOrStopped(QMediaPlayer::State newState)
+{
+    LOG_MSG_SHORT(newState);
+    return;
+    // Esegui la sostituzione SOLO quando il player è nello stato STOP
+    if (newState == QMediaPlayer::StoppedState && m_stagedPlaylist->mediaCount() > 0)
+    {
+        // Esegui la sostituzione:
+        // 1. Disconnetti il vecchio segnale
+        disconnect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
+        // 2. Sostituisci la playlist corrente con la temporanea
+        //QMediaPlaylist *oldPlaylist = m_playlist;
+        m_playlist = m_stagedPlaylist;
+        //m_stagedPlaylist = nullptr; // Rimuovi il riferimento temporaneo
+        m_player->setPlaylist(m_playlist);
+        //delete oldPlaylist;
+        // 3. Riconnetti il nuovo segnale
+        connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
+        emit playlistUpdated(m_playlist);
+        // 4. Se la riproduzione è stata avviata dopo lo stop, fai ripartire la prima traccia
+        // (O implementa la logica di riavvio desiderata, ma senza setPosition!)
+        // Ad esempio: m_player->play();
+    }
+}
+
 void PlaylistTable::setSignalsConnections()
 {
+    connect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
+        this, SLOT(onTrackFinishedOrStopped(QMediaPlayer::State)));
     connect(m_view, &QTableView::customContextMenuRequested, this, &PlaylistTable::showPlaylistContextMenu);
     connect(ui->pushButtonClearFind, &QPushButton::clicked, this, &PlaylistTable::clearSearchHighlight);
     connect(ui->pushButtonPrev, &QPushButton::clicked, this, &PlaylistTable::findPrevious);
@@ -317,7 +347,7 @@ void PlaylistTable::restoreColumnVisibility()
 void PlaylistTable::onColumnResized(int column, int oldSize, int newSize)
 {
     // settingsMgr->beginGroup("Table");
-    QString sSettingsGroup = settingsMgr->getSettings().group() ;
+    QString sSettingsGroup = settingsMgr->getSettings().group();
     if (sSettingsGroup != "")
     {
         //settingsMgr->endGroup();
@@ -475,6 +505,40 @@ void PlaylistTable::syncPlaylistOrder_(int sortColumn, Qt::SortOrder order)
     //connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
 }
 
+void PlaylistTable::syncStagedPlaylistOrder(int sortColumn, Qt::SortOrder order)
+{
+    LOG_MSG_SHORT("");
+    // 1. Esegui l'ordinamento sul modello proxy
+    m_view->setModel(m_sortModel);
+    int sortCol = m_HorizontalHeader->sortIndicatorSection();
+    Qt::SortOrder sortOrder = m_HorizontalHeader->sortIndicatorOrder();
+    m_sortModel->sort(sortCol, sortOrder);
+    qApp->processEvents();
+    // 2. CREA LA PLAYLIST ORDINATA TEMPORANEA
+    m_stagedPlaylist->clear();
+    QAbstractItemModel *viewModel = m_view->model();
+    for (int i = 0; i < viewModel->rowCount(); ++i)
+    {
+        // ... (La tua logica per costruire il percorso URL) ...
+        QModelIndex pathIndex = viewModel->index(i, 2);
+        QString path = viewModel->data(pathIndex).toString() + "/";
+        pathIndex = viewModel->index(i, 0);
+        path.append(viewModel->data(pathIndex).toString());
+        path.append(".");
+        pathIndex = viewModel->index(i, 1);
+        path.append(viewModel->data(pathIndex).toString());
+        m_stagedPlaylist->addMedia(QUrl::fromLocalFile(path));
+    }
+    // 4. AGGIORNAMENTI UI (Solo la view, non il player)
+    m_view->setTextElideMode(Qt::ElideRight);
+    for (int row = 0; row < m_model->rowCount(); ++row)
+    {
+        m_model->item(row, ColumnIndex::Duration)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        m_model->item(row, ColumnIndex::FileSize)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    }
+    //emit playlistSorted (m_stagedPlaylist);
+}
+
 void PlaylistTable::syncPlaylistOrder(int sortColumn, Qt::SortOrder order)
 {
     //qDebug() << "syncPlaylistOrder";
@@ -559,8 +623,7 @@ void PlaylistTable::syncPlaylistOrder(int sortColumn, Qt::SortOrder order)
     // delete m_playlist;
     // m_playlist = newPlaylist;
     // m_player->setPlaylist(m_playlist);
-    connect(m_playlist, SIGNAL(currentIndexChanged(int)),
-        this, SLOT(onCurrentTrackChanged(int)));
+    connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(onCurrentTrackChanged(int)));
     // TODO uncomment?
     /*
     if (oldIndex >= 0 && oldIndex < newCount)
@@ -641,10 +704,11 @@ void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
     // m_view->horizontalHeader ()->setSortIndicatorShown (true);
     // After sorting the model, rebuild the QMediaPlaylist order.
     syncPlaylistOrder(logicalIndex, order);
+    //syncStagedPlaylistOrder (logicalIndex, order);
     qDebug() << "Playlist sorted and reordered to match table view.";
     emit isSorting(false);
     //m_view->blockSignals(false);
-    if (!ui->comboBoxFind->currentText().isEmpty() && ui->comboBoxFind->currentText().length() < MIN_SEARCH_CHARS == false) QTimer::singleShot(100, this, delayedFindInTable);
+    if (!ui->comboBoxFind->currentText().isEmpty() && ui->comboBoxFind->currentText().length() < MIN_SEARCH_CHARS == false) QTimer::singleShot(100, this, &PlaylistTable::delayedFindInTable);
 }
 
 //void PlaylistView::addTrack(const QString &filePath)
@@ -774,7 +838,7 @@ void PlaylistTable::readTags()
             continue;
         int sourceRow = sourceIndex.row();
         // Read data from SOURCE model
-        QStandardItem* item = m_model->item(sourceRow, 0);
+        QStandardItem *item = m_model->item(sourceRow, 0);
         if (!item)
             continue;
         QString fullPath = item->data(Qt::UserRole + 1).toString();
@@ -833,11 +897,11 @@ void PlaylistTable::saveSessionPlaylist()
             continue;
         int sourceRow = sourceIndex.row();
         // Read data from SOURCE model
-        QStandardItem* item = m_model->item(sourceRow, 0);
+        QStandardItem *item = m_model->item(sourceRow, 0);
         if (!item)
             continue;
         QString fullPath = item->data(Qt::UserRole + 1).toString();
-        qDebug() << proxyRow << fullPath;
+        //qDebug() << proxyRow << fullPath;
         if (!fullPath.isEmpty())
         {
             // Map filePath to SOURCE row (not proxy row!)
@@ -867,7 +931,7 @@ void PlaylistTable::readPlaylistTags()
             continue;
         int sourceRow = sourceIndex.row();
         // Read data from SOURCE model
-        QStandardItem* item = m_model->item(sourceRow, 0);
+        QStandardItem *item = m_model->item(sourceRow, 0);
         if (!item)
             continue;
         QString fullPath = item->data(Qt::UserRole + 1).toString();
@@ -899,6 +963,7 @@ void PlaylistTable::readPlaylistTags()
             this, SLOT(onTagLoaded(QString, AudioTagInfo)));
     }
 }
+
 void PlaylistTable::onTagLoadingFinished()
 {
     LOG_MSG_SHORT("Read" << m_FilePathToRow.count() << "tags");
@@ -922,6 +987,7 @@ void PlaylistTable::onTagLoadingFinished()
     // QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
     // m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
 }
+
 //void PlaylistTable::onTagLoaded(const QString& filePath, const AudioTagInfo& info)
 //{
 ////    static int icount;
@@ -1034,7 +1100,7 @@ void PlaylistTable::onTagLoadingFinished()
 // QModelIndex bottomRight = m_model->index(row, 17);
 // emit m_model->dataChanged(topLeft, bottomRight);
 //}
-void PlaylistTable::onTagLoaded(const QString & filePath, const AudioTagInfo & info)
+void PlaylistTable::onTagLoaded(const QString &filePath, const AudioTagInfo &info)
 {
     // Check if we have mapping for this file
     if (!m_FilePathToRow.contains(filePath))
@@ -1046,7 +1112,7 @@ void PlaylistTable::onTagLoaded(const QString & filePath, const AudioTagInfo & i
         return;
     // Update data in SOURCE model (not proxy!)
     // The proxy will automatically reflect these changes
-    QStandardItem* item = m_model->item(sourceRow, 0);
+    QStandardItem *item = m_model->item(sourceRow, 0);
     item->setData(true, Qt::UserRole + 2);
     // m_model->setData(m_model->index(sourceRow,  Qt::UserRole + 2), true);
     m_model->setData(m_model->index(sourceRow, 3), info.iDuration);
@@ -1089,8 +1155,12 @@ void PlaylistTable::playlistLoadFinished()
     Qt::SortOrder order = static_cast<Qt::SortOrder>(settingsMgr->value("PlaylistViewSortColumnOrder", 0).toInt());
     //m_sortModel->sort(iSortCol, order);
     //if (m_view->horizontalHeader()->isSortIndicatorShown())
-    onHeaderSortChanged(iSortCol, order);
-    m_HorizontalHeader->setSortIndicator(iSortCol, order);
+    // onHeaderSortChanged(iSortCol, order);
+    // m_HorizontalHeader->setSortIndicator(iSortCol, order);
+    // m_HorizontalHeader->setSortIndicatorShown(true);
+    m_sortModel->sort(iSortCol, order);
+    m_view->setSortingEnabled(true);
+    m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
     m_HorizontalHeader->setSortIndicatorShown(true);
 }
 
@@ -1103,7 +1173,20 @@ void PlaylistTable::addFilesFinished()
     // onHeaderSortChanged(iSortCol, order);
 }
 
-void PlaylistTable::addTrack(const QString & filePath)
+void PlaylistTable::alignColumns(int iLastRow)
+{
+    m_model->item(iLastRow, ColumnIndex::Duration)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::FileSize)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Bitrate)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Bits)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Channels)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Samplerate)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Track)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::Year)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_model->item(iLastRow, ColumnIndex::PlayCount)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+}
+
+void PlaylistTable::addTrack(const QString &filePath)
 {
     QString fileName = extractFileName(filePath);
     QFileInfo info(filePath);
@@ -1153,29 +1236,29 @@ void PlaylistTable::addTrack(const QString & filePath)
     else
     {
         // --- Create standard items for each column ---
-        QStandardItem* fileItem = new QStandardItem(icon, fileName);
+        QStandardItem *fileItem = new QStandardItem(icon, fileName);
         fileItem->setData(info.canonicalFilePath(), Qt::UserRole + 1); // store full path
         fileItem->setData(false, Qt::UserRole + 2);
-        QStandardItem* extensionItem = new QStandardItem(info.suffix());
-        QStandardItem* pathItem = new QStandardItem(QDir::toNativeSeparators(info.canonicalPath()));
-        QStandardItem* durationItem = new QStandardItem(QString::number(0));
-        QStandardItem* artistItem = new QStandardItem("");
-        QStandardItem* titleItem = new QStandardItem("");
-        QStandardItem* albumItem = new QStandardItem("");
-        QStandardItem* trackItem = new QStandardItem("");
-        QStandardItem* yearItem = new QStandardItem("");
-        QStandardItem* genreItem = new QStandardItem("");
-        QStandardItem* commentItem = new QStandardItem("");
-        QStandardItem* bitrateItem = new QStandardItem("");
-        QStandardItem* samplerateItem = new QStandardItem("");
-        QStandardItem* bitsItem = new QStandardItem("");
-        QStandardItem* channelsItem = new QStandardItem("");
-        QStandardItem* formatItem = new QStandardItem("");
-        QStandardItem* coverSizeItem = new QStandardItem("");
-        QStandardItem* fileSizeItem = new QStandardItem("");
-        QStandardItem* lastModifiedItem = new QStandardItem("");
-        QStandardItem* ratingItem = new QStandardItem("");
-        QStandardItem* playCountItem = new QStandardItem("");
+        QStandardItem *extensionItem = new QStandardItem(info.suffix());
+        QStandardItem *pathItem = new QStandardItem(QDir::toNativeSeparators(info.canonicalPath()));
+        QStandardItem *durationItem = new QStandardItem(QString::number(0));
+        QStandardItem *artistItem = new QStandardItem("");
+        QStandardItem *titleItem = new QStandardItem("");
+        QStandardItem *albumItem = new QStandardItem("");
+        QStandardItem *trackItem = new QStandardItem("");
+        QStandardItem *yearItem = new QStandardItem("");
+        QStandardItem *genreItem = new QStandardItem("");
+        QStandardItem *commentItem = new QStandardItem("");
+        QStandardItem *bitrateItem = new QStandardItem("");
+        QStandardItem *samplerateItem = new QStandardItem("");
+        QStandardItem *bitsItem = new QStandardItem("");
+        QStandardItem *channelsItem = new QStandardItem("");
+        QStandardItem *formatItem = new QStandardItem("");
+        QStandardItem *coverSizeItem = new QStandardItem("");
+        QStandardItem *fileSizeItem = new QStandardItem("");
+        QStandardItem *lastModifiedItem = new QStandardItem("");
+        QStandardItem *ratingItem = new QStandardItem("");
+        QStandardItem *playCountItem = new QStandardItem("");
         // Build row
         QList<QStandardItem *> rowItems;
         rowItems << fileItem << extensionItem << pathItem << durationItem
@@ -1188,17 +1271,9 @@ void PlaylistTable::addTrack(const QString & filePath)
     // --- Add to playlist ---
     //m_playlist->addMedia(QUrl::fromLocalFile(filePath));
     int iLastRow = m_model->rowCount() - 1;
-    //    // --- Align columns
-    m_model->item(iLastRow, ColumnIndex::Duration)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::FileSize)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::Bitrate)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::Bits)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::Channels)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::Samplerate)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::Track)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::Year)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_model->item(iLastRow, ColumnIndex::PlayCount)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    alignColumns(iLastRow);
 }
+
 void PlaylistTable::setSectionsResizeMode()
 {
     m_view->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
@@ -1256,15 +1331,20 @@ void PlaylistTable::clear()
     //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
     // setSectionsResizeMode();
 }
-QString PlaylistTable::extractFileName(const QString & filePath)
+
+QString PlaylistTable::extractFileName(const QString &filePath)
 {
     QFileInfo info(filePath);
     return info.completeBaseName();
 }
-void PlaylistTable::onDoubleClicked(const QModelIndex & index)
+
+void PlaylistTable::onDoubleClicked(const QModelIndex &index)
 {
     if (!index.isValid())
+    {
+        LOG_MSG_SHORT("No valid index:" << index.row());
         return;
+    }
     int proxyRow = index.row();
     // Map proxy row to source row
     QModelIndex sourceIndex = m_sortModel->mapToSource(index);
@@ -1277,7 +1357,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex & index)
         m_playlist->setCurrentIndex(proxyRow);
         emit trackActivated(proxyRow);
         // Incrementa playcount nel modello
-        QStandardItem* playCountItem = m_model->item(sourceRow, ColumnIndex::PlayCount);
+        QStandardItem *playCountItem = m_model->item(sourceRow, ColumnIndex::PlayCount);
         if (playCountItem)
         {
             int playCount = playCountItem->text().toInt();
@@ -1287,7 +1367,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex & index)
             emit m_model->dataChanged(playCountItem->index(), playCountItem->index(), {Qt::DisplayRole});
         }
         // Incrementa playcount nel database
-        QStandardItem* fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
+        QStandardItem *fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
         if (fileItem)
         {
             QString path = fileItem->data(Qt::UserRole + 1).toString();
@@ -1295,14 +1375,18 @@ void PlaylistTable::onDoubleClicked(const QModelIndex & index)
             {
                 DatabaseManager::instance().incrementPlayCount(path);
                 DatabaseManager::instance().addToHistory(path, 0);
+                fileItem->setIcon(QIcon(":/img/img/icons8-play-48.png"));
             }
         }
     }
     else
     {
-        //qDebug() << "same row";
+        qDebug() << "same row";
+        QModelIndex proxyindex = m_sortModel->mapToSource(index);
+        QStandardItem *stdItem = m_model->item(proxyindex.row(), 0);
         m_playlist->setCurrentIndex(proxyRow);
         emit trackActivated(proxyRow);
+        stdItem->setIcon(QIcon(":/img/img/icons8-play-48.png"));
     }
     /*
           // qDebug() << __PRETTY_FUNCTION__ << "index.row()" << index.row();
@@ -1326,6 +1410,7 @@ void PlaylistTable::onDoubleClicked(const QModelIndex & index)
 
     */
 }
+
 //void PlaylistTable::onDoubleClicked(const QModelIndex &index)
 //{
 // if (!index.isValid())
@@ -1344,16 +1429,18 @@ void PlaylistTable::onDoubleClicked(const QModelIndex & index)
 // emit trackActivated(proxyRow);
 // }
 //}
-void PlaylistTable::onClicked(const QModelIndex & index)
+void PlaylistTable::onClicked(const QModelIndex &index)
 {
     int row = mapProxyRowToSource(m_sortModel, index.row());
     //LOG_MSG_SHORT("index.row()= proxy:" << index.row() << " - Model:" << row);
     //m_view->setModel (m_model);
     //m_view->verticalHeader ()->setModel (m_sortModel);
 }
+
 void PlaylistTable::setCurrentItemIcon(bool bPlaying)
 {
-    if (!bPlaying)
+    //if (!m_bSessionPlaylistIsShown) return;
+    if (m_player->state() != QMediaPlayer::PlayingState || !bPlaying) // !bPlaying)
     {
         QIcon defaultIcon(":/img/img/icons8-music-48.png");
         // QIcon defaultIcon(":/img/img/icons8-stop-48.png");
@@ -1365,6 +1452,7 @@ void PlaylistTable::setCurrentItemIcon(bool bPlaying)
         if (m_CurrentItem) m_CurrentItem->setIcon(playingIcon);
     }
 }
+
 //void PlaylistTable::onCurrentTrackChanged(int index)
 //{
 // qDebug() << __PRETTY_FUNCTION__ << "index:" << index;
@@ -1475,6 +1563,7 @@ void PlaylistTable::incrementPlayCount(int sourceRow)
         }
     }
 }
+
 void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
 {
     qDebug() << __PRETTY_FUNCTION__ << "playlistIndex:" << playlistIndex;
@@ -1533,6 +1622,7 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
         if (m_view->selectionModel())
             m_view->selectionModel()->clearSelection();
         m_CurrentItem = nullptr;
+        m_CurrentPlaylistItem = nullptr;
         return;
     }
     // Set playing icon on the matched SOURCE item
@@ -1541,8 +1631,13 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
     {
         currentItem->setIcon(playingIcon);
         m_CurrentItem = currentItem;
+        if (m_bSessionPlaylistIsShown)
+        {
+            m_CurrentPlaylistItem = currentItem;
+            m_iLastPlaylistFile = m_CurrentPlaylistItem->row();
+        }
     }
-    incrementPlayCount(sourceRow);    // Map SOURCE row to PROXY row for view operations
+    incrementPlayCount(sourceRow); // Map SOURCE row to PROXY row for view operations
     DatabaseManager::instance().addToHistory(currentCanon, 0);
     QModelIndex sourceIndex = m_model->index(matchSourceRow, 0);
     QModelIndex proxyIndex = m_sortModel->mapFromSource(sourceIndex);
@@ -1577,15 +1672,16 @@ void PlaylistTable::onCurrentTrackChanged(int playlistIndex)
 void PlaylistTable::on_pushButton_2_clicked()
 {
     QHeaderView *header = m_view->horizontalHeader();
-    header-> resizeSections(QHeaderView::ResizeToContents);
+    header->resizeSections(QHeaderView::ResizeToContents);
 }
 
-int PlaylistTable::mapSourceRowToProxy(QAbstractItemModel * sourceModel, QSortFilterProxyModel * proxyModel, int sourceRow)
+int PlaylistTable::mapSourceRowToProxy(QAbstractItemModel *sourceModel, QSortFilterProxyModel *proxyModel, int sourceRow)
 {
     QModelIndex sourceIndex = sourceModel->index(sourceRow, 0);
     return proxyModel->mapFromSource(sourceIndex).row();
 }
-int PlaylistTable::mapProxyRowToSource(QSortFilterProxyModel * proxyModel, int proxyRow)
+
+int PlaylistTable::mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int proxyRow)
 {
     if (!proxyModel)
         return -1;
@@ -1593,9 +1689,10 @@ int PlaylistTable::mapProxyRowToSource(QSortFilterProxyModel * proxyModel, int p
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     return sourceIndex.isValid() ? sourceIndex.row() : -1;
 }
+
 void PlaylistTable::updateSearchCount(int currentRow)
 {
-    QPoint globalPos = ui->pushButtonClearFind-> mapToGlobal(QPoint(ui->pushButtonClearFind->width() / 2, ui->pushButtonClearFind->height() / 2));
+    QPoint globalPos = ui->pushButtonClearFind->mapToGlobal(QPoint(ui->pushButtonClearFind->width() / 2, ui->pushButtonClearFind->height() / 2));
     // Costruisci una lista delle righe uniche con match
     QSet<int> uniqueRows;
     for (const QModelIndex &idx : m_findMatches)
@@ -1615,9 +1712,10 @@ void PlaylistTable::updateSearchCount(int currentRow)
     // ui->labelSearchStatus->setText(QString("%1 of %2")
     // .arg(currentIndex + 1)
     // .arg(rowsList.size()));
-    QString text = QString("%1 of %2").arg(currentIndex + 1) .arg(rowsList.size());
+    QString text = QString("%1 of %2").arg(currentIndex + 1).arg(rowsList.size());
     QToolTip::showText(globalPos, text, ui->pushButtonClearFind);
 }
+
 void PlaylistTable::handleNewSearchInput()
 {
     QString newText = ui->comboBoxFind->currentText().trimmed();
@@ -1652,6 +1750,7 @@ void PlaylistTable::handleNewSearchInput()
     }
     saveSearchHistory(updatedHistory);
 }
+
 void PlaylistTable::handleNewFilterInput()
 {
     QString newText = ui->comboBoxFilter->currentText().trimmed();
@@ -1686,6 +1785,7 @@ void PlaylistTable::handleNewFilterInput()
     }
     saveFilterHistory(updatedHistory);
 }
+
 /*
   void PlaylistTable::handleNewSearchInput()
 {
@@ -1744,6 +1844,7 @@ void PlaylistTable::loadSearchHistory()
     }
     ui->comboBoxFind->setEditText(QString());
 }
+
 void PlaylistTable::loadFilterHistory()
 {
     settingsMgr->beginGroup("Table");
@@ -1758,18 +1859,21 @@ void PlaylistTable::loadFilterHistory()
     }
     ui->comboBoxFilter->setEditText(QString());
 }
-void PlaylistTable::saveSearchHistory(const QStringList & history)
+
+void PlaylistTable::saveSearchHistory(const QStringList &history)
 {
     settingsMgr->beginGroup("Table");
     settingsMgr->setValue("SearchHistory", history);
     settingsMgr->endGroup();
 }
-void PlaylistTable::saveFilterHistory(const QStringList & history)
+
+void PlaylistTable::saveFilterHistory(const QStringList &history)
 {
     settingsMgr->beginGroup("Table");
     settingsMgr->setValue("FilterHistory", history);
     settingsMgr->endGroup();
 }
+
 //void PlaylistTable::updateSearchCount(int currentMatchIndex)
 //{
 // int totalMatches = m_findMatches.size();
@@ -1814,6 +1918,7 @@ void PlaylistTable::findNext()
     m_view->scrollTo(nextIndex, QAbstractItemView::EnsureVisible);
     updateSearchCount(nextRow);
 }
+
 void PlaylistTable::findPrevious()
 {
     if (m_findMatches.isEmpty() && !m_lastSearchText.isEmpty())
@@ -1842,6 +1947,7 @@ void PlaylistTable::findPrevious()
     m_view->scrollTo(nextIndex, QAbstractItemView::EnsureVisible);
     updateSearchCount(prevRow);
 }
+
 void PlaylistTable::clearSearchHighlight()
 {
     for (int r = 0; r < m_sortModel->rowCount(); ++r)
@@ -1852,7 +1958,8 @@ void PlaylistTable::clearSearchHighlight()
     // ui->pushButtonNext->setEnabled (true);
     // ui->pushButtonPrev->setEnabled (true);
 }
-void PlaylistTable::findInTable(const QString & searchText)
+
+void PlaylistTable::findInTable(const QString &searchText)
 {
     if (searchText.length() < MIN_SEARCH_CHARS) return;
     if (!m_sortModel || searchText.isEmpty())
@@ -1914,6 +2021,7 @@ void PlaylistTable::findInTable(const QString & searchText)
     // m_view->selectionModel()->select(first, QItemSelectionModel::ClearAndSelect);
     //}
 }
+
 //void PlaylistTable::clearSearchHighlight()
 //{
 // for (int r = 0; r < m_sortModel->rowCount(); ++r)
@@ -1974,7 +2082,7 @@ void PlaylistTable::findInTable(const QString & searchText)
 // LOG_MSG_SHORT("path" << path << "row" << index.row());
 // }
 //}
-void PlaylistTable::setRating(const QModelIndex & index, int newRating)
+void PlaylistTable::setRating(const QModelIndex &index, int newRating)
 {
     if (!index.isValid() || newRating < -1)
         return;
@@ -1988,7 +2096,7 @@ void PlaylistTable::setRating(const QModelIndex & index, int newRating)
     QString ratingValue = QString::number(newRating);
     m_model->setData(ratingIndex, ratingValue, Qt::DisplayRole);
     // Emit dataChanged manually if needed
-    emit m_model->dataChanged(ratingIndex, ratingIndex, { Qt::DisplayRole });
+    emit m_model->dataChanged(ratingIndex, ratingIndex, {Qt::DisplayRole});
     // Update database
     QStandardItem *fileItem = m_model->item(sourceRow, ColumnIndex::Filename);
     if (fileItem)
@@ -2002,13 +2110,14 @@ void PlaylistTable::setRating(const QModelIndex & index, int newRating)
     }
     LOG_MSG_SHORT("Updated rating:" << newRating << "row:" << sourceRow);
 }
-void PlaylistTable::showPlaylistContextMenu(const QPoint & pos)
+
+void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
 {
     QModelIndex index = m_view->indexAt(pos);
     if (!index.isValid()) return;
     QModelIndex sourceIndex = m_sortModel->mapToSource(index);
     int sourceRow = sourceIndex.row();
-    QStandardItem* item = m_model->item(sourceRow, 0);
+    QStandardItem *item = m_model->item(sourceRow, 0);
     QString fullPath = item->data(Qt::UserRole + 1).toString();
     int trackId = DatabaseManager::instance().getTrackId(fullPath);
     bool inFavorites = DatabaseManager::instance().isTrackInFavorites(trackId);
@@ -2086,7 +2195,7 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint & pos)
         {
             //QModelIndex sourceIndex = m_model->index(m_CurrentItem->row(), 0);
             QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
-            m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
+            m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter); //EnsureVisible);
         }
     }
     else if (selectedAction == ratingRemoveAction)
@@ -2102,7 +2211,7 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint & pos)
     {
         QModelIndex sourceIndex = m_sortModel->mapToSource(index);
         int sourceRow = sourceIndex.row();
-        QStandardItem* item = m_model->item(sourceRow, 0);
+        QStandardItem *item = m_model->item(sourceRow, 0);
         QString fullPath = item->data(Qt::UserRole + 1).toString();
         if (inFavorites)
         {
@@ -2145,6 +2254,7 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint & pos)
     // openFolderAndSelectFileEx(localFile);
     // }
 }
+
 /*
   void PlaylistTable::setKeyboardTargetWidget(Widget *target)
 {
@@ -2174,8 +2284,8 @@ void PlaylistTable::keyPressEvent(QKeyEvent *event)
 */
 void PlaylistTable::on_pushButtonFav_clicked()
 {
-  m_iLastPlaylistFile= m_CurrentItem->row ();
-//   m_lastPlaylistFile = m_CurrentItem->data(Qt::UserRole + 1).toString();
+    // m_iLastPlaylistFile = m_CurrentPlaylistItem->row();
+    // m_lastPlaylistFile = m_CurrentItem->data(Qt::UserRole + 1).toString();
     if (m_bSessionPlaylistIsShown) saveSessionPlaylist();
     m_bSessionPlaylistIsShown = false;
     m_model->clear();
@@ -2202,8 +2312,8 @@ void PlaylistTable::on_pushButtonFav_clicked()
     m_view->verticalHeader()->setMaximumSectionSize(32);
     restoreColumnWidths();
     restoreColumnVisibility();
-    // m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
-    // m_HorizontalHeader->setSortIndicatorShown(false);
+    m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
+    m_HorizontalHeader->setSortIndicatorShown(false);
     //on_pushButton_clicked();
     //on_pushButton_2_clicked ();
     //setSectionsResizeMode();
@@ -2240,12 +2350,13 @@ void PlaylistTable::on_pushButtonFav_clicked()
             continue;
         int sourceRow = sourceIndex.row();
         // Read data from SOURCE model
-        QStandardItem* item = m_model->item(sourceRow, 0);
+        QStandardItem *item = m_model->item(sourceRow, 0);
         if (!item)
             continue;
         QString fullPath = item->data(Qt::UserRole + 1).toString();
         //qDebug()<<"fullPath="<< fullPath;
         m_playlist->addMedia(QUrl::fromLocalFile(fullPath));
+        alignColumns(proxyRow);
     }
     emit playlistUpdated(m_playlist);
     m_view->setSortingEnabled(true);
@@ -2254,8 +2365,8 @@ void PlaylistTable::on_pushButtonFav_clicked()
 
 void PlaylistTable::on_pushButtonHistory_clicked()
 {
- m_iLastPlaylistFile= m_CurrentItem->row ();
-//    m_lastPlaylistFile = m_CurrentItem->data(Qt::UserRole + 1).toString();
+    //m_iLastPlaylistFile = m_CurrentPlaylistItem->row();
+    // m_lastPlaylistFile = m_CurrentItem->data(Qt::UserRole + 1).toString();
     if (m_bSessionPlaylistIsShown) saveSessionPlaylist();
     m_bSessionPlaylistIsShown = false;
     m_model->clear();
@@ -2282,8 +2393,8 @@ void PlaylistTable::on_pushButtonHistory_clicked()
     m_view->verticalHeader()->setMaximumSectionSize(32);
     restoreColumnWidths();
     restoreColumnVisibility();
-    // m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
-    // m_HorizontalHeader->setSortIndicatorShown(false);
+    m_HorizontalHeader->setSortIndicator(-1, Qt::AscendingOrder);
+    m_HorizontalHeader->setSortIndicatorShown(false);
     //on_pushButton_clicked();
     //on_pushButton_2_clicked ();
     //setSectionsResizeMode();
@@ -2325,12 +2436,13 @@ void PlaylistTable::on_pushButtonHistory_clicked()
             continue;
         int sourceRow = sourceIndex.row();
         // Read data from SOURCE model
-        QStandardItem* item = m_model->item(sourceRow, 0);
+        QStandardItem *item = m_model->item(sourceRow, 0);
         if (!item)
             continue;
         QString fullPath = item->data(Qt::UserRole + 1).toString();
         //qDebug()<<"fullPath="<< fullPath;
         m_playlist->addMedia(QUrl::fromLocalFile(fullPath));
+        alignColumns(proxyRow);
     }
     emit playlistUpdated(m_playlist);
     m_view->setSortingEnabled(true);
@@ -2400,12 +2512,13 @@ void PlaylistTable::on_pushButtonPlaylist_clicked()
             continue;
         int sourceRow = sourceIndex.row();
         // Read data from SOURCE model
-        QStandardItem* item = m_model->item(sourceRow, 0);
+        QStandardItem *item = m_model->item(sourceRow, 0);
         if (!item)
             continue;
         QString fullPath = item->data(Qt::UserRole + 1).toString();
         //qDebug()<<"fullPath="<< fullPath;
         m_playlist->addMedia(QUrl::fromLocalFile(fullPath));
+        alignColumns(proxyRow);
     }
     //emit playlistUpdated(m_playlist);
     int iSortCol = settingsMgr->value("PlaylistViewSortColumn", 0).toInt();
@@ -2414,11 +2527,62 @@ void PlaylistTable::on_pushButtonPlaylist_clicked()
     m_view->setSortingEnabled(true);
     m_view->horizontalHeader()->setSortIndicator(iSortCol, order);
     m_HorizontalHeader->setSortIndicatorShown(true);
-    onCurrentTrackChanged (m_iLastPlaylistFile);
+    //onCurrentTrackChanged(m_iLastPlaylistFile);
     // if (m_CurrentItem)
     // {
     //            //QModelIndex sourceIndex = m_model->index(m_CurrentItem->row(), 0);
     // QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
     // m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter);//EnsureVisible);
     // }
+}
+
+void PlaylistTable::setupToolButton()
+{
+    toolButtonMenu = new QMenu(this);
+    resetAllPlayCountsAction = new QAction("Reset all play counts", this);
+    action2 = new QAction("Find next", this);
+    toolButtonMenu->addAction(resetAllPlayCountsAction);
+    toolButtonMenu->addAction(action2);
+    ui->toolButton->setMenu(toolButtonMenu);
+    // 4. Imposta la popupMode su InstantPopup
+    // Questo è il passaggio chiave per mostrare il menu al clic!
+    // ui->toolButton->setPopupMode(QToolButton::InstantPopup);
+    connect(resetAllPlayCountsAction, &QAction::triggered, this, &PlaylistTable::resetAllPlayCounts);
+    connect(action2, &QAction::triggered, this, &PlaylistTable::findNext);
+}
+
+void PlaylistTable::resetAllPlayCounts()
+{
+    DatabaseManager &db = DatabaseManager::instance();
+    db.resetAllPlayCounts();
+    int iRows = m_view->model()->rowCount();
+    for (int iIdx = 0; iIdx < iRows; iIdx++)
+    {
+        //QModelIndex proxyIndex = m_sortModel->index(iIdx, ColumnIndex::PlayCount);
+        QStandardItem *playCountItem = m_model->item(iIdx, ColumnIndex::PlayCount);
+        if (playCountItem)
+        {
+            playCountItem->setText(QString::number(0));
+            playCountItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            emit m_model->dataChanged(playCountItem->index(), playCountItem->index(),
+            {Qt::DisplayRole});
+        }
+        // proxyIndex.data ().setValue("");
+    }
+    /*
+              QAbstractItemModel *viewModel = m_view->model();
+    for (int i = 0; i < viewModel->rowCount(); ++i)
+    {
+        // ... (La tua logica per costruire il percorso URL) ...
+        QModelIndex pathIndex = viewModel->index(i, ColumnIndex::PlayCount);
+        QString path = viewModel->data(pathIndex).toString() + "/";
+        pathIndex = viewModel->index(i, 0);
+        path.append(viewModel->data(pathIndex).toString());
+        path.append(".");
+        pathIndex = viewModel->index(i, 1);
+        path.append(viewModel->data(pathIndex).toString());
+        m_stagedPlaylist->addMedia(QUrl::fromLocalFile(path));
+    }
+
+    */
 }

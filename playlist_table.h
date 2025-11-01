@@ -1,22 +1,21 @@
 #ifndef PLAYLISTTABLE_H
 #define PLAYLISTTABLE_H
 
-#include <QFuture>
-#include <QtConcurrent/QtConcurrent>
-#include <QWidget>
-#include <QTableView>
-#include <QStandardItemModel>
-#include <QMediaPlaylist>
-#include <QMediaPlayer>
 #include "audio_tag.h"
+#include "elided_header_view.h"
 #include "playlist_sortmodel.h"
 #include "settings_manager.h"
 #include "tag_loader_worker.h"
-#include "elided_header_view.h"
+#include <QFuture>
+#include <QMediaPlayer>
+#include <QMediaPlaylist>
+#include <QStandardItemModel>
+#include <QTableView>
+#include <QWidget>
+#include <QtConcurrent/QtConcurrent>
 
 namespace ColumnIndex
 {
-
 enum Value
 {
     Filename = 0,
@@ -75,26 +74,26 @@ static const QStringList Headers =
 static const QList<int> DefaultWidths =
 {
     250, // Filename
-    30,  // Ext
+    30, // Ext
     120, // Path
-    50,  // Duration
+    50, // Duration
     120, // Artist
     120, // Title
     120, // Album
-    30,  // Track
-    40,  // Year
+    30, // Track
+    40, // Year
     100, // Genre
     100, // Comment
-    30,  // Bitrate
-    40,  // Samplerate
-    30,  // Bits
-    30,  // Channels
+    30, // Bitrate
+    40, // Samplerate
+    30, // Bits
+    30, // Channels
     100, // Format
     60, // Cover size
-    60,  // File size
+    60, // File size
     80, // Last modified
-    40,  // Rating
-    40   // Play count
+    40, // Rating
+    40 // Play count
 };
 
 // Helper functions
@@ -111,7 +110,7 @@ inline int defaultWidth(int index)
         return DefaultWidths.at(index);
     return 100; // fallback width
 }
-}
+} // namespace ColumnIndex
 
 //class Widget;
 
@@ -133,9 +132,12 @@ public:
     void addFilesFinished();
     void setSectionsResizeMode();
     // void setKeyboardTargetWidget(Widget *target);
+    void setupToolButton();
+    void alignColumns(int iLastRow);
 signals:
     void trackActivated(int index);
     void playlistUpdated(QMediaPlaylist *playlist);
+    void playlistSorted(QMediaPlaylist *playlist);
     void isSorting(bool);
     void windowClosed();
     void focusReceived();
@@ -173,14 +175,17 @@ private slots:
     void on_pushButtonFav_clicked();
     void on_pushButtonHistory_clicked();
     void on_pushButtonPlaylist_clicked();
-
+    void onTrackFinishedOrStopped(QMediaPlayer::State);
+    void resetAllPlayCounts();
 private:
     ElidedHeaderView *m_HorizontalHeader;
     SettingsManager *settingsMgr;
     Ui::PlaylistTable *ui;
     QStandardItem *m_CurrentItem;
+    QStandardItem *m_CurrentPlaylistItem;
     void incrementPlayCount(int sourceRow);
     void setSignalsConnections();
+    void syncStagedPlaylistOrder(int sortColumn, Qt::SortOrder order);
     void syncPlaylistOrder(int sortCol, Qt::SortOrder sortOrder);
     void syncPlaylistOrder_(int sortColumn, Qt::SortOrder order);
     int m_iSortCol;
@@ -190,6 +195,7 @@ private:
     QString extractFileName(const QString &filePath);
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
+    QMediaPlaylist *m_stagedPlaylist;
     QStandardItemModel *m_model;
     PlaylistSortModel *m_sortModel;
     QTableView *m_view;
@@ -202,8 +208,8 @@ private:
     // QList<QModelIndex> m_findMatches;    // indici sul proxy (visibili)
     // int m_findCurrentIndex = -1;
     QString m_lastSearchText;
-//        QString m_lastPlaylistFile;
-   int m_iLastPlaylistFile;
+    // QString m_lastPlaylistFile;
+    int m_iLastPlaylistFile;
     QList<QPersistentModelIndex> m_findMatches;
     void updateSearchCount(int currentMatchIndex);
     const int MAX_SEARCH_HISTORY_SIZE = 20;
@@ -215,6 +221,9 @@ private:
     // Widget *m_target;
     void setRating(const QModelIndex &index, int newRating);
     void saveSessionPlaylist();
+    QMenu *toolButtonMenu;
+    QAction *resetAllPlayCountsAction;
+    QAction *action2;
 };
 
 #endif // PLAYLISTTABLE_H
