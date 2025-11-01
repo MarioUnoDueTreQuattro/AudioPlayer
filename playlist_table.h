@@ -203,6 +203,8 @@ private:
     QHash<QString, int> m_FilePathToRow;
     int mapSourceRowToProxy(QAbstractItemModel *sourceModel, QSortFilterProxyModel *proxyModel, int sourceRow);
     int mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int proxyRow);
+    int mapRowToProxy(int sourceRow);
+    int mapRowToSource(int proxyRow);
     TagLoaderWorker *m_tagWorker;
     QFutureWatcher<void> *m_FutureWatcher;
     // QList<QModelIndex> m_findMatches;    // indici sul proxy (visibili)
@@ -223,7 +225,7 @@ private:
     void saveSessionPlaylist();
     QMenu *toolButtonMenu;
     QAction *resetAllPlayCountsAction;
-    QAction *action2;
+    QAction *deleteInexistentFilesAction;
 };
 
 #endif // PLAYLISTTABLE_H

@@ -38,7 +38,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QMediaPlaylist *playlist, QWi
       m_bHasBeenSorted(false),
       m_bSessionPlaylistIsShown(true)
       /*,
-                  m_findCurrentIndex (-1)*/
+                              m_findCurrentIndex (-1)*/
 {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
     ui->setupUi(this);
@@ -1690,6 +1690,21 @@ int PlaylistTable::mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int pr
     return sourceIndex.isValid() ? sourceIndex.row() : -1;
 }
 
+int PlaylistTable::mapRowToProxy( int sourceRow)
+{
+    QModelIndex sourceIndex = m_model->index(sourceRow, 0);
+    return m_sortModel->mapFromSource(sourceIndex).row();
+}
+
+int PlaylistTable::mapRowToSource( int proxyRow)
+{
+    if (!m_sortModel)
+        return -1;
+    QModelIndex proxyIndex = m_sortModel->index(proxyRow, 0); // column 0 is arbitrary, just needs a valid index
+    QModelIndex sourceIndex = m_sortModel->mapToSource(proxyIndex);
+    return sourceIndex.isValid() ? sourceIndex.row() : -1;
+}
+
 void PlaylistTable::updateSearchCount(int currentRow)
 {
     QPoint globalPos = ui->pushButtonClearFind->mapToGlobal(QPoint(ui->pushButtonClearFind->width() / 2, ui->pushButtonClearFind->height() / 2));
@@ -2209,10 +2224,10 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     }
     else if (selectedAction == favoriteAction)
     {
-        QModelIndex sourceIndex = m_sortModel->mapToSource(index);
-        int sourceRow = sourceIndex.row();
-        QStandardItem *item = m_model->item(sourceRow, 0);
-        QString fullPath = item->data(Qt::UserRole + 1).toString();
+        //QModelIndex sourceIndex = m_sortModel->mapToSource(index);
+        //int sourceRow = sourceIndex.row();
+        //QStandardItem *item = m_model->item(sourceRow, 0);
+        //QString fullPath = item->data(Qt::UserRole + 1).toString();
         if (inFavorites)
         {
             DatabaseManager::instance().removeFromFavorites(fullPath);
@@ -2323,7 +2338,7 @@ void PlaylistTable::on_pushButtonFav_clicked()
     //if (m_model->rowCount() > 0) onHeaderSortChanged(iSortCol, order);
     //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
     // setSectionsResizeMode();
-    m_playlist->clear();
+    // m_playlist->clear();
     QList<AudioTagInfo> favList = DatabaseManager::instance().favoriteTracks();
     for (AudioTagInfo tagInfo : favList)
     {
@@ -2404,7 +2419,7 @@ void PlaylistTable::on_pushButtonHistory_clicked()
     //if (m_model->rowCount() > 0) onHeaderSortChanged(iSortCol, order);
     //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
     // setSectionsResizeMode();
-    m_playlist->clear();
+    // m_playlist->clear();
     QList<AudioTagInfo> historyList = DatabaseManager::instance().historyTracks();
     for (AudioTagInfo tagInfo : historyList)
     {
@@ -2485,7 +2500,7 @@ void PlaylistTable::on_pushButtonPlaylist_clicked()
     //if (m_model->rowCount() > 0) onHeaderSortChanged(iSortCol, order);
     //if (m_view->horizontalHeader()->isSortIndicatorShown()) onHeaderSortChanged(iSortCol, order);
     // setSectionsResizeMode();
-    m_playlist->clear();
+    // m_playlist->clear();
     QList<AudioTagInfo> favList = DatabaseManager::instance().loadSessionPlaylist();
     for (AudioTagInfo tagInfo : favList)
     {
@@ -2540,15 +2555,19 @@ void PlaylistTable::setupToolButton()
 {
     toolButtonMenu = new QMenu(this);
     resetAllPlayCountsAction = new QAction("Reset all play counts", this);
-    action2 = new QAction("Find next", this);
+    deleteInexistentFilesAction = new QAction("Delete inexistent files", this);
     toolButtonMenu->addAction(resetAllPlayCountsAction);
-    toolButtonMenu->addAction(action2);
+    toolButtonMenu->addAction(deleteInexistentFilesAction);
     ui->toolButton->setMenu(toolButtonMenu);
     // 4. Imposta la popupMode su InstantPopup
     // Questo è il passaggio chiave per mostrare il menu al clic!
     // ui->toolButton->setPopupMode(QToolButton::InstantPopup);
     connect(resetAllPlayCountsAction, &QAction::triggered, this, &PlaylistTable::resetAllPlayCounts);
-    connect(action2, &QAction::triggered, this, &PlaylistTable::findNext);
+    //connect(deleteInexistentFilesAction, &QAction::triggered, this, &PlaylistTable::deleteInexistentFiles);
+    connect(deleteInexistentFilesAction, &QAction::triggered, [this]()
+    {
+        DatabaseManager::instance().deleteInexistentFiles();
+    });
 }
 
 void PlaylistTable::resetAllPlayCounts()
@@ -2558,7 +2577,6 @@ void PlaylistTable::resetAllPlayCounts()
     int iRows = m_view->model()->rowCount();
     for (int iIdx = 0; iIdx < iRows; iIdx++)
     {
-        //QModelIndex proxyIndex = m_sortModel->index(iIdx, ColumnIndex::PlayCount);
         QStandardItem *playCountItem = m_model->item(iIdx, ColumnIndex::PlayCount);
         if (playCountItem)
         {
@@ -2567,22 +2585,5 @@ void PlaylistTable::resetAllPlayCounts()
             emit m_model->dataChanged(playCountItem->index(), playCountItem->index(),
             {Qt::DisplayRole});
         }
-        // proxyIndex.data ().setValue("");
     }
-    /*
-              QAbstractItemModel *viewModel = m_view->model();
-    for (int i = 0; i < viewModel->rowCount(); ++i)
-    {
-        // ... (La tua logica per costruire il percorso URL) ...
-        QModelIndex pathIndex = viewModel->index(i, ColumnIndex::PlayCount);
-        QString path = viewModel->data(pathIndex).toString() + "/";
-        pathIndex = viewModel->index(i, 0);
-        path.append(viewModel->data(pathIndex).toString());
-        path.append(".");
-        pathIndex = viewModel->index(i, 1);
-        path.append(viewModel->data(pathIndex).toString());
-        m_stagedPlaylist->addMedia(QUrl::fromLocalFile(path));
-    }
-
-    */
 }

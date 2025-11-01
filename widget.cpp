@@ -70,7 +70,7 @@ Widget::Widget(QWidget *parent)
     }
     else
         LOG_MSG_SHORT("Database opened.");
-    db.deleteInexistentFiles();
+    //db.deleteInexistentFiles();
     settingsMgr = SettingsManager::instance();
     ui->labelFilter->setVisible(false);
     ui->lineEditFilter->setVisible(false);
