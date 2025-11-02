@@ -9,17 +9,14 @@ TEMPLATE = app
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+INCLUDEPATH += widgets
+
 SOURCES += \
 #    3rdparty/qhotkey/QHotkey/qhotkey.cpp \
 #    3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
     audio_fader.cpp \
     audio_tag.cpp \
-    clickable_label.cpp \
-    clickable_slider.cpp \
     database_manager.cpp \
-    elided_header_view.cpp \
-    esc_aware_lineedit.cpp \
-    fading_slider.cpp \
     info_widget.cpp \
     main.cpp \
     playlist_delegates.cpp \
@@ -31,19 +28,19 @@ SOURCES += \
     system_volume_controller.cpp \
     tag_loader_worker.cpp \
     utility.cpp \
-    widget.cpp
+    widget.cpp \
+    widgets/clickable_label.cpp \
+    widgets/clickable_slider.cpp \
+    widgets/elided_header_view.cpp \
+    widgets/esc_aware_lineedit.cpp \
+    widgets/fading_slider.cpp
 
 HEADERS += \
 #    3rdparty/qhotkey/QHotkey/qhotkey.h \
 #    3rdparty/qhotkey/QHotkey/qhotkey_p.h \
     audio_fader.h \
     audio_tag.h \
-    clickable_label.h \
-    clickable_slider.h \
     database_manager.h \
-    elided_header_view.h \
-    esc_aware_lineedit.h \
-    fading_slider.h \
     info_widget.h \
     playlist_delegates.h \
     playlist_sortmodel.h \
@@ -54,7 +51,12 @@ HEADERS += \
     system_volume_controller.h \
     tag_loader_worker.h \
     utility.h \
-    widget.h
+    widget.h \
+    widgets/clickable_label.h \
+    widgets/clickable_slider.h \
+    widgets/elided_header_view.h \
+    widgets/esc_aware_lineedit.h \
+    widgets/fading_slider.h
 
 FORMS += \
     info_widget.ui \
