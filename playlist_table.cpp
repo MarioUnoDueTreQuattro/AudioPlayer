@@ -15,6 +15,8 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QTimer>
+#include <QMessageBox>
+
 //#include "widget.h"
 
 //#include <QItemSelectionModel>
@@ -1690,13 +1692,13 @@ int PlaylistTable::mapProxyRowToSource(QSortFilterProxyModel *proxyModel, int pr
     return sourceIndex.isValid() ? sourceIndex.row() : -1;
 }
 
-int PlaylistTable::mapRowToProxy( int sourceRow)
+int PlaylistTable::mapRowToProxy(int sourceRow)
 {
     QModelIndex sourceIndex = m_model->index(sourceRow, 0);
     return m_sortModel->mapFromSource(sourceIndex).row();
 }
 
-int PlaylistTable::mapRowToSource( int proxyRow)
+int PlaylistTable::mapRowToSource(int proxyRow)
 {
     if (!m_sortModel)
         return -1;
@@ -2556,8 +2558,14 @@ void PlaylistTable::setupToolButton()
     toolButtonMenu = new QMenu(this);
     resetAllPlayCountsAction = new QAction("Reset all play counts", this);
     deleteInexistentFilesAction = new QAction("Delete inexistent files", this);
+    exportFavoritesAction = new QAction("Export favorites", this);
+    importFavoritesAction = new QAction("Import favorites in database", this);
+    testMigrationAction=new QAction("Database migration", this);
     toolButtonMenu->addAction(resetAllPlayCountsAction);
     toolButtonMenu->addAction(deleteInexistentFilesAction);
+    toolButtonMenu->addAction(exportFavoritesAction);
+    toolButtonMenu->addAction(importFavoritesAction);
+    toolButtonMenu->addAction(testMigrationAction);
     ui->toolButton->setMenu(toolButtonMenu);
     // 4. Imposta la popupMode su InstantPopup
     // Questo è il passaggio chiave per mostrare il menu al clic!
@@ -2568,6 +2576,72 @@ void PlaylistTable::setupToolButton()
     {
         DatabaseManager::instance().deleteInexistentFiles();
     });
+    connect(exportFavoritesAction, &QAction::triggered, this, &PlaylistTable::exportFavorites);
+    connect(importFavoritesAction, &QAction::triggered, this, &PlaylistTable::importFavorites);
+    connect(testMigrationAction, &QAction::triggered, this, &PlaylistTable::testMigration);
+}
+
+void PlaylistTable::importFavorites()
+{
+    QString filename = QCoreApplication::applicationDirPath();
+    filename.append("/");
+    filename.append("Favorites.m3u");
+    QFile f(filename);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
+    int iLinesCount = 0;
+    int iLinesAddedCount = 0;
+    QTextStream in(&f);
+    while (!in.atEnd())
+    {
+        QString line = in.readLine().trimmed();
+        if (line.isEmpty() || line.startsWith("#"))
+            continue;
+        QFileInfo fi(line);
+        if (fi.exists())
+        {
+            iLinesCount++;
+            bool bAdded = DatabaseManager::instance().addToFavorites(line);
+            if (bAdded) iLinesAddedCount++;
+            //LOG_MSG_SHORT(line);
+        }
+    }
+    f.close();
+    if (iLinesCount == iLinesAddedCount)
+    {
+        QMessageBox::information(this, tr("Import favorites"), tr("%2 tracks in playlist\n%1\nAll %3 tracks set as favorites in database.").arg(filename).arg(iLinesCount).arg(iLinesAddedCount));
+    }
+    else
+    {
+        int iDiff = iLinesCount - iLinesAddedCount;
+        QMessageBox::information(this, tr("Import favorites"), tr("%2 tracks in playlist\n%1\n%3 tracks set as favorites in database.\n%4 tracks not set as favorites in database.").arg(filename).arg(iLinesCount).arg(iLinesAddedCount).arg(iDiff));
+    }
+}
+
+void PlaylistTable::exportFavorites()
+{
+    QList<AudioTagInfo> favList = DatabaseManager::instance().favoriteTracks();
+    if (favList.isEmpty())
+    {
+        QMessageBox::warning(this, "", "No favorites found.");
+        return;
+    }
+    QString filename = QCoreApplication::applicationDirPath();
+    filename.append("/");
+    filename.append("Favorites.m3u");
+    QFile f(filename);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(this, tr("Error"), tr("Cannot save playlist: %1").arg(filename));
+        return;
+    }
+    QTextStream out(&f);
+    for (AudioTagInfo tagInfo : favList)
+    {
+        out << tagInfo.sFileName << "\n";
+    }
+    f.close();
+    QMessageBox::information(this, tr("Export favorites"), tr("Exported %2 tracks in playlist\n %1").arg(filename).arg(favList.count()));
 }
 
 void PlaylistTable::resetAllPlayCounts()
@@ -2586,4 +2660,143 @@ void PlaylistTable::resetAllPlayCounts()
             {Qt::DisplayRole});
         }
     }
+}
+
+void PlaylistTable::testMigration()
+{
+    //DatabaseManager dbMgr;
+//    QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first();
+//    sDatabasePath.append("/playlist.db");
+    DatabaseManager &dbMgr = DatabaseManager::instance();
+//    if (!dbMgr.openDatabase(sDatabasePath))
+//    {
+//        qWarning() << "Could not open database!";
+//        // return;
+//    }
+//    else
+//        LOG_MSG_SHORT("Database opened.");
+
+//    // Test 1: Apri database (esegue migrazione automaticamente)
+//    qDebug() << "\n========== TEST 1: Open Database ==========";
+//    if (!dbMgr.openDatabase("test_music.db"))
+//    {
+//        qCritical() << "FAIL: Could not open database";
+//        return;
+//    }
+//    qDebug() << "PASS: Database opened and migrated";
+
+    // Test 2: Verifica schema Favorites
+    qDebug() << "\n========== TEST 2: Verify Favorites Schema ==========";
+    QSqlQuery query(dbMgr.database());
+    query.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='Favorites'");
+    if (query.next())
+    {
+        QString schema = query.value(0).toString();
+        qDebug() << "Favorites schema:\n" << schema;
+
+        if (schema.contains("UNIQUE") && schema.contains("CASCADE"))
+        {
+            qDebug() << "PASS: Favorites has UNIQUE and CASCADE";
+        }
+        else
+        {
+            qCritical() << "FAIL: Favorites missing UNIQUE or CASCADE";
+        }
+    }
+
+    // Test 3: Verifica foreign keys abilitate
+    qDebug() << "\n========== TEST 3: Verify Foreign Keys ==========";
+    query.exec("PRAGMA foreign_keys");
+    if (query.next())
+    {
+        bool enabled = query.value(0).toBool();
+        if (enabled)
+        {
+            qDebug() << "PASS: Foreign keys enabled";
+        }
+        else
+        {
+            qCritical() << "FAIL: Foreign keys disabled";
+        }
+    }
+
+    // Test 4: Test INSERT OR IGNORE
+    qDebug() << "\n========== TEST 4: Test Duplicate Prevention ==========";
+
+    // Inserisci un track
+    query.exec("INSERT INTO Tracks (FullFilePath, Title) VALUES ('/test/song.mp3', 'Test Song')");
+    int trackId = query.lastInsertId().toInt();
+    qDebug() << "Inserted track ID:" << trackId;
+
+    // Aggiungi a favorites (prima volta)
+    query.prepare("INSERT OR IGNORE INTO Favorites (TrackId, DateAdded) VALUES (?, datetime('now'))");
+    query.addBindValue(trackId);
+    query.exec();
+    int affected1 = query.numRowsAffected();
+    qDebug() << "First insert affected rows:" << affected1;
+
+    // Aggiungi di nuovo (dovrebbe essere ignorato)
+    query.prepare("INSERT OR IGNORE INTO Favorites (TrackId, DateAdded) VALUES (?, datetime('now'))");
+    query.addBindValue(trackId);
+    query.exec();
+    int affected2 = query.numRowsAffected();
+    qDebug() << "Second insert affected rows:" << affected2;
+
+    if (affected1 == 1 && affected2 == 0)
+    {
+        qDebug() << "PASS: Duplicate prevention works";
+    }
+    else
+    {
+        qCritical() << "FAIL: Duplicates not prevented";
+    }
+
+    // Test 5: Test CASCADE
+    qDebug() << "\n========== TEST 5: Test ON DELETE CASCADE ==========";
+
+    // Conta favorites prima
+    query.exec("SELECT COUNT(*) FROM Favorites WHERE TrackId = " + QString::number(trackId));
+    query.next();
+    int countBefore = query.value(0).toInt();
+    qDebug() << "Favorites count before delete:" << countBefore;
+
+    // Elimina track
+    query.exec("DELETE FROM Tracks WHERE Id = " + QString::number(trackId));
+
+    // Conta favorites dopo
+    query.exec("SELECT COUNT(*) FROM Favorites WHERE TrackId = " + QString::number(trackId));
+    query.next();
+    int countAfter = query.value(0).toInt();
+    qDebug() << "Favorites count after delete:" << countAfter;
+
+    if (countBefore > 0 && countAfter == 0)
+    {
+        qDebug() << "PASS: CASCADE delete works";
+    }
+    else
+    {
+        qCritical() << "FAIL: CASCADE delete failed";
+    }
+
+    // Test 6: Verifica indici
+    qDebug() << "\n========== TEST 6: Verify Indexes ==========";
+    query.exec("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'");
+    int indexCount = 0;
+    while (query.next())
+    {
+        qDebug() << "  Index:" << query.value(0).toString();
+        indexCount++;
+    }
+    qDebug() << "Total custom indexes:" << indexCount;
+
+    if (indexCount > 0)
+    {
+        qDebug() << "PASS: Indexes created";
+    }
+    else
+    {
+        qWarning() << "WARN: No indexes found";
+    }
+
+    qDebug() << "\n========== ALL TESTS COMPLETED ==========";
 }

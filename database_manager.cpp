@@ -10,25 +10,95 @@ DatabaseManager::~DatabaseManager()
     closeDatabase();
 }
 
+//bool DatabaseManager::openDatabase(const QString &dbPath)
+//{
+// if (QSqlDatabase::contains("audio_connection"))
+// m_db = QSqlDatabase::database("audio_connection");
+// else
+// m_db = QSqlDatabase::addDatabase("QSQLITE", "audio_connection");
+// m_db.setDatabaseName(dbPath);
+// if (!m_db.open())
+// {
+// qDebug() << "Database open error:" << m_db.lastError().text();
+// return false;
+// }
+// return createTables();
+//}
+
 bool DatabaseManager::openDatabase(const QString &dbPath)
 {
-    if (QSqlDatabase::contains("audio_connection"))
-        m_db = QSqlDatabase::database("audio_connection");
-    else
-        m_db = QSqlDatabase::addDatabase("QSQLITE", "audio_connection");
+    // Se già aperto, chiudi prima
+    if (m_db.isOpen())
+    {
+        closeDatabase();
+    }
+    // Verifica se il database esiste
+    bool dbExists = QFile::exists(dbPath);
+    // Crea connessione
+    m_db = QSqlDatabase::addDatabase("QSQLITE");
     m_db.setDatabaseName(dbPath);
     if (!m_db.open())
     {
-        qDebug() << "Database open error:" << m_db.lastError().text();
+        qCritical() << "Failed to open database:" << m_db.lastError().text();
         return false;
     }
-    return createTables();
+    qDebug() << "Database opened:" << dbPath;
+    qDebug() << "Database existed:" << (dbExists ? "Yes" : "No (creating new)");
+    // ===== ABILITA FOREIGN KEYS =====
+    QSqlQuery query(m_db);
+    if (!query.exec("PRAGMA foreign_keys = ON"))
+    {
+        qWarning() << "Failed to enable foreign keys:" << query.lastError().text();
+        return false;
+    }
+    qDebug() << "Foreign keys enabled";
+    // Verifica che siano effettivamente abilitate
+    query.exec("PRAGMA foreign_keys");
+    if (query.next())
+    {
+        bool enabled = query.value(0).toBool();
+        if (!enabled)
+        {
+            qCritical() << "Foreign keys not enabled!";
+            return false;
+        }
+    }
+    // ===== CREA TABELLE SE NON ESISTONO =====
+    if (!createTables())
+    {
+        qCritical() << "Failed to create tables";
+        return false;
+    }
+    // ===== CONTROLLA E AGGIORNA VERSIONE DATABASE =====
+    if (!checkAndUpgradeDatabase())
+    {
+        qCritical() << "Database upgrade failed";
+        return false;
+    }
+    // ===== VERIFICA INTEGRITA'=====
+    if (!verifyDatabaseIntegrity())
+    {
+        qWarning() << "Database integrity check failed";
+        // Decidi se continuare o meno
+    }
+    qDebug() << "Database ready";
+    return true;
 }
 
 void DatabaseManager::closeDatabase()
 {
+    // if (m_db.isOpen())
+    // m_db.close();
     if (m_db.isOpen())
+    {
+        QString dbName = m_db.databaseName();
         m_db.close();
+        qDebug() << "Database closed:" << dbName;
+    }
+    // Rimuovi la connessione
+    QString connectionName = m_db.connectionName();
+    m_db = QSqlDatabase();
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 //bool DatabaseManager::createTables()
@@ -663,8 +733,20 @@ bool DatabaseManager::setRating(const QString &fullFilePath, int iRating)
 
 bool DatabaseManager::createTables()
 {
+    qDebug() << "Creating database tables...";
     QSqlQuery query(m_db);
-    // Tracks
+    // ========== METADATA (per versioning) ==========
+    QString metadataSql = QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS DatabaseMetadata ("
+            "Key TEXT PRIMARY KEY,"
+            "Value TEXT);"
+        );
+    if (!query.exec(metadataSql))
+    {
+        qCritical() << "Error creating DatabaseMetadata:" << query.lastError().text();
+        return false;
+    }
+    // ========== TRACKS ==========
     QString tracksSql = QStringLiteral(
             "CREATE TABLE IF NOT EXISTS Tracks ("
             "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -693,10 +775,10 @@ bool DatabaseManager::createTables()
         );
     if (!query.exec(tracksSql))
     {
-        qDebug() << "Error creating Tracks:" << query.lastError().text();
+        qCritical() << "Error creating Tracks:" << query.lastError().text();
         return false;
     }
-    // Playlists
+    // ========== PLAYLISTS ==========
     QString playlistsSql = QStringLiteral(
             "CREATE TABLE IF NOT EXISTS Playlists ("
             "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -706,66 +788,115 @@ bool DatabaseManager::createTables()
         );
     if (!query.exec(playlistsSql))
     {
-        qDebug() << "Error creating Playlists:" << query.lastError().text();
+        qCritical() << "Error creating Playlists:" << query.lastError().text();
         return false;
     }
-    // PlaylistItems
+    // ========== PLAYLIST ITEMS ==========
     QString playlistItemsSql = QStringLiteral(
             "CREATE TABLE IF NOT EXISTS PlaylistItems ("
             "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "PlaylistId INTEGER NOT NULL,"
             "TrackId INTEGER NOT NULL,"
             "Position INTEGER,"
-            "FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id),"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+            "FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id) ON DELETE CASCADE,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE,"
+            "UNIQUE(PlaylistId, TrackId));"
         );
     if (!query.exec(playlistItemsSql))
     {
-        qDebug() << "Error creating PlaylistItems:" << query.lastError().text();
+        qCritical() << "Error creating PlaylistItems:" << query.lastError().text();
         return false;
     }
-    // History
+    // ========== HISTORY ==========
     QString historySql = QStringLiteral(
             "CREATE TABLE IF NOT EXISTS History ("
             "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "TrackId INTEGER NOT NULL,"
-            "PlayDate TEXT,"           // <-- salvata come DATETIME leggibile
-            "PlayPosition INTEGER,"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id)"
-            ");"
+            "PlayDate TEXT NOT NULL,"
+            "PlayPosition INTEGER DEFAULT 0,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE);"
         );
     if (!query.exec(historySql))
     {
-        qDebug() << "Error creating History:" << query.lastError().text();
+        qCritical() << "Error creating History:" << query.lastError().text();
         return false;
     }
-    // Favorites
+    // ========== FAVORITES ==========
     QString favoritesSql = QStringLiteral(
             "CREATE TABLE IF NOT EXISTS Favorites ("
             "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "TrackId INTEGER NOT NULL,"
-            "DateAdded TEXT,"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+            "TrackId INTEGER NOT NULL UNIQUE,"
+            "DateAdded TEXT NOT NULL,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE);"
         );
     if (!query.exec(favoritesSql))
     {
-        qDebug() << "Error creating Favorites:" << query.lastError().text();
+        qCritical() << "Error creating Favorites:" << query.lastError().text();
         return false;
     }
-    // SessionPlaylist
+    // ========== SESSION PLAYLIST ==========
     QString sessionSql = QStringLiteral(
             "CREATE TABLE IF NOT EXISTS SessionPlaylist ("
             "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "TrackId INTEGER NOT NULL,"
-            "Position INTEGER,"
-            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id));"
+            "Position INTEGER NOT NULL,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE);"
         );
     if (!query.exec(sessionSql))
     {
-        qDebug() << "Error creating SessionPlaylist:" << query.lastError().text();
+        qCritical() << "Error creating SessionPlaylist:" << query.lastError().text();
         return false;
     }
+    qDebug() << "All tables created successfully";
     return true;
+}
+
+bool DatabaseManager::createIndexes()
+{
+    qDebug() << "Creating database indexes...";
+    QSqlQuery query(m_db);
+    QStringList indexes =
+    {
+        // Tracks
+        "CREATE INDEX IF NOT EXISTS idx_tracks_filepath ON Tracks(FullFilePath)",
+        "CREATE INDEX IF NOT EXISTS idx_tracks_artist ON Tracks(Artist)",
+        "CREATE INDEX IF NOT EXISTS idx_tracks_album ON Tracks(Album)",
+        "CREATE INDEX IF NOT EXISTS idx_tracks_genre ON Tracks(Genre)",
+        "CREATE INDEX IF NOT EXISTS idx_tracks_title ON Tracks(Title)",
+
+        // PlaylistItems
+        "CREATE INDEX IF NOT EXISTS idx_playlistitems_playlist ON PlaylistItems(PlaylistId)",
+        "CREATE INDEX IF NOT EXISTS idx_playlistitems_track ON PlaylistItems(TrackId)",
+        "CREATE INDEX IF NOT EXISTS idx_playlistitems_position ON PlaylistItems(Position)",
+
+        // History
+        "CREATE INDEX IF NOT EXISTS idx_history_track ON History(TrackId)",
+        "CREATE INDEX IF NOT EXISTS idx_history_date ON History(PlayDate DESC)",
+
+        // Favorites
+        "CREATE INDEX IF NOT EXISTS idx_favorites_track ON Favorites(TrackId)",
+        "CREATE INDEX IF NOT EXISTS idx_favorites_date ON Favorites(DateAdded DESC)",
+
+        // SessionPlaylist
+        "CREATE INDEX IF NOT EXISTS idx_session_track ON SessionPlaylist(TrackId)",
+        "CREATE INDEX IF NOT EXISTS idx_session_position ON SessionPlaylist(Position)"
+    };
+    int created = 0;
+    for (const QString &sql : indexes)
+    {
+        if (!query.exec(sql))
+        {
+            qWarning() << "Failed to create index:" << query.lastError().text();
+            qWarning() << "   SQL:" << sql;
+            // Continua con gli altri indici
+        }
+        else
+        {
+            created++;
+        }
+    }
+    qDebug() << "Created" << created << "of" << indexes.size() << "indexes";
+    return created > 0;
 }
 
 int DatabaseManager::getTrackId(const QString &fullFilePath) const
@@ -1053,5 +1184,439 @@ bool DatabaseManager::deleteInexistentFiles()
         return false;
     }
     qDebug() << "Successfully deleted" << idsToDelete.size() << "nonexistent track(s)";
+    return true;
+}
+
+int DatabaseManager::getDatabaseVersion()
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT Value FROM DatabaseMetadata WHERE Key = 'version'");
+    if (query.exec() && query.next())
+    {
+        int version = query.value(0).toInt();
+        qDebug() << "Current database version:" << version;
+        return version;
+    }
+    // Se la tabella DatabaseMetadata non esiste o è vuota,
+    // controlla se ci sono altre tabelle (database esistente ma senza versioning)
+    query.exec("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Tracks'");
+    if (query.next() && query.value(0).toInt() > 0)
+    {
+        qDebug() << "Database exists but has no version (assuming version 1)";
+        return 1; // Database esistente senza versioning
+    }
+    qDebug() << "New database (version will be set to" << CURRENT_DB_VERSION << ")";
+    return 0; // Nuovo database
+}
+
+void DatabaseManager::setDatabaseVersion(int version)
+{
+    QSqlQuery query(m_db);
+    query.prepare("INSERT OR REPLACE INTO DatabaseMetadata (Key, Value) VALUES ('version', ?)");
+    query.addBindValue(QString::number(version));
+    if (query.exec())
+    {
+        qDebug() << "Database version set to:" << version;
+    }
+    else
+    {
+        qWarning() << "Failed to set database version:" << query.lastError().text();
+    }
+}
+
+bool DatabaseManager::checkAndUpgradeDatabase()
+{
+    int currentVersion = getDatabaseVersion();
+    if (currentVersion == CURRENT_DB_VERSION)
+    {
+        qDebug() << "Database is up to date (version" << CURRENT_DB_VERSION << ")";
+        return true;
+    }
+    if (currentVersion == 0)
+    {
+        // Nuovo database, imposta versione corrente
+        setDatabaseVersion(CURRENT_DB_VERSION);
+        createIndexes(); // Crea indici per nuovo database
+        return true;
+    }
+    if (currentVersion > CURRENT_DB_VERSION)
+    {
+        qCritical() << "Database version" << currentVersion
+            << "is newer than supported version" << CURRENT_DB_VERSION;
+        qCritical() << "   Please update the application!";
+        return false;
+    }
+    // Esegui migrazioni in sequenza
+    qDebug() << "Upgrading database from version" << currentVersion
+        << "to" << CURRENT_DB_VERSION;
+    // Backup prima della migrazione (opzionale ma consigliato)
+    QString dbPath = m_db.databaseName();
+    QString backupPath = dbPath + ".backup_v" + QString::number(currentVersion)
+        + "_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+    if (QFile::copy(dbPath, backupPath))
+    {
+        qDebug() << "Backup created:" << backupPath;
+    }
+    else
+    {
+        qWarning() << "Failed to create backup";
+        // Decidi se continuare o meno
+    }
+    // Applica migrazioni
+    if (currentVersion < 2)
+    {
+        if (!upgradeToVersion2())
+        {
+            qCritical() << "Failed to upgrade to version 2";
+            return false;
+        }
+    }
+    // Aggiungi future migrazioni qui
+    // if (currentVersion < 3)
+    // {
+    // if (!upgradeToVersion3())
+    // {
+    // qCritical() << "[ERROR] Failed to upgrade to version 3";
+    // return false;
+    // }
+    // }
+    // Future migrazioni v3 → v4
+    // if (currentVersion < 4)
+    // {
+    // if (!upgradeToVersion4())
+    // {
+    // return false;
+    // }
+    // }
+    // Aggiungi future migrazioni qui
+    // if (currentVersion < 3)
+    // {
+    // if (!upgradeToVersion3())
+    // {
+    // return false;
+    // }
+    // }
+    setDatabaseVersion(CURRENT_DB_VERSION);
+    qDebug() << "Database upgrade completed successfully";
+    return true;
+}
+
+bool DatabaseManager::upgradeToVersion2()
+{
+    qDebug() << "Upgrading to version 2...";
+    qDebug() << "   - Add ON DELETE CASCADE to all foreign keys";
+    qDebug() << "   - Add UNIQUE constraint to Favorites.TrackId";
+    qDebug() << "   - Add UNIQUE(PlaylistId, TrackId) to PlaylistItems";
+    qDebug() << "   - Create performance indexes";
+    if (!m_db.transaction())
+    {
+        qCritical() << "Failed to start transaction";
+        return false;
+    }
+    QSqlQuery query(m_db);
+    // ========== FAVORITES ==========
+    qDebug() << "   Migrating Favorites table...";
+    if (!query.exec("ALTER TABLE Favorites RENAME TO Favorites_old"))
+    {
+        qCritical() << "Failed to rename Favorites:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    QString favoritesSql = QStringLiteral(
+            "CREATE TABLE Favorites ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL UNIQUE,"
+            "DateAdded TEXT NOT NULL,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE)"
+        );
+    if (!query.exec(favoritesSql))
+    {
+        qCritical() << "Failed to create new Favorites:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    // Copia dati rimuovendo duplicati
+    if (!query.exec("INSERT INTO Favorites (TrackId, DateAdded) "
+                    "SELECT TrackId, MIN(COALESCE(DateAdded, datetime('now'))) "
+                    "FROM Favorites_old "
+                    "GROUP BY TrackId"))
+    {
+        qCritical() << "Failed to copy Favorites data:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    int favoritesCount = query.numRowsAffected();
+    if (!query.exec("DROP TABLE Favorites_old"))
+    {
+        qCritical() << "Failed to drop old Favorites:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "   Favorites migrated (" << favoritesCount << "records)";
+    // ========== PLAYLIST ITEMS ==========
+    qDebug() << "   Migrating PlaylistItems table...";
+    if (!query.exec("ALTER TABLE PlaylistItems RENAME TO PlaylistItems_old"))
+    {
+        qCritical() << "Failed to rename PlaylistItems:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    QString playlistItemsSql = QStringLiteral(
+            "CREATE TABLE PlaylistItems ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "PlaylistId INTEGER NOT NULL,"
+            "TrackId INTEGER NOT NULL,"
+            "Position INTEGER,"
+            "FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id) ON DELETE CASCADE,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE,"
+            "UNIQUE(PlaylistId, TrackId))"
+        );
+    if (!query.exec(playlistItemsSql))
+    {
+        qCritical() << "Failed to create new PlaylistItems:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    // Copia dati rimuovendo duplicati (mantieni la prima occorrenza per posizione)
+    if (!query.exec("INSERT OR IGNORE INTO PlaylistItems (PlaylistId, TrackId, Position) "
+                    "SELECT PlaylistId, TrackId, MIN(Position) "
+                    "FROM PlaylistItems_old "
+                    "GROUP BY PlaylistId, TrackId"))
+    {
+        qCritical() << "Failed to copy PlaylistItems data:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    int playlistItemsCount = query.numRowsAffected();
+    if (!query.exec("DROP TABLE PlaylistItems_old"))
+    {
+        qCritical() << "Failed to drop old PlaylistItems:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "   PlaylistItems migrated (" << playlistItemsCount << "records)";
+    // ========== HISTORY ==========
+    qDebug() << "   Migrating History table...";
+    if (!query.exec("ALTER TABLE History RENAME TO History_old"))
+    {
+        qCritical() << "Failed to rename History:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    QString historySql = QStringLiteral(
+            "CREATE TABLE History ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "PlayDate TEXT NOT NULL,"
+            "PlayPosition INTEGER DEFAULT 0,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE)"
+        );
+    if (!query.exec(historySql))
+    {
+        qCritical() << "Failed to create new History:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    if (!query.exec("INSERT INTO History (Id, TrackId, PlayDate, PlayPosition) "
+                    "SELECT Id, TrackId, COALESCE(PlayDate, datetime('now')), "
+                    "COALESCE(PlayPosition, 0) FROM History_old"))
+    {
+        qCritical() << "Failed to copy History data:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    int historyCount = query.numRowsAffected();
+    if (!query.exec("DROP TABLE History_old"))
+    {
+        qCritical() << "Failed to drop old History:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "   History migrated (" << historyCount << "records)";
+    // ========== SESSION PLAYLIST ==========
+    qDebug() << "   Migrating SessionPlaylist table...";
+    if (!query.exec("ALTER TABLE SessionPlaylist RENAME TO SessionPlaylist_old"))
+    {
+        qCritical() << "Failed to rename SessionPlaylist:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    QString sessionSql = QStringLiteral(
+            "CREATE TABLE SessionPlaylist ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "TrackId INTEGER NOT NULL,"
+            "Position INTEGER NOT NULL,"
+            "FOREIGN KEY (TrackId) REFERENCES Tracks(Id) ON DELETE CASCADE)"
+        );
+    if (!query.exec(sessionSql))
+    {
+        qCritical() << "Failed to create new SessionPlaylist:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    if (!query.exec("INSERT INTO SessionPlaylist (Id, TrackId, Position) "
+                    "SELECT Id, TrackId, COALESCE(Position, 0) FROM SessionPlaylist_old"))
+    {
+        qCritical() << "Failed to copy SessionPlaylist data:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    int sessionCount = query.numRowsAffected();
+    if (!query.exec("DROP TABLE SessionPlaylist_old"))
+    {
+        qCritical() << "Failed to drop old SessionPlaylist:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "   SessionPlaylist migrated (" << sessionCount << "records)";
+    // ========== CREA INDICI ==========
+    qDebug() << "   Creating indexes...";
+    if (!createIndexes())
+    {
+        qWarning() << "Some indexes failed to create (non-critical)";
+        // Continua comunque
+    }
+    // ========== COMMIT ==========
+    if (!m_db.commit())
+    {
+        qCritical() << "Failed to commit transaction:" << m_db.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "Successfully upgraded to version 2";
+    return true;
+}
+
+bool DatabaseManager::upgradeToVersion3()
+{
+    qDebug() << "[UPGRADE] Upgrading to version 3...";
+    qDebug() << "          - Add 'Lyrics' column to Tracks table";
+    qDebug() << "          - Add 'Color' column to Playlists table";
+    if (!m_db.transaction())
+    {
+        qCritical() << "[ERROR] Failed to start transaction";
+        return false;
+    }
+    QSqlQuery query(m_db);
+    // ===== AGGIUNGI COLONNA 'Lyrics' A TRACKS =====
+    if (!query.exec("ALTER TABLE Tracks ADD COLUMN Lyrics TEXT"))
+    {
+        qCritical() << "[ERROR] Failed to add Lyrics column:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "          [OK] Added Lyrics column to Tracks";
+    // ===== AGGIUNGI COLONNA 'Color' A PLAYLISTS =====
+    if (!query.exec("ALTER TABLE Playlists ADD COLUMN Color TEXT DEFAULT '#FFFFFF'"))
+    {
+        qCritical() << "[ERROR] Failed to add Color column:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "          [OK] Added Color column to Playlists";
+    // Commit
+    if (!m_db.commit())
+    {
+        qCritical() << "[ERROR] Failed to commit transaction";
+        m_db.rollback();
+        return false;
+    }
+    qDebug() << "[OK] Successfully upgraded to version 3";
+    return true;
+}
+
+bool DatabaseManager::recreateTableWithChanges(
+    const QString &tableName,
+    const QString &newTableSql,
+    const QString &dataCopySql)
+{
+    QSqlQuery query(m_db);
+    QString oldTableName = tableName + "_old";
+    // 1. Rinomina vecchia tabella
+    QString renameSql = QString("ALTER TABLE %1 RENAME TO %2").arg(tableName, oldTableName);
+    if (!query.exec(renameSql))
+    {
+        qWarning() << "Failed to rename table" << tableName << ":" << query.lastError().text();
+        return false;
+    }
+    // 2. Crea nuova tabella
+    if (!query.exec(newTableSql))
+    {
+        qWarning() << "Failed to create new table" << tableName << ":" << query.lastError().text();
+        return false;
+    }
+    // 3. Copia dati (se fornito SQL personalizzato, altrimenti copia tutto)
+    QString copySql = dataCopySql.isEmpty()
+        ? QString("INSERT INTO %1 SELECT * FROM %2").arg(tableName, oldTableName)
+        : dataCopySql;
+    if (!query.exec(copySql))
+    {
+        qWarning() << "Failed to copy data to" << tableName << ":" << query.lastError().text();
+        return false;
+    }
+    // 4. Elimina vecchia tabella
+    QString dropSql = QString("DROP TABLE %1").arg(oldTableName);
+    if (!query.exec(dropSql))
+    {
+        qWarning() << "Failed to drop old table" << oldTableName << ":" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+bool DatabaseManager::verifyDatabaseIntegrity()
+{
+    qDebug() << "Verifying database integrity...";
+    QSqlQuery query(m_db);
+    // 1. PRAGMA integrity_check
+    if (!query.exec("PRAGMA integrity_check"))
+    {
+        qWarning() << "Failed to run integrity check";
+        return false;
+    }
+    if (query.next())
+    {
+        QString result = query.value(0).toString();
+        if (result != "ok")
+        {
+            qCritical() << "Database integrity check failed:" << result;
+            return false;
+        }
+    }
+    // 2. PRAGMA foreign_key_check
+    if (!query.exec("PRAGMA foreign_key_check"))
+    {
+        qWarning() << "Failed to run foreign key check";
+        return false;
+    }
+    if (query.next())
+    {
+        qCritical() << "Foreign key violations detected:";
+        do
+        {
+            qCritical() << "   Table:" << query.value(0).toString()
+                << "Row:" << query.value(1).toString()
+                << "Parent:" << query.value(2).toString();
+        }
+        while (query.next());
+        return false;
+    }
+    // 3. Verifica che le tabelle esistano
+    QStringList expectedTables =
+    {
+        "DatabaseMetadata", "Tracks", "Playlists", "PlaylistItems",
+        "History", "Favorites", "SessionPlaylist"
+    };
+    for (const QString &tableName : expectedTables)
+    {
+        query.exec(QString("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='%1'")
+            .arg(tableName));
+        if (!query.next() || query.value(0).toInt() == 0)
+        {
+            qCritical() << "Missing table:" << tableName;
+            return false;
+        }
+    }
+    qDebug() << "Database integrity verified";
     return true;
 }

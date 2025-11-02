@@ -44,7 +44,7 @@ public:
     // Delete copy constructor and assignment operator to enforce singleton
     DatabaseManager(DatabaseManager const &) = delete;
     void operator=(DatabaseManager const &) = delete;
-
+    QSqlDatabase &database() { return m_db; }
     /**
      * @brief Opens (or creates) the SQLite database file.
      *
@@ -221,6 +221,15 @@ private:
 
 private:
     QSqlDatabase m_db; /**< SQLite database connection */
+    bool createIndexes();
+    static const int CURRENT_DB_VERSION = 2;
+    bool checkAndUpgradeDatabase();
+    bool upgradeToVersion2();
+    int getDatabaseVersion();
+    void setDatabaseVersion(int version);
+    bool verifyDatabaseIntegrity();
+    bool recreateTableWithChanges(const QString &tableName, const QString &newTableSql, const QString &dataCopySql);
+    bool upgradeToVersion3(); // Next version
 };
 
 #endif // DATABASEMANAGER_H

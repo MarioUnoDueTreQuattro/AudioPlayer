@@ -177,6 +177,9 @@ private slots:
     void on_pushButtonPlaylist_clicked();
     void onTrackFinishedOrStopped(QMediaPlayer::State);
     void resetAllPlayCounts();
+    void exportFavorites();
+    void importFavorites();
+    void testMigration();
 private:
     ElidedHeaderView *m_HorizontalHeader;
     SettingsManager *settingsMgr;
@@ -226,6 +229,9 @@ private:
     QMenu *toolButtonMenu;
     QAction *resetAllPlayCountsAction;
     QAction *deleteInexistentFilesAction;
+    QAction *exportFavoritesAction;
+    QAction *importFavoritesAction;
+    QAction *testMigrationAction;
 };
 
 #endif // PLAYLISTTABLE_H
