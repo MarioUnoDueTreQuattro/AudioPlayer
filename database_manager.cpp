@@ -466,6 +466,7 @@ QList<AudioTagInfo> DatabaseManager::recentHistory(int limit)
         info.iFileSize = query.value("FileSize").toInt();
         info.iRating = query.value("Rating").toInt();
         info.iPlayCount = query.value("PlayCount").toInt();
+        info.sLastModified = query.value("LastModified").toString();
         list.append(info);
     }
     return list;
@@ -542,6 +543,7 @@ QList<AudioTagInfo> DatabaseManager::loadSessionPlaylist()
         info.iFileSize = query.value("FileSize").toInt();
         info.iRating = query.value("Rating").toInt();
         info.iPlayCount = query.value("PlayCount").toInt();
+        info.sLastModified = query.value("LastModified").toString();
         list.append(info);
     }
     return list;
@@ -576,6 +578,7 @@ QList<AudioTagInfo> DatabaseManager::topPlayed(int limit)
         info.iFileSize = query.value("FileSize").toInt();
         info.iRating = query.value("Rating").toInt();
         info.iPlayCount = query.value("PlayCount").toInt();
+        info.sLastModified = query.value("LastModified").toString();
         list.append(info);
     }
     return list;
