@@ -57,6 +57,7 @@ Widget::Widget(QWidget *parent)
       m_bInfoWindowHasBeenMinimized(false),
       m_bInfoWindowHasBeenClosed(false),
       m_bPlaylistTableWindowHasBeenClosed(false),
+      m_bPlaylistTableWindowHasBeenShown(false),
       m_bUserRequestedPlayback(false),
       m_bTablePlaylist(false)
 {
@@ -113,11 +114,11 @@ Widget::Widget(QWidget *parent)
     ui->listWidget -> setAlternatingRowColors(true);
     setSignalsConnections();
     setKeyboardShortcuts();
-    if (m_bTablePlaylist)
-    {
-        m_playlistView->show();
-        // m_playlistView->setKeyboardTargetWidget (this);
-    }
+    // if (m_bTablePlaylist)
+    // {
+    // m_playlistView->show();
+    //        // m_playlistView->setKeyboardTargetWidget (this);
+    // }
     startUp();
     //ui->listWidget->hide ();
 }
@@ -2687,4 +2688,16 @@ void Widget::showAbout()
 {
     about aboutDlg(this) ;
     aboutDlg.exec();
+}
+
+
+void Widget::showEvent(QShowEvent *event)
+{
+    LOG_MSG("");
+    if (m_bTablePlaylist && !m_bPlaylistTableWindowHasBeenShown)
+    {
+        m_playlistView->show();
+        m_bPlaylistTableWindowHasBeenShown = true;
+        // m_playlistView->setKeyboardTargetWidget (this);
+    }
 }

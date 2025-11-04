@@ -30,6 +30,7 @@ public:
 public slots:
     void openFiles(const QStringList &filePaths);
 protected:
+    void showEvent(QShowEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -118,6 +119,7 @@ private:
     bool m_bInfoWindowHasBeenMinimized;
     bool m_bInfoWindowHasBeenClosed;
     bool m_bPlaylistTableWindowHasBeenClosed;
+    bool m_bPlaylistTableWindowHasBeenShown;
     bool m_bSystemVolumeSlider;
     QSet<QString> m_playlistPaths;
     QList<QString> m_playedList;
@@ -153,6 +155,7 @@ private:
     QAction *settingsAction;
     QAction *aboutAction;
     void setupToolButton();
+    // QWidget interface
 };
 
 #endif // WIDGET_H
