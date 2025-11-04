@@ -2,14 +2,13 @@
 #include "ui_about.h"
 #include <QMessageBox>
 
-
 about::about(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::about)
 {
     ui->setupUi(this);
-    setWindowTitle("About " + qApp->applicationName());
-    setWindowFlags(Qt::Dialog|Qt::MSWindowsFixedSizeDialogHint);
+    this->setWindowTitle("About " + qApp->applicationName());
+    this->setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
     setupWidgets();
     this->adjustSize();
 }
@@ -31,7 +30,9 @@ void about::on_pushButtonAboutQt_clicked()
 
 void about::setupWidgets()
 {
-    ui->labelIcon->setPixmap(QPixmap(":/img/img/icons8-play-32.png"));
+    //QPixmap iconPix = QPixmap(":/img/img/icons8-play-96.png").scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QPixmap iconPix = QPixmap(":/img/img/icons8-play-96.png");
+    ui->labelIcon->setPixmap(iconPix);
     QFont appFont = ui->labelAppName->font();
     appFont.setBold(true);
     appFont.setPixelSize(24);
@@ -46,10 +47,10 @@ void about::setupWidgets()
     QString sVersion = "<h3><p style=\"font-weight: bold; color: rgb(0, 0, 128);\">Version ";
     sVersion = sVersion + APP_VERSION;
     sVersion = sVersion + sIsDebug + "</p></h3>";
-    sVersion=sVersion+    "<p>Build date and time: " + __DATE__ + " at " + __TIME__ + "</p>";
+    sVersion = sVersion + "<p>Build date and time: " + __DATE__ + " at " + __TIME__ + "</p>";
     ui->labelAppVersion->setText(sVersion);
-    ui->labelAppCopyright->setText(    "<br><p>Copyright &copy; 2025 Andrea G.</p>"
-    "<p>All rights reserved.</p>"
+    ui->labelAppCopyright->setText("<br><p>Copyright &copy; 2025 Andrea G.</p>"
+                                   "<p>All rights reserved.</p>"
         /* "<p>Visit our website: <a href='https://www.example.com'>www.example.com</a></p>"*/);
-        ui->textEditInfo->hide();
+    ui->textEditInfo->hide();
 }

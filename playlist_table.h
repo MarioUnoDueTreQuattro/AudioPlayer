@@ -146,6 +146,7 @@ public slots:
     void onDoubleClicked(const QModelIndex &index);
     void onCurrentTrackChanged(int index);
     void onHeaderSortChanged(int logicalIndex, Qt::SortOrder order);
+    void setToolButtonWidth(int iWidth);
 protected:
     void moveEvent(QMoveEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;

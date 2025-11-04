@@ -538,6 +538,9 @@ void Widget::resizeEvent(QResizeEvent *event)
     settingsMgr->setValue("windowGeometry", saveGeometry());
     // settings.setValue("windowState", saveState());
     // Call base implementation (optional if QWidget)
+    int iWidth = ui->muteButton->width();
+    ui->configureButton->setFixedWidth(iWidth);
+    m_playlistView->setToolButtonWidth(iWidth);
     QWidget::resizeEvent(event);
 }
 
@@ -2663,7 +2666,7 @@ void Widget::setupToolButton()
     settingsAction = new QAction("Settings", this);
     settingsAction->setIcon(QIcon(":/img/img/icons8-wrench-48.png"));
     aboutAction = new QAction("About", this);
-    aboutAction->setIcon(QIcon(":/img/img/icons8-play-32.png"));
+    aboutAction->setIcon(QIcon(":/img/img/icons8-play-96.png"));
     toolButtonMenu->addAction(settingsAction);
     toolButtonMenu->addAction(aboutAction);
     ui->configureButton->setMenu(toolButtonMenu);
@@ -2672,6 +2675,7 @@ void Widget::setupToolButton()
     // ui->toolButton->setPopupMode(QToolButton::InstantPopup);
     connect(settingsAction, &QAction::triggered, this, &Widget::on_configureButton_clicked);
     connect(aboutAction, &QAction::triggered, this, &Widget::showAbout);
+    //ui->configureButton->setFixedWidth(ui->muteButton->width());
     //connect(deleteInexistentFilesAction, &QAction::triggered, this, &PlaylistTable::deleteInexistentFiles);
     // connect(deleteInexistentFilesAction, &QAction::triggered, [this]()
     // {

@@ -2553,6 +2553,11 @@ void PlaylistTable::on_pushButtonPlaylist_clicked()
     // }
 }
 
+void PlaylistTable::setToolButtonWidth(int iWidth)
+{
+ui->toolButton->setFixedWidth(iWidth);
+}
+
 void PlaylistTable::setupToolButton()
 {
     toolButtonMenu = new QMenu(this);

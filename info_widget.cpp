@@ -21,7 +21,7 @@ InfoWidget::InfoWidget(QWidget *parent)
 {
     m_bEnableLog = false;
     ui->setupUi(this);
-    setWindowIcon(QIcon(":/img/img/icons8-play-32.png"));
+    setWindowIcon(QIcon(":/img/img/icons8-play-96.png"));
     setWindowFlags(Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
     settingsMgr = SettingsManager::instance();
     loadSettings();
