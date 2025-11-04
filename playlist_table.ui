@@ -31,7 +31,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
-        <widget class="QToolButton" name="toolButton">
+        <widget class="HoverMenuToolButton" name="toolButton">
          <property name="contextMenuPolicy">
           <enum>Qt::DefaultContextMenu</enum>
          </property>
@@ -258,6 +258,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>HoverMenuToolButton</class>
+   <extends>QToolButton</extends>
+   <header>hover_menu_toolbutton.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources.qrc"/>
  </resources>

@@ -33,7 +33,8 @@ SOURCES += \
     widgets/clickable_slider.cpp \
     widgets/elided_header_view.cpp \
     widgets/esc_aware_lineedit.cpp \
-    widgets/fading_slider.cpp
+    widgets/fading_slider.cpp \
+    widgets/hover_menu_toolbutton.cpp
 
 HEADERS += \
 #    3rdparty/qhotkey/QHotkey/qhotkey.h \
@@ -56,7 +57,8 @@ HEADERS += \
     widgets/clickable_slider.h \
     widgets/elided_header_view.h \
     widgets/esc_aware_lineedit.h \
-    widgets/fading_slider.h
+    widgets/fading_slider.h \
+    widgets/hover_menu_toolbutton.h
 
 FORMS += \
     info_widget.ui \
