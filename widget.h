@@ -148,6 +148,10 @@ private:
     // PlaylistView *m_playlistView;
     PlaylistTable *m_playlistView;
     void startUp();
+    QMenu *toolButtonMenu;
+    QAction *settingsAction;
+    QAction *aboutAction;
+    void setupToolButton();
 };
 
 #endif // WIDGET_H

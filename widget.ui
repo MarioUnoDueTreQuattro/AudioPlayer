@@ -302,7 +302,13 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="configureButton">
+      <widget class="HoverMenuToolButton" name="configureButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="toolTip">
         <string>Settings</string>
        </property>
@@ -311,7 +317,7 @@
        </property>
        <property name="icon">
         <iconset resource="resources.qrc">
-         <normaloff>:/img/img/icons8-wrench-48.png</normaloff>:/img/img/icons8-wrench-48.png</iconset>
+         <normaloff>:/img/img/icons8-menu-vertical-48.png</normaloff>:/img/img/icons8-menu-vertical-48.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -340,6 +346,11 @@
    <class>FadingSlider</class>
    <extends>QSlider</extends>
    <header>fading_slider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>HoverMenuToolButton</class>
+   <extends>QToolButton</extends>
+   <header>hover_menu_toolbutton.h</header>
   </customwidget>
  </customwidgets>
  <resources>

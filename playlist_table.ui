@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>777</width>
+    <width>821</width>
     <height>386</height>
    </rect>
   </property>
@@ -32,6 +32,12 @@
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
         <widget class="HoverMenuToolButton" name="toolButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="contextMenuPolicy">
           <enum>Qt::DefaultContextMenu</enum>
          </property>
@@ -41,12 +47,6 @@
          <property name="icon">
           <iconset resource="resources.qrc">
            <normaloff>:/img/img/icons8-menu-vertical-48.png</normaloff>:/img/img/icons8-menu-vertical-48.png</iconset>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-         <property name="autoRaise">
-          <bool>true</bool>
          </property>
         </widget>
        </item>

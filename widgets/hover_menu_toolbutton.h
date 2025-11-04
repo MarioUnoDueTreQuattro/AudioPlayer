@@ -30,7 +30,7 @@ private slots:
 
     // Periodically check cursor position to close the menu
     void checkMousePosition();
-
+ void release();
 private:
     QTimer *m_delayTimer;          // Delay before showing menu
     QTimer *m_closeCheckTimer;     // Periodic check for mouse position

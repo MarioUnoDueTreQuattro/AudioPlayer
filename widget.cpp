@@ -60,6 +60,7 @@ Widget::Widget(QWidget *parent)
       m_bTablePlaylist(false)
 {
     ui->setupUi(this);
+    setupToolButton();
     QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first();
     sDatabasePath.append("/playlist.db");
     DatabaseManager &db = DatabaseManager::instance();
@@ -2653,4 +2654,24 @@ void Widget::on_pushButtonResetFilter_clicked()
         ui->listWidget->setCurrentItem(item);
         ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
     }
+}
+
+void Widget::setupToolButton()
+{
+    toolButtonMenu = new QMenu(this);
+    settingsAction = new QAction("Settings", this);
+    settingsAction->setIcon(QIcon(":/img/img/icons8-wrench-48.png"));
+    aboutAction = new QAction("About", this);
+    toolButtonMenu->addAction(settingsAction);
+    toolButtonMenu->addAction(aboutAction);
+    ui->configureButton->setMenu(toolButtonMenu);
+    // 4. Imposta la popupMode su InstantPopup
+    // Questo è il passaggio chiave per mostrare il menu al clic!
+    // ui->toolButton->setPopupMode(QToolButton::InstantPopup);
+    connect(settingsAction, &QAction::triggered, this, &Widget::on_configureButton_clicked);
+    //connect(deleteInexistentFilesAction, &QAction::triggered, this, &PlaylistTable::deleteInexistentFiles);
+    // connect(deleteInexistentFilesAction, &QAction::triggered, [this]()
+    // {
+    // DatabaseManager::instance().deleteInexistentFiles();
+    // });
 }
