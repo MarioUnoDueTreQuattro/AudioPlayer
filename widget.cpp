@@ -1,3 +1,4 @@
+#include "about.h"
 #include "widget.h"
 #include "settings.h"
 #include "ui_widget.h"
@@ -2662,6 +2663,7 @@ void Widget::setupToolButton()
     settingsAction = new QAction("Settings", this);
     settingsAction->setIcon(QIcon(":/img/img/icons8-wrench-48.png"));
     aboutAction = new QAction("About", this);
+    aboutAction->setIcon(QIcon(":/img/img/icons8-play-32.png"));
     toolButtonMenu->addAction(settingsAction);
     toolButtonMenu->addAction(aboutAction);
     ui->configureButton->setMenu(toolButtonMenu);
@@ -2669,9 +2671,16 @@ void Widget::setupToolButton()
     // Questo è il passaggio chiave per mostrare il menu al clic!
     // ui->toolButton->setPopupMode(QToolButton::InstantPopup);
     connect(settingsAction, &QAction::triggered, this, &Widget::on_configureButton_clicked);
+    connect(aboutAction, &QAction::triggered, this, &Widget::showAbout);
     //connect(deleteInexistentFilesAction, &QAction::triggered, this, &PlaylistTable::deleteInexistentFiles);
     // connect(deleteInexistentFilesAction, &QAction::triggered, [this]()
     // {
     // DatabaseManager::instance().deleteInexistentFiles();
     // });
+}
+
+void Widget::showAbout()
+{
+    about aboutDlg(this) ;
+    aboutDlg.exec();
 }

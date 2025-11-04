@@ -14,6 +14,7 @@ INCLUDEPATH += widgets
 SOURCES += \
 #    3rdparty/qhotkey/QHotkey/qhotkey.cpp \
 #    3rdparty/qhotkey/QHotkey/qhotkey_win.cpp \
+    about.cpp \
     audio_fader.cpp \
     audio_tag.cpp \
     database_manager.cpp \
@@ -39,6 +40,7 @@ SOURCES += \
 HEADERS += \
 #    3rdparty/qhotkey/QHotkey/qhotkey.h \
 #    3rdparty/qhotkey/QHotkey/qhotkey_p.h \
+    about.h \
     audio_fader.h \
     audio_tag.h \
     database_manager.h \
@@ -61,6 +63,7 @@ HEADERS += \
     widgets/hover_menu_toolbutton.h
 
 FORMS += \
+    about.ui \
     info_widget.ui \
     playlist_table.ui \
     settings.ui \

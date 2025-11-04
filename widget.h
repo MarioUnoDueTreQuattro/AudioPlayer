@@ -92,6 +92,7 @@ private slots:
     void showPlaylistTable();
     void playlistIsSorting(bool bIsSorting);
     void reloadPlaylist();
+    void showAbout();
 private:
     // QAction *m_playAction;
     // bool m_bPlaylistFinished;
