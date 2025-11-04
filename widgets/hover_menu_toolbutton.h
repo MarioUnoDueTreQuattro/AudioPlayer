@@ -32,8 +32,8 @@ private slots:
     void checkMousePosition();
 
 private:
-    QTimer *m_delayTimer;         // Delay before showing menu
-    QTimer *m_closeCheckTimer;    // Periodic check for mouse position
+    QTimer *m_delayTimer;          // Delay before showing menu
+    QTimer *m_closeCheckTimer;     // Periodic check for mouse position
     QPointer<QMenu> m_menuPointer; // Safe pointer to the active menu
 };
 
