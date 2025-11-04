@@ -2560,7 +2560,7 @@ void PlaylistTable::setupToolButton()
     deleteInexistentFilesAction = new QAction("Delete inexistent files", this);
     exportFavoritesAction = new QAction("Export favorites", this);
     importFavoritesAction = new QAction("Import favorites in database", this);
-    testMigrationAction=new QAction("Database migration", this);
+    testMigrationAction = new QAction("Database migration", this);
     toolButtonMenu->addAction(resetAllPlayCountsAction);
     toolButtonMenu->addAction(deleteInexistentFilesAction);
     toolButtonMenu->addAction(exportFavoritesAction);
@@ -2665,26 +2665,32 @@ void PlaylistTable::resetAllPlayCounts()
 void PlaylistTable::testMigration()
 {
     //DatabaseManager dbMgr;
-//    QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first();
-//    sDatabasePath.append("/playlist.db");
+    // QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first();
+    // sDatabasePath.append("/playlist.db");
+    // if (!dbMgr.openDatabase(sDatabasePath))
+    // {
+    // qWarning() << "Could not open database!";
+    //        // return;
+    // }
+    // else
+    // LOG_MSG_SHORT("Database opened.");
     DatabaseManager &dbMgr = DatabaseManager::instance();
-//    if (!dbMgr.openDatabase(sDatabasePath))
-//    {
-//        qWarning() << "Could not open database!";
-//        // return;
-//    }
-//    else
-//        LOG_MSG_SHORT("Database opened.");
-
-//    // Test 1: Apri database (esegue migrazione automaticamente)
-//    qDebug() << "\n========== TEST 1: Open Database ==========";
-//    if (!dbMgr.openDatabase("test_music.db"))
-//    {
-//        qCritical() << "FAIL: Could not open database";
-//        return;
-//    }
-//    qDebug() << "PASS: Database opened and migrated";
-
+    //   // Test 1: Apri database (esegue migrazione automaticamente)
+    // qDebug() << "\n========== TEST 1: Open Database ==========";
+    // if (!dbMgr.openDatabase("test_music.db"))
+    // {
+    // qCritical() << "FAIL: Could not open database";
+    // return;
+    // }
+    // qDebug() << "PASS: Database opened and migrated";
+    // Test 1: Apri database (esegue migrazione automaticamente)
+    qDebug() << "\n========== TEST 1: Open Database ==========";
+    if (!dbMgr.database().isOpen())
+    {
+        qCritical() << "FAIL: Could not open database";
+        return;
+    }
+    qDebug() << "PASS: Database opened and migrated";
     // Test 2: Verifica schema Favorites
     qDebug() << "\n========== TEST 2: Verify Favorites Schema ==========";
     QSqlQuery query(dbMgr.database());
@@ -2693,7 +2699,6 @@ void PlaylistTable::testMigration()
     {
         QString schema = query.value(0).toString();
         qDebug() << "Favorites schema:\n" << schema;
-
         if (schema.contains("UNIQUE") && schema.contains("CASCADE"))
         {
             qDebug() << "PASS: Favorites has UNIQUE and CASCADE";
@@ -2703,7 +2708,6 @@ void PlaylistTable::testMigration()
             qCritical() << "FAIL: Favorites missing UNIQUE or CASCADE";
         }
     }
-
     // Test 3: Verifica foreign keys abilitate
     qDebug() << "\n========== TEST 3: Verify Foreign Keys ==========";
     query.exec("PRAGMA foreign_keys");
@@ -2719,29 +2723,24 @@ void PlaylistTable::testMigration()
             qCritical() << "FAIL: Foreign keys disabled";
         }
     }
-
     // Test 4: Test INSERT OR IGNORE
     qDebug() << "\n========== TEST 4: Test Duplicate Prevention ==========";
-
     // Inserisci un track
     query.exec("INSERT INTO Tracks (FullFilePath, Title) VALUES ('/test/song.mp3', 'Test Song')");
     int trackId = query.lastInsertId().toInt();
     qDebug() << "Inserted track ID:" << trackId;
-
     // Aggiungi a favorites (prima volta)
     query.prepare("INSERT OR IGNORE INTO Favorites (TrackId, DateAdded) VALUES (?, datetime('now'))");
     query.addBindValue(trackId);
     query.exec();
     int affected1 = query.numRowsAffected();
     qDebug() << "First insert affected rows:" << affected1;
-
     // Aggiungi di nuovo (dovrebbe essere ignorato)
     query.prepare("INSERT OR IGNORE INTO Favorites (TrackId, DateAdded) VALUES (?, datetime('now'))");
     query.addBindValue(trackId);
     query.exec();
     int affected2 = query.numRowsAffected();
     qDebug() << "Second insert affected rows:" << affected2;
-
     if (affected1 == 1 && affected2 == 0)
     {
         qDebug() << "PASS: Duplicate prevention works";
@@ -2750,25 +2749,20 @@ void PlaylistTable::testMigration()
     {
         qCritical() << "FAIL: Duplicates not prevented";
     }
-
     // Test 5: Test CASCADE
     qDebug() << "\n========== TEST 5: Test ON DELETE CASCADE ==========";
-
     // Conta favorites prima
     query.exec("SELECT COUNT(*) FROM Favorites WHERE TrackId = " + QString::number(trackId));
     query.next();
     int countBefore = query.value(0).toInt();
     qDebug() << "Favorites count before delete:" << countBefore;
-
     // Elimina track
     query.exec("DELETE FROM Tracks WHERE Id = " + QString::number(trackId));
-
     // Conta favorites dopo
     query.exec("SELECT COUNT(*) FROM Favorites WHERE TrackId = " + QString::number(trackId));
     query.next();
     int countAfter = query.value(0).toInt();
     qDebug() << "Favorites count after delete:" << countAfter;
-
     if (countBefore > 0 && countAfter == 0)
     {
         qDebug() << "PASS: CASCADE delete works";
@@ -2777,7 +2771,6 @@ void PlaylistTable::testMigration()
     {
         qCritical() << "FAIL: CASCADE delete failed";
     }
-
     // Test 6: Verifica indici
     qDebug() << "\n========== TEST 6: Verify Indexes ==========";
     query.exec("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'");
@@ -2788,7 +2781,6 @@ void PlaylistTable::testMigration()
         indexCount++;
     }
     qDebug() << "Total custom indexes:" << indexCount;
-
     if (indexCount > 0)
     {
         qDebug() << "PASS: Indexes created";
@@ -2797,6 +2789,5 @@ void PlaylistTable::testMigration()
     {
         qWarning() << "WARN: No indexes found";
     }
-
     qDebug() << "\n========== ALL TESTS COMPLETED ==========";
 }

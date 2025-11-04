@@ -63,7 +63,7 @@ Widget::Widget(QWidget *parent)
     QString sDatabasePath = QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first();
     sDatabasePath.append("/playlist.db");
     DatabaseManager &db = DatabaseManager::instance();
-    if (!db.openDatabase(sDatabasePath))
+    if (!db.openDatabase(sDatabasePath, false))
     {
         qWarning() << "Could not open database!";
         // return;

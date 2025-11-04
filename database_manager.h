@@ -54,7 +54,7 @@ public:
      * @param dbPath Path to the SQLite database file.
      * @return true if the database was opened successfully, false otherwise.
      */
-    bool openDatabase(const QString &dbPath);
+    bool openDatabase(const QString &dbPath, bool bDebug = false);
 
     /**
      * @brief Closes the database connection.
@@ -217,17 +217,17 @@ private:
      * @brief Creates all necessary tables if they do not exist.
      * @return true if all tables were created or already exist.
      */
-    bool createTables();
+    bool createTables(bool bDebug = false);
 
 private:
     QSqlDatabase m_db; /**< SQLite database connection */
     bool createIndexes();
     static const int CURRENT_DB_VERSION = 2;
-    bool checkAndUpgradeDatabase();
+    bool checkAndUpgradeDatabase(bool bDebug = false);
     bool upgradeToVersion2();
-    int getDatabaseVersion();
+    int getDatabaseVersion(bool bDebug = false);
     void setDatabaseVersion(int version);
-    bool verifyDatabaseIntegrity();
+    bool verifyDatabaseIntegrity(bool bDebug = false);
     bool recreateTableWithChanges(const QString &tableName, const QString &newTableSql, const QString &dataCopySql);
     bool upgradeToVersion3(); // Next version
 };

@@ -25,7 +25,7 @@ DatabaseManager::~DatabaseManager()
 // return createTables();
 //}
 
-bool DatabaseManager::openDatabase(const QString &dbPath)
+bool DatabaseManager::openDatabase(const QString &dbPath, bool bDebug)
 {
     // Se già aperto, chiudi prima
     if (m_db.isOpen())
@@ -42,8 +42,8 @@ bool DatabaseManager::openDatabase(const QString &dbPath)
         qCritical() << "Failed to open database:" << m_db.lastError().text();
         return false;
     }
-    qDebug() << "Database opened:" << dbPath;
-    qDebug() << "Database existed:" << (dbExists ? "Yes" : "No (creating new)");
+    if (bDebug) qDebug() << "Database opened:" << dbPath;
+    if (bDebug) qDebug() << "Database existed:" << (dbExists ? "Yes" : "No (creating new)");
     // ===== ABILITA FOREIGN KEYS =====
     QSqlQuery query(m_db);
     if (!query.exec("PRAGMA foreign_keys = ON"))
@@ -51,7 +51,7 @@ bool DatabaseManager::openDatabase(const QString &dbPath)
         qWarning() << "Failed to enable foreign keys:" << query.lastError().text();
         return false;
     }
-    qDebug() << "Foreign keys enabled";
+    if (bDebug) qDebug() << "Foreign keys enabled";
     // Verifica che siano effettivamente abilitate
     query.exec("PRAGMA foreign_keys");
     if (query.next())
@@ -64,24 +64,24 @@ bool DatabaseManager::openDatabase(const QString &dbPath)
         }
     }
     // ===== CREA TABELLE SE NON ESISTONO =====
-    if (!createTables())
+    if (!createTables(bDebug))
     {
         qCritical() << "Failed to create tables";
         return false;
     }
     // ===== CONTROLLA E AGGIORNA VERSIONE DATABASE =====
-    if (!checkAndUpgradeDatabase())
+    if (!checkAndUpgradeDatabase(bDebug))
     {
         qCritical() << "Database upgrade failed";
         return false;
     }
     // ===== VERIFICA INTEGRITA'=====
-    if (!verifyDatabaseIntegrity())
+    if (!verifyDatabaseIntegrity(bDebug))
     {
         qWarning() << "Database integrity check failed";
         // Decidi se continuare o meno
     }
-    qDebug() << "Database ready";
+    if (bDebug) qDebug() << "Database ready";
     return true;
 }
 
@@ -734,9 +734,9 @@ bool DatabaseManager::setRating(const QString &fullFilePath, int iRating)
 // }
 //}
 
-bool DatabaseManager::createTables()
+bool DatabaseManager::createTables(bool bDebug)
 {
-    qDebug() << "Creating database tables...";
+    if (bDebug) qDebug() << "Creating database tables...";
     QSqlQuery query(m_db);
     // ========== METADATA (per versioning) ==========
     QString metadataSql = QStringLiteral(
@@ -850,7 +850,7 @@ bool DatabaseManager::createTables()
         qCritical() << "Error creating SessionPlaylist:" << query.lastError().text();
         return false;
     }
-    qDebug() << "All tables created successfully";
+    if (bDebug) qDebug() << "All tables created successfully";
     return true;
 }
 
@@ -1190,14 +1190,14 @@ bool DatabaseManager::deleteInexistentFiles()
     return true;
 }
 
-int DatabaseManager::getDatabaseVersion()
+int DatabaseManager::getDatabaseVersion(bool bDebug)
 {
     QSqlQuery query(m_db);
     query.prepare("SELECT Value FROM DatabaseMetadata WHERE Key = 'version'");
     if (query.exec() && query.next())
     {
         int version = query.value(0).toInt();
-        qDebug() << "Current database version:" << version;
+        if (bDebug) qDebug() << "Current database version:" << version;
         return version;
     }
     // Se la tabella DatabaseMetadata non esiste o è vuota,
@@ -1205,10 +1205,10 @@ int DatabaseManager::getDatabaseVersion()
     query.exec("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Tracks'");
     if (query.next() && query.value(0).toInt() > 0)
     {
-        qDebug() << "Database exists but has no version (assuming version 1)";
+        if (bDebug) qDebug() << "Database exists but has no version (assuming version 1)";
         return 1; // Database esistente senza versioning
     }
-    qDebug() << "New database (version will be set to" << CURRENT_DB_VERSION << ")";
+    if (bDebug) qDebug() << "New database (version will be set to" << CURRENT_DB_VERSION << ")";
     return 0; // Nuovo database
 }
 
@@ -1227,12 +1227,12 @@ void DatabaseManager::setDatabaseVersion(int version)
     }
 }
 
-bool DatabaseManager::checkAndUpgradeDatabase()
+bool DatabaseManager::checkAndUpgradeDatabase(bool bDebug)
 {
     int currentVersion = getDatabaseVersion();
     if (currentVersion == CURRENT_DB_VERSION)
     {
-        qDebug() << "Database is up to date (version" << CURRENT_DB_VERSION << ")";
+        if (bDebug) qDebug() << "Database is up to date (version" << CURRENT_DB_VERSION << ")";
         return true;
     }
     if (currentVersion == 0)
@@ -1250,15 +1250,15 @@ bool DatabaseManager::checkAndUpgradeDatabase()
         return false;
     }
     // Esegui migrazioni in sequenza
-    qDebug() << "Upgrading database from version" << currentVersion
-        << "to" << CURRENT_DB_VERSION;
+    if (bDebug) qDebug() << "Upgrading database from version" << currentVersion
+            << "to" << CURRENT_DB_VERSION;
     // Backup prima della migrazione (opzionale ma consigliato)
     QString dbPath = m_db.databaseName();
     QString backupPath = dbPath + ".backup_v" + QString::number(currentVersion)
         + "_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
     if (QFile::copy(dbPath, backupPath))
     {
-        qDebug() << "Backup created:" << backupPath;
+        if (bDebug) qDebug() << "Backup created:" << backupPath;
     }
     else
     {
@@ -1300,7 +1300,7 @@ bool DatabaseManager::checkAndUpgradeDatabase()
     // }
     // }
     setDatabaseVersion(CURRENT_DB_VERSION);
-    qDebug() << "Database upgrade completed successfully";
+    if (bDebug) qDebug() << "Database upgrade completed successfully";
     return true;
 }
 
@@ -1567,9 +1567,9 @@ bool DatabaseManager::recreateTableWithChanges(
     return true;
 }
 
-bool DatabaseManager::verifyDatabaseIntegrity()
+bool DatabaseManager::verifyDatabaseIntegrity(bool bDebug)
 {
-    qDebug() << "Verifying database integrity...";
+    if (bDebug) qDebug() << "Verifying database integrity...";
     QSqlQuery query(m_db);
     // 1. PRAGMA integrity_check
     if (!query.exec("PRAGMA integrity_check"))
@@ -1620,6 +1620,6 @@ bool DatabaseManager::verifyDatabaseIntegrity()
             return false;
         }
     }
-    qDebug() << "Database integrity verified";
+    if (bDebug) qDebug() << "Database integrity verified";
     return true;
 }
