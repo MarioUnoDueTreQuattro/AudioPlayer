@@ -44,12 +44,13 @@ QString AboutDialog::getSystemInformationString()
     // out << "=== System Information ===" << Qt::endl;
     // out << "OS Type: " << QSysInfo::productType() << Qt::endl;
     // out << "OS Version: " << QSysInfo::productVersion() << Qt::endl;
-    out << "Operating System: " << QSysInfo::prettyProductName() << Qt::endl;
+    out << "Operating system: " << QSysInfo::prettyProductName() << Qt::endl;
     out << "Kernel: " << QSysInfo::kernelType() << " " << QSysInfo::kernelVersion() << Qt::endl;
     out << "Architecture: " << QSysInfo::currentCpuArchitecture() << " - " << QSysInfo::WordSize << " bits" << Qt::endl;
     // out << "Build Architecture: " << QSysInfo::buildCpuArchitecture() << Qt::endl;
     out << "Logical CPUs: " << QThread::idealThreadCount() << Qt::endl;
-    out << "Host Name: " << QSysInfo::machineHostName();//<< Qt::endl;
+    out << "Host name: " << QSysInfo::machineHostName() << Qt::endl;
+    out << "Qt version: " << QT_VERSION_STR;
     // out << "Word Size: " << QSysInfo::WordSize << " bits" << Qt::endl;
     // Per il conteggio dei processori
     // 4. La funzione QTextStream 'out' ha scritto tutti i dati nella 'infoString',
@@ -88,8 +89,8 @@ void AboutDialog::adjustTextEditColor()
     QString hexColor = windowColor.name(); // Esempio: "#202020"
     // 3. Applica QSS per forzare il background-color
     ui->textEditInfo->setStyleSheet(
-         QString("QTextEdit { background-color: %1; }")
-       //QString("QTextEdit { background-color: %1; border: 1px solid %2; }")
+        QString("QTextEdit { background-color: %1; }")
+        //QString("QTextEdit { background-color: %1; border: 1px solid %2; }")
         .arg(hexColor) // Imposta lo sfondo del QTextEdit al colore della finestra
         //.arg(hexColor) // Opzionalmente, rimuove anche il bordo di focus/default
     );
@@ -146,7 +147,7 @@ void AboutDialog::adjustTextEditHeight()
     int frameHeight = ui->textEditInfo->frameWidth() * 2;
     // 4. Calcola l'altezza totale: altezza del testo + margini.
     int newHeight = qRound(textHeight) + frameHeight;
-    qDebug() << "newHeight:" << newHeight;
+    //qDebug() << "newHeight:" << newHeight;
     // 5. Imposta l'altezza desiderata
     ui->textEditInfo->setFixedHeight(newHeight);
     ui->textEditInfo->setMinimumSize(ui->textEditInfo->width() + 10, newHeight);

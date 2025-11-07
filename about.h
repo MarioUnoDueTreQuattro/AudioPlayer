@@ -3,7 +3,8 @@
 
 #include <QDialog>
 
-namespace Ui {
+namespace Ui
+{
 class AboutDialog;
 }
 
@@ -14,11 +15,8 @@ class AboutDialog : public QDialog
 public:
     explicit AboutDialog(QWidget *parent = nullptr);
     ~AboutDialog();
-
     void setupWidgets();
-
     void adjustTextEditColor();
-
 private slots:
     void on_pushButtonOk_clicked();
     void on_pushButtonAboutQt_clicked();
