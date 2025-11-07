@@ -4,26 +4,28 @@
 #include <QDialog>
 
 namespace Ui {
-class about;
+class AboutDialog;
 }
 
-class about : public QDialog
+class AboutDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit about(QWidget *parent = nullptr);
-    ~about();
+    explicit AboutDialog(QWidget *parent = nullptr);
+    ~AboutDialog();
 
     void setupWidgets();
 
+    void adjustTextEditColor();
+
 private slots:
     void on_pushButtonOk_clicked();
-
     void on_pushButtonAboutQt_clicked();
-
+    void adjustTextEditHeight();
 private:
-    Ui::about *ui;
+    Ui::AboutDialog *ui;
+    QString getSystemInformationString();
 };
 
 #endif // ABOUT_H

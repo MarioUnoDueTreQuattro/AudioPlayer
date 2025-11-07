@@ -2686,14 +2686,14 @@ void Widget::setupToolButton()
 
 void Widget::showAbout()
 {
-    about aboutDlg(this) ;
+    AboutDialog aboutDlg(this) ;
     aboutDlg.exec();
 }
 
 
 void Widget::showEvent(QShowEvent *event)
 {
-    LOG_MSG("");
+    //LOG_MSG("");
     if (m_bTablePlaylist && !m_bPlaylistTableWindowHasBeenShown)
     {
         m_playlistView->show();
