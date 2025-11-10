@@ -152,8 +152,7 @@ void PlaylistTable::onTrackFinishedOrStopped(QMediaPlayer::State newState)
 
 void PlaylistTable::setSignalsConnections()
 {
-    connect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
-        this, SLOT(onTrackFinishedOrStopped(QMediaPlayer::State)));
+    connect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(onTrackFinishedOrStopped(QMediaPlayer::State)));
     connect(m_view, &QTableView::customContextMenuRequested, this, &PlaylistTable::showPlaylistContextMenu);
     connect(ui->pushButtonClearFind, &QPushButton::clicked, this, &PlaylistTable::clearSearchHighlight);
     connect(ui->pushButtonPrev, &QPushButton::clicked, this, &PlaylistTable::findPrevious);
@@ -688,8 +687,6 @@ void PlaylistTable::delayedFindInTable()
 
 void PlaylistTable::onHeaderSortChanged(int logicalIndex, Qt::SortOrder order)
 {
-    Q_UNUSED(logicalIndex);
-    Q_UNUSED(order);
     m_iSortCol = logicalIndex;
     m_SortOrder = order;
     //if (m_bHasBeenSorted==false) return;
@@ -1101,6 +1098,7 @@ void PlaylistTable::onTagLoadingFinished()
 // QModelIndex bottomRight = m_model->index(row, 17);
 // emit m_model->dataChanged(topLeft, bottomRight);
 //}
+
 void PlaylistTable::onTagLoaded(const QString &filePath, const AudioTagInfo &info)
 {
     // Check if we have mapping for this file
@@ -1277,6 +1275,8 @@ void PlaylistTable::addTrack(const QString &filePath)
 
 void PlaylistTable::setSectionsResizeMode()
 {
+    // for (int i = 0; i < ColumnIndex::ColumnCount; ++i)
+    // m_view->horizontalHeader()->setSectionResizeMode(i, QHeaderView::ResizeToContents);
     m_view->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     m_view->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_view->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
@@ -2098,6 +2098,7 @@ void PlaylistTable::findInTable(const QString &searchText)
 // LOG_MSG_SHORT("path" << path << "row" << index.row());
 // }
 //}
+
 void PlaylistTable::setRating(const QModelIndex &index, int newRating)
 {
     if (!index.isValid() || newRating < -1)

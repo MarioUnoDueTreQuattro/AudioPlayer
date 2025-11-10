@@ -144,7 +144,7 @@ signals:
 public slots:
     void setCurrentItemIcon(bool);
     void onDoubleClicked(const QModelIndex &index);
-    void onCurrentTrackChanged(int index);
+    void onCurrentTrackChanged(int playlistIndex);
     void onHeaderSortChanged(int logicalIndex, Qt::SortOrder order);
     void setToolButtonWidth(int iWidth);
 protected:
