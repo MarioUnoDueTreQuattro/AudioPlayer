@@ -1,44 +1,42 @@
-#include "about.h"
 #include "widget.h"
+#include "about.h"
+#include "database_manager.h"
 #include "settings.h"
-#include "ui_widget.h"
 #include "settings_manager.h"
+#include "ui_widget.h"
 #include "utility.h"
-#include <QFileInfo>
-#include <QMimeData>
-#include <QDragEnterEvent>
-#include <QDropEvent>
-#include <QUrl>
-#include <QDebug>
-//#include <QSettings>
 #include <QApplication>
-#include <QTime>
-#include <QMessageBox>
-#include <QDir>
-#include <QFileInfoList>
-#include <QDirIterator>
-#include <QRandomGenerator>
-#include <QScreen>
-#include <QGuiApplication>
-#include <QClipboard>
-#include <QFileDialog>
-#include <QMenu>
-#include <QStandardPaths>
-#include <QThread>
-#include <QBuffer>
 #include <QAudioFormat>
 #include <QAudioOutput>
-#include <QStyleFactory>
-#include <QPalette>
-#include <QDirIterator>
-#include <QToolTip>
+#include <QBuffer>
+#include <QClipboard>
+#include <QDebug>
 #include <QDesktopServices>
-#include <QTimer>
-#include <QProcess>
+#include <QDir>
+#include <QDirIterator>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QElapsedTimer>
-#include <windows.h>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QFileInfoList>
+#include <QGuiApplication>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QPalette>
+#include <QProcess>
+#include <QRandomGenerator>
+#include <QScreen>
+#include <QStandardPaths>
+#include <QStyleFactory>
+#include <QThread>
+#include <QTime>
+#include <QTimer>
+#include <QToolTip>
+#include <QUrl>
 #include <shlobj.h>
-#include "database_manager.h"
+#include <windows.h>
 
 //#include <fileref.h>
 //#include <tag.h>
@@ -111,7 +109,7 @@ Widget::Widget(QWidget *parent)
     ui->volumeSlider->setValue(m_lastVolume);
     m_bVolumeFadeDisabled = false;
     if (m_bVolumeFade) m_player->setVolume(0);
-    ui->listWidget -> setAlternatingRowColors(true);
+    ui->listWidget->setAlternatingRowColors(true);
     setSignalsConnections();
     setKeyboardShortcuts();
     // if (m_bTablePlaylist)
@@ -125,7 +123,7 @@ Widget::Widget(QWidget *parent)
 
 void Widget::playlistUpdated(QMediaPlaylist *playlist)
 {
-    LOG_MSG("") ;
+    LOG_MSG("");
     m_playlist = playlist;
     ui->listWidget->clear();
     int iCount = playlist->mediaCount();
@@ -141,7 +139,7 @@ void Widget::playlistUpdated(QMediaPlaylist *playlist)
 
 void Widget::playlistSorted(QMediaPlaylist *playlist)
 {
-    LOG_MSG("") ;
+    LOG_MSG("");
     //m_playlist = playlist;
     //ui->listWidget->clear();
     int iCount = playlist->mediaCount();
@@ -206,7 +204,7 @@ void Widget::handleVolumeUp()
     {
         int iCurVol = ui->volumeSlider->value();
         iCurVol = qBound(0, iCurVol + iDiff, 100);
-        float fVol = float (float(iCurVol) / 100.0f);
+        float fVol = float(float(iCurVol) / 100.0f);
         m_systemVolumeController->setVolume(fVol);
         ui->volumeSlider->setValue(iCurVol);
         ui->volumeLabel->setText(QString::number(iCurVol) + "%");
@@ -227,7 +225,7 @@ void Widget::handleVolumeDown()
     {
         int iCurVol = ui->volumeSlider->value();
         iCurVol = qBound(0, iCurVol + iDiff, 100);
-        float fVol = float (float(iCurVol) / 100.0f);
+        float fVol = float(float(iCurVol) / 100.0f);
         m_systemVolumeController->setVolume(fVol);
         ui->volumeSlider->setValue(iCurVol);
         ui->volumeLabel->setText(QString::number(iCurVol) + "%");
@@ -258,8 +256,10 @@ void Widget::handlePositionBackward()
 void Widget::playlistIsSorting(bool bIsSorting)
 {
     LOG_VAR(bIsSorting);
-    if (bIsSorting) m_bVolumeFadeDisabled = true;
-    else m_bVolumeFadeDisabled = false;
+    if (bIsSorting)
+        m_bVolumeFadeDisabled = true;
+    else
+        m_bVolumeFadeDisabled = false;
 }
 
 void Widget::setSignalsConnections()
@@ -277,7 +277,7 @@ void Widget::setSignalsConnections()
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(handleStopButton()));
     connect(ui->volumeSlider, SIGNAL(valueChanged(int)), this, SLOT(handleVolumeChanged(int)));
     connect(ui->muteButton, SIGNAL(clicked()), this, SLOT(handleMuteButton())); // NEW
-    connect(ui->listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(handleItemDoubleClicked()));
+    connect(ui->listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(handleItemDoubleClicked()));
     connect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(handleMediaStateChanged(QMediaPlayer::State)));
     connect(m_playlist, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePlaylistCurrentIndexChanged(int)));
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(handlePositionChanged(qint64)));
@@ -502,7 +502,7 @@ void Widget::playSilence(int ms)
     // Create an audio output instance
     QAudioOutput *audioOut = new QAudioOutput(format, this);
     // Store buffer pointer in audioOut properties for later cleanup
-    audioOut->setProperty("silenceBuffer", QVariant::fromValue<void*>(buffer));
+    audioOut->setProperty("silenceBuffer", QVariant::fromValue<void *>(buffer));
     // Connect stateChanged signal for this audioOut instance
     connect(audioOut, SIGNAL(stateChanged(QAudio::State)),
         this, SLOT(handleSilenceFinished(QAudio::State)));
@@ -518,7 +518,7 @@ void Widget::handleSilenceFinished(QAudio::State state)
     if (state == QAudio::IdleState || state == QAudio::StoppedState)
     {
         // Retrieve and delete the buffer associated with this audioOut
-        QBuffer *buffer = static_cast<QBuffer *>(audioOut->property("silenceBuffer").value<void*>());
+        QBuffer *buffer = static_cast<QBuffer *>(audioOut->property("silenceBuffer").value<void *>());
         if (buffer)
         {
             buffer->close();
@@ -583,7 +583,7 @@ void Widget::switchVolume()
     if (!m_bSystemVolumeSlider)
     {
         m_bSystemVolumeSlider = true;
-        int iVol = int (m_systemVolumeController->volume() * 100.01f);
+        int iVol = int(m_systemVolumeController->volume() * 100.01f);
         qDebug() << "Current master volume:" << iVol;
         ui->volumeSlider->setValue(iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
@@ -867,7 +867,14 @@ void Widget::dropEvent(QDropEvent *event)
             if (fi.isDir())
             {
                 QDirIterator it(fi.absoluteFilePath(),
-                    QStringList() << "*.mp3" << "*.wav" << "*.m4a" << "*.aac" << "*.opus" << "*.flac" << "*.ogg" << "*.mp2",
+                    QStringList() << "*.mp3"
+                    << "*.wav"
+                    << "*.m4a"
+                    << "*.aac"
+                    << "*.opus"
+                    << "*.flac"
+                    << "*.ogg"
+                    << "*.mp2",
                     QDir::Files,
                     QDirIterator::Subdirectories);
                 while (it.hasNext())
@@ -998,7 +1005,7 @@ void Widget::handlePlay()
 
 void Widget::copyCurrentName()
 {
-    QListWidgetItem* currentItem = ui->listWidget->currentItem();
+    QListWidgetItem *currentItem = ui->listWidget->currentItem();
     if (currentItem)
     {
         QApplication::clipboard()->setText(currentItem->text());
@@ -1133,6 +1140,7 @@ void Widget::handlePlaylistCurrentIndexChangedByTable(int index)
     //handlePlay ();
     m_bUserRequestedPlayback = false;
 }
+
 void Widget::handlePlaylistCurrentIndexChanged(int index)
 {
     qDebug() << __FUNCTION__ << "Index=" << index;
@@ -1307,7 +1315,7 @@ void Widget::loadSettings()
     //QSettings settings(QApplication::organizationName(), QApplication::applicationName());
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     m_bVolumeFade = settingsMgr->value("VolumeFade", true).toBool();
-    m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();;
+    m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();
     m_sTheme = settingsMgr->value("Theme").toString();
     m_sPalette = settingsMgr->value("ThemePalette", "Light").toString();
     setTheme();
@@ -1447,19 +1455,21 @@ void Widget::handleVolumeChanged(int value)
     if (m_bSystemVolumeSlider == false)
     {
         m_lastVolume = value;
-        ui->volumeLabel->setText(QString::number(value) + "%");  // NEW
+        ui->volumeLabel->setText(QString::number(value) + "%"); // NEW
         if (!m_isMuted)
         {
-            if (m_bVolumeFade) musicFader->fadeToTarget(ui->volumeSlider->value(), m_iVolumeFadeTime);
-            else m_player->setVolume(value);
+            if (m_bVolumeFade)
+                musicFader->fadeToTarget(ui->volumeSlider->value(), m_iVolumeFadeTime);
+            else
+                m_player->setVolume(value);
         }
         //QSettings settings;
         settingsMgr->setValue("volume", m_lastVolume);
     }
     else
     {
-        float fVol = float (float(value) / 100.0f);
-        int iVol = int (fVol * 100.01f);
+        float fVol = float(float(value) / 100.0f);
+        int iVol = int(fVol * 100.01f);
         // qDebug() << "Current master volume f:" << fVol;
         // qDebug() << "Current master volume i:" << iVol;
         m_systemVolumeController->setVolume(fVol);
@@ -1494,7 +1504,7 @@ void Widget::handleMuteButton()
         {
             // Unmute
             m_systemVolumeController->mute(false);
-            int iVol = int (m_systemVolumeController->volume() * 100.01f);
+            int iVol = int(m_systemVolumeController->volume() * 100.01f);
             qDebug() << "Current master volume:" << iVol;
             ui->volumeSlider->setValue(iVol);
             ui->volumeLabel->setText(QString::number(iVol) + "%");
@@ -1552,7 +1562,7 @@ void Widget::handleDurationChanged(qint64 duration)
 {
     // qDebug() << __FUNCTION__;
     ui->positionSlider->setMaximum(static_cast<int>(duration));
-    ui->positionSlider-> setSingleStep(ui->positionSlider->maximum() / 100);
+    ui->positionSlider->setSingleStep(ui->positionSlider->maximum() / 100);
     QTime total(0, 0);
     total = total.addMSecs(static_cast<int>(duration));
     ui->timeLabel->setText("00:00 / " + total.toString("mm:ss"));
@@ -1627,7 +1637,7 @@ void Widget::on_nextButton_clicked()
             {
                 newIndex = QRandomGenerator::global()->bounded(count);
             }
-            while (newIndex == currentIndex); // avoid repeating immediately
+            while (newIndex == currentIndex);   // avoid repeating immediately
             m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);
             m_playlist->setCurrentIndex(newIndex);
             m_playlist->setPlaybackMode(currentMode);
@@ -1683,7 +1693,7 @@ void Widget::on_prevButton_clicked()
 
 void Widget::on_configureButton_clicked()
 {
-    Settings settingsDialog;       //=new configureDialog(this);
+    Settings settingsDialog; //=new configureDialog(this);
     connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(settingsDialogAccepted()));
     connect(&settingsDialog, SIGNAL(applyClicked()), this, SLOT(settingsDialogAccepted()));
     // cd.setParent (this);
@@ -1754,7 +1764,7 @@ void Widget::settingsDialogAccepted()
     }
     //m_infoWidget->setStyle (this->style ());
     m_bVolumeFade = settingsMgr->value("VolumeFade", true).toBool();
-    m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();;
+    m_iVolumeFadeTime = settingsMgr->value("VolumeFadeTime", 1000).toInt();
     m_bTablePlaylist = settingsMgr->value("EnhancedPlaylist", true).toBool();
     ui->volumeSlider->updateIndicatorSettings();
 }
@@ -1765,16 +1775,16 @@ void Widget::handleModeButton()
     switch (mode)
     {
         case QMediaPlaylist::CurrentItemOnce:
-            m_playlist->setPlaybackMode(QMediaPlaylist::Sequential);  // Loop All
+            m_playlist->setPlaybackMode(QMediaPlaylist::Sequential); // Loop All
             break;
         case QMediaPlaylist::Sequential:
-            m_playlist->setPlaybackMode(QMediaPlaylist::Loop);  // Loop All
+            m_playlist->setPlaybackMode(QMediaPlaylist::Loop); // Loop All
             break;
         case QMediaPlaylist::Loop:
-            m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop);  // Loop One
+            m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop); // Loop One
             break;
         case QMediaPlaylist::CurrentItemInLoop:
-            m_playlist->setPlaybackMode(QMediaPlaylist::Random);  // Shuffle
+            m_playlist->setPlaybackMode(QMediaPlaylist::Random); // Shuffle
             break;
         case QMediaPlaylist::Random:
             m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemOnce);
@@ -1906,7 +1916,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
         int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
         m_playlist->setCurrentIndex(idx);
         ui->listWidget->setCurrentRow(idx);
-        QListWidgetItem* item = ui->listWidget->item(idx);
+        QListWidgetItem *item = ui->listWidget->item(idx);
         if (item)
             ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
         //ui->listWidget->scrollToItem(ui->listWidget->item(idx), QAbstractItemView::PositionAtCenter);
@@ -1996,13 +2006,13 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
         playlistTableAction->setIcon(QIcon(":/img/img/icons8-playlist_trim-48.png"));
     }
     contextMenu.addSeparator();
-    QAction* searchAction = contextMenu.addAction(tr("Search on Google"));
+    QAction *searchAction = contextMenu.addAction(tr("Search on Google"));
     searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
-    QAction* selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
+    QAction *selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
     selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
-    QAction* copyNameAction = contextMenu.addAction(tr("Copy file name"));
+    QAction *copyNameAction = contextMenu.addAction(tr("Copy file name"));
     copyNameAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_file-48.png"));
-    QAction* copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
+    QAction *copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
     copyFullPathAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_path-48.png"));
     contextMenu.addSeparator();
     QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
@@ -2139,19 +2149,19 @@ void Widget::showModeButtonContextMenu(const QPoint &pos)
     }
     else if (selectedAction == playModeLoopAction)
     {
-        m_playlist->setPlaybackMode(QMediaPlaylist::Loop);  // Loop All
+        m_playlist->setPlaybackMode(QMediaPlaylist::Loop); // Loop All
     }
     else if (selectedAction == playModeCurrentItemLoopAction)
     {
-        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop);  // Loop One
+        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop); // Loop One
     }
     else if (selectedAction == playModeCurrentItemOnceAction)
     {
-        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemOnce);  // Loop One
+        m_playlist->setPlaybackMode(QMediaPlaylist::CurrentItemOnce); // Loop One
     }
     else if (selectedAction == playModeRandomAction)
     {
-        m_playlist->setPlaybackMode(QMediaPlaylist::Random);  // Shuffle
+        m_playlist->setPlaybackMode(QMediaPlaylist::Random); // Shuffle
     }
     updateModeButtonIcon();
     //QSettings settings;
@@ -2181,7 +2191,7 @@ void Widget::showVolumeSliderContextMenu(const QPoint &pos)
         systemVolumeAction->setChecked(true);
         playerVolumeAction->setChecked(false);
         m_bSystemVolumeSlider = true;
-        int iVol = int (m_systemVolumeController->volume() * 100.01f);
+        int iVol = int(m_systemVolumeController->volume() * 100.01f);
         qDebug() << "Current master volume:" << iVol;
         ui->volumeSlider->setValue(iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
@@ -2404,7 +2414,7 @@ void Widget::scrollToCurrentTrack()
     if (currentIndex >= 0 && currentIndex < ui->listWidget->count())
     {
         QListWidgetItem *item = ui->listWidget->item(currentIndex);
-        ui->listWidget->setCurrentRow(currentIndex);  // highlight
+        ui->listWidget->setCurrentRow(currentIndex); // highlight
         ui->listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
     }
 }
@@ -2414,7 +2424,7 @@ void Widget::onSystemVolumeChanged(float newVolume)
     qDebug() << "System volume changed: " << newVolume;
     if (m_bSystemVolumeSlider)
     {
-        int iVol = int (m_systemVolumeController->volume() * 100.01f);
+        int iVol = int(m_systemVolumeController->volume() * 100.01f);
         qDebug() << "Current master volume:" << iVol;
         QSignalBlocker blocker(ui->volumeSlider);
         ui->volumeSlider->setValue(iVol);
@@ -2439,7 +2449,7 @@ void Widget::onDefaultDeviceChanged()
     if (m_player && m_player->state() == QMediaPlayer::PlayingState)
     {
         wasPlaying = true;
-        m_player->pause();  // Stop to release old device
+        m_player->pause(); // Stop to release old device
     }
     // Recreate QAudioOutput or QMediaPlayer
     // delete m_audioOutput;
@@ -2472,7 +2482,7 @@ void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyNam
     if (m_player && m_player->state() == QMediaPlayer::PlayingState)
     {
         wasPlaying = true;
-        m_player->pause();  // Stop to release old device
+        m_player->pause(); // Stop to release old device
     }
     m_systemVolumeController->blockSignals(true);
     m_systemVolumeController->cleanup();
@@ -2491,7 +2501,7 @@ void Widget::openFolderAndSelectFileInExplorer(const QString &filePath)
 {
     // Use Windows Explorer to open and select the file
     QStringList args;
-    args << "/select," ;
+    args << "/select,";
     args << QDir::toNativeSeparators(filePath);
     QProcess::startDetached("explorer.exe", args);
     //QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(filePath));
@@ -2686,7 +2696,7 @@ void Widget::setupToolButton()
 
 void Widget::showAbout()
 {
-    AboutDialog aboutDlg(this) ;
+    AboutDialog aboutDlg(this);
     aboutDlg.exec();
 }
 
