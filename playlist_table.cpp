@@ -3,19 +3,18 @@
 #include "playlist_delegates.h"
 #include "ui_playlist_table.h"
 #include "utility.h"
-#include <QDebug>
-#include <QFileInfo>
-#include <QHeaderView>
-#include <QVBoxLayout>
-//#include <QSettings>
 #include <QApplication>
 #include <QBrush>
+#include <QDebug>
 #include <QDesktopWidget>
+#include <QFileInfo>
+#include <QHeaderView>
 #include <QLineEdit>
 #include <QMenu>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QTimer>
-#include <QMessageBox>
+#include <QVBoxLayout>
 
 //#include "widget.h"
 
@@ -40,7 +39,7 @@ PlaylistTable::PlaylistTable(QMediaPlayer *player, QMediaPlaylist *playlist, QWi
       m_bHasBeenSorted(false),
       m_bSessionPlaylistIsShown(true)
       /*,
-                              m_findCurrentIndex (-1)*/
+                                    m_findCurrentIndex (-1)*/
 {
     qRegisterMetaType<AudioTagInfo>("AudioTagInfo");
     ui->setupUi(this);
@@ -2555,7 +2554,7 @@ void PlaylistTable::on_pushButtonPlaylist_clicked()
 
 void PlaylistTable::setToolButtonWidth(int iWidth)
 {
-ui->toolButton->setFixedWidth(iWidth);
+    ui->toolButton->setFixedWidth(iWidth);
 }
 
 void PlaylistTable::setupToolButton()
