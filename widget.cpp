@@ -1907,6 +1907,8 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
         QFileInfo fi(line);
         if (fi.exists())
             addFileToPlaylist(fi.absoluteFilePath());
+        else
+            qDebug() << "Skipped non-existent file:" << line;
     }
     file.close();
     if (restoreLastTrack && m_playlist->mediaCount() > 0)
@@ -1945,7 +1947,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     setInfoWidgetTitle();
 }
 
-void Widget::savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath)
+void Widget::savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath, bool bExtendedM3U)
 {
     if (path.isEmpty())
         return;
@@ -1955,12 +1957,23 @@ void Widget::savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath)
         QMessageBox::warning(this, tr("Error"), tr("Cannot save playlist: %1").arg(path));
         return;
     }
+    QString sFilePath;
+    QString sTitle;
     QTextStream out(&f);
+    if (bExtendedM3U) out << "#EXTM3U\n";
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
     {
         QUrl url = m_playlist->media(i).canonicalUrl();
         if (url.isLocalFile())
-            out << url.toLocalFile() << "\n";
+        {
+            sFilePath = url.toLocalFile() ;
+            if (bExtendedM3U)
+            {
+                sTitle = QFileInfo(sFilePath).baseName();
+                out << "#EXTINF:-1," << sTitle << "\n";
+            }
+            out << QDir::toNativeSeparators(sFilePath) << "\n";
+        }
     }
     f.close();
     if (bSaveDialogPlaylistPath)
