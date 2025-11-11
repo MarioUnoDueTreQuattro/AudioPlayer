@@ -1,21 +1,24 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
-#include <QWidget>
-#include <QResizeEvent>
-#include <QMediaPlayer>
-#include <QMediaPlaylist>
-#include <QListWidgetItem>
-#include <QStack>
-#include "settings_manager.h"
-#include "system_volume_controller.h"
 #include "audio_fader.h"
-//#include <3rdparty/qhotkey/QHotkey/QHotkey>
 #include "info_widget.h"
 #include "playlist_table.h"
+#include "settings_manager.h"
+#include "system_volume_controller.h"
+#include <QListWidgetItem>
+#include <QMediaPlayer>
+#include <QMediaPlaylist>
+#include <QResizeEvent>
+#include <QStack>
+#include <QWidget>
+//#include <3rdparty/qhotkey/QHotkey/QHotkey>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class Widget; }
+namespace Ui
+{
+class Widget;
+}
 QT_END_NAMESPACE
 
 class Widget : public QWidget
@@ -58,7 +61,7 @@ private slots:
     void onDeviceChanged(const QString &deviceId, const QString &friendlyName);
     void settingsDialogAccepted();
     void handleSilenceFinished(QAudio::State state);
-    void handleModeButton();  // NEW slot
+    void handleModeButton(); // NEW slot
     void updateModeButtonIcon(); // Helper to update icon
     void handlePlayButton();
     void handleStopButton();
@@ -71,9 +74,9 @@ private slots:
     void handlePlaylistCurrentIndexChanged(int index);
     void handleVolumeChanged(int value);
     void handleMuteButton();
-    void handlePositionChanged(qint64 position);  // NEW
-    void handleDurationChanged(qint64 duration);  // NEW
-    void handleSliderMoved(int position);        // NEW
+    void handlePositionChanged(qint64 position); // NEW
+    void handleDurationChanged(qint64 duration); // NEW
+    void handleSliderMoved(int position); // NEW
     void handleMediaError(QMediaPlayer::Error error);
     void updateLastTrackPosition(qint64 position);
     void handlePauseButton();
@@ -132,16 +135,16 @@ private:
     void scrollToCurrentTrack();
     QString m_lastPlaylistPath;
     QString m_lastDialogPlaylistPath;
-    QStack<int> m_shuffleHistory;  // store played indices in shuffle mode
-    int m_lastTrackIndex;     // index of last playing track
+    QStack<int> m_shuffleHistory; // store played indices in shuffle mode
+    int m_lastTrackIndex; // index of last playing track
     qint64 m_lastTrackPosition; // position in milliseconds
-    int m_lastVolume;                       // remember last non-mute volume
+    int m_lastVolume; // remember last non-mute volume
     bool m_isMuted;
     void addFileToPlaylist(const QString &filePath);
     void loadPlaylistFile(const QString &path, bool restoreLastTrack = true, bool savePlaylist = false);
-    void savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath = true, bool bExtendedM3U = true);
+    void savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath = true, bool bExtendedM3U = false);
     void savePlaylist();
-    void loadSettings();                    // <--- NEW
+    void loadSettings();
     void saveSettings();
     void updateMuteButtonIcon();
     Ui::Widget *ui;

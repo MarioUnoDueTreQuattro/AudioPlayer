@@ -993,8 +993,11 @@ void Widget::handlePlay()
         else
         {
             if (m_infoWidget == nullptr) m_infoWidget = new InfoWidget();
-            m_infoWidget->raise();
-            m_infoWidget->show();
+            if (isVisible() && !isMinimized())
+            {
+                m_infoWidget->raise();
+                m_infoWidget->show();
+            }
         }
     }
     else
