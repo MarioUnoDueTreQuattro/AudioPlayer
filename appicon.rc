@@ -1,4 +1,5 @@
 #include <windows.h>
+#pragma code_page(1252)
 
 IDI_ICON1 ICON "icons8-play-96.ico"
 

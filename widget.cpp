@@ -30,6 +30,7 @@
 #include <QScreen>
 #include <QStandardPaths>
 #include <QStyleFactory>
+#include <QTextCodec>
 #include <QThread>
 #include <QTime>
 #include <QTimer>
@@ -1898,12 +1899,14 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
     QTextStream in(&file);
+    in.setCodec(QTextCodec::codecForName("UTF-8"));
     m_shuffleHistory.clear(); // no history needed
     m_playlistPaths.clear();
     if (m_bTablePlaylist && m_playlistView != nullptr) m_playlistView->clear();
     ui->listWidget->clear();
     ui->listWidget->viewport()->update();
-    if (!m_playlist->isEmpty()) m_playlist->clear();
+    bool bEmptyPlaylist = m_playlist->isEmpty();
+    if (!bEmptyPlaylist) m_playlist->clear();
     while (!in.atEnd())
     {
         QString line = in.readLine().trimmed();
@@ -1965,6 +1968,7 @@ void Widget::savePlaylistFile(const QString &path, bool bSaveDialogPlaylistPath,
     QString sFilePath;
     QString sTitle;
     QTextStream out(&f);
+    out.setCodec(QTextCodec::codecForName("UTF-8"));
     if (bExtendedM3U) out << "#EXTM3U\n";
     for (int i = 0; i < m_playlist->mediaCount(); ++i)
     {
