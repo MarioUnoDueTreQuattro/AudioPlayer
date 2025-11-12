@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>306</width>
-    <height>484</height>
+    <height>475</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -331,6 +331,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="checkBoxConfirmClear">
+         <property name="text">
+          <string>Confirm playlist clear</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QGroupBox" name="groupBox">
          <property name="title">
           <string>Fade</string>
@@ -527,7 +534,7 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>119</height>
+           <height>2</height>
           </size>
          </property>
         </spacer>
@@ -535,22 +542,6 @@
       </layout>
      </widget>
     </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>2</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">

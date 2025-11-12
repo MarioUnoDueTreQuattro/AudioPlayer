@@ -175,6 +175,7 @@ void Settings::saveSettings()
     settingsMgr->setValue("VolumeFadeIndicatorRadius", ui->spinBoxFadeRadius->value());
     settingsMgr->setValue("VolumeFadeIndicatorTransparency", ui->spinBoxFadeTransparency->value());
     settingsMgr->setValue("VolumeFadeIndicatorColor", m_FadeIndicatorColor.name());
+    settingsMgr->setValue("ConfirmClearPlaylist", ui->checkBoxConfirmClear->isChecked());
     settingsMgr->sync();
 }
 
@@ -257,7 +258,7 @@ void Settings::loadSettings()
     ui->tabWidget->setCurrentIndex(iTab);
     bool bIndicatorFade = settingsMgr->value("VolumeFadeIndicator", true).toBool();
     ui->checkBoxFadeIndicator->setChecked(bIndicatorFade);
-    ui->spinBoxFadeRadius->setValue (settingsMgr->value("VolumeFadeIndicatorRadius", 5).toInt());
+    ui->spinBoxFadeRadius->setValue(settingsMgr->value("VolumeFadeIndicatorRadius", 5).toInt());
     ui->spinBoxFadeTransparency->setValue(settingsMgr->value("VolumeFadeIndicatorTransparency", 50).toInt());
     colorName = settingsMgr->value("VolumeFadeIndicatorColor", "#0370C8").toString();
     m_FadeIndicatorColor = QColor(colorName);
@@ -265,6 +266,8 @@ void Settings::loadSettings()
     palette.setColor(QPalette::Button, m_FadeIndicatorColor);
     ui->pushButtonFadeColor->setAutoFillBackground(true);
     ui->pushButtonFadeColor->setPalette(palette);
+    bool bConfirmClear = settingsMgr->value("ConfirmClearPlaylist", true).toBool();
+    ui->checkBoxConfirmClear->setChecked(bConfirmClear);
 }
 
 void Settings::on_pushButtonPlayedTextColor_clicked()
@@ -385,8 +388,8 @@ void Settings::on_pushButtonFadeColor_clicked()
 void Settings::on_pushButtonResetFade_clicked()
 {
     ui->spinBoxFade->setValue(1000);
-    ui->checkBoxFade->setChecked (true);
-    ui->checkBoxFadeIndicator->setChecked (true);
+    ui->checkBoxFade->setChecked(true);
+    ui->checkBoxFadeIndicator->setChecked(true);
     ui->spinBoxFadeRadius->setValue(5);
     ui->spinBoxFadeTransparency->setValue(50);
     ui->pushButtonFadeColor->setPalette(QColor(3, 112, 200));

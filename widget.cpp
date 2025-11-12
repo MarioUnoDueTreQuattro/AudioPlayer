@@ -993,7 +993,7 @@ void Widget::handlePlay()
         else
         {
             if (m_infoWidget == nullptr) m_infoWidget = new InfoWidget();
-            if (isVisible() && !isMinimized())
+            if (!isMinimized())
             {
                 m_infoWidget->raise();
                 m_infoWidget->show();
@@ -1222,7 +1222,8 @@ void Widget::handleClearPlaylist()
 
 void Widget::clearPlaylist(bool silent)
 {
-    if (!silent)
+    bool bConfirmClear = settingsMgr->value("ConfirmClearPlaylist", true).toBool();
+    if (!silent && bConfirmClear)
     {
         // Ask for confirmation before clearing the playlist
         QMessageBox::StandardButton reply;
@@ -1853,6 +1854,7 @@ void Widget::handleLoadPlaylist()
     m_lastPlaylistPath = fileName;
     m_lastDialogPlaylistPath = fileName;
     settingsMgr->setValue("lastDialogPlaylistPath", m_lastDialogPlaylistPath);
+    //m_player->stop();
     QApplication::setOverrideCursor(Qt::WaitCursor);
     loadPlaylistFile(fileName, false, true);
     QApplication::restoreOverrideCursor();
