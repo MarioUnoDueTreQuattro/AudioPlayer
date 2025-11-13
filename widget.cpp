@@ -1,6 +1,7 @@
 #include "widget.h"
 #include "about.h"
 #include "database_manager.h"
+#include "playlist_helper.h"
 #include "settings.h"
 #include "settings_manager.h"
 #include "ui_widget.h"
@@ -564,7 +565,8 @@ void Widget::focusInEvent(QFocusEvent *event)
     QWidget::focusInEvent(event);
 }
 
-void Widget::openGoogleSearch(const QString &text)
+/*
+  void Widget::openGoogleSearch(const QString &text)
 {
     // Percent-encode the query text
     const QByteArray encodedQuery = QUrl::toPercentEncoding(text);
@@ -577,6 +579,7 @@ void Widget::openGoogleSearch(const QString &text)
         qWarning() << "Failed to open URL:" << searchUrl.toString();
     }
 }
+*/
 
 void Widget::switchVolume()
 {
@@ -1007,7 +1010,8 @@ void Widget::handlePlay()
     }
 }
 
-void Widget::copyCurrentName()
+/*
+  void Widget::copyCurrentName()
 {
     QListWidgetItem *currentItem = ui->listWidget->currentItem();
     if (currentItem)
@@ -1019,8 +1023,10 @@ void Widget::copyCurrentName()
         qDebug() << "No item selected for copying.";
     }
 }
+*/
 
-void Widget::copyCurrentFullPath()
+/*
+  void Widget::copyCurrentFullPath()
 {
     QString sCurrentQUrl = m_playlist->media(ui->listWidget->currentRow()).canonicalUrl().toLocalFile();
     if (sCurrentQUrl.isEmpty() == false)
@@ -1033,6 +1039,7 @@ void Widget::copyCurrentFullPath()
         qDebug() << "No item selected for copying.";
     }
 }
+*/
 
 void Widget::handleItemDoubleClicked()
 {
@@ -2077,11 +2084,14 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
     }
     else if (selectedAction == copyNameAction)
     {
-        copyCurrentName();
+        PlaylistHelper::copyCurrentName(ui->listWidget);
+        // copyCurrentName();
     }
     else if (selectedAction == copyFullPathAction)
     {
-        copyCurrentFullPath();
+        //QString sFullPath=PlaylistHelper::getCurrentFullPath(m_playlist,ui->listWidget);
+        PlaylistHelper::copyCurrentFullPath(m_playlist, ui->listWidget);
+        // copyCurrentFullPath();
     }
     else if (selectedAction == loadAction)
     {
@@ -2108,7 +2118,8 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
         QString sTrackWithoutExtension = ui->listWidget->currentItem()->text();
         QFileInfo info(sTrackWithoutExtension);
         sTrackWithoutExtension = info.completeBaseName();
-        openGoogleSearch(sTrackWithoutExtension);
+        // openGoogleSearch(sTrackWithoutExtension);
+        PlaylistHelper::openGoogleSearch(sTrackWithoutExtension);
     }
     else if (selectedAction == selectInExplorerAction)
     {
@@ -2129,7 +2140,8 @@ void Widget::showPlaylistContextMenu(const QPoint &pos)
         }
         QString localFile = mediaUrl.toLocalFile();
         // openFolderAndSelectFileInExplorer (localFile);
-        openFolderAndSelectFileEx(localFile);
+        //openFolderAndSelectFileEx(localFile);
+        PlaylistHelper::openFolderAndSelectFileEx(localFile);
     }
 }
 
@@ -2529,7 +2541,8 @@ void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyNam
     onSystemVolumeChanged(m_systemVolumeController->volume());
 }
 
-void Widget::openFolderAndSelectFileInExplorer(const QString &filePath)
+/*
+  void Widget::openFolderAndSelectFileInExplorer(const QString &filePath)
 {
     // Use Windows Explorer to open and select the file
     QStringList args;
@@ -2538,8 +2551,10 @@ void Widget::openFolderAndSelectFileInExplorer(const QString &filePath)
     QProcess::startDetached("explorer.exe", args);
     //QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(filePath));
 }
+*/
 
-void Widget::openFolderAndSelectFile(const QString &filePath)
+/*
+  void Widget::openFolderAndSelectFile(const QString &filePath)
 {
     //    // Use Windows Explorer to open and select the file
     // QStringList args;
@@ -2615,6 +2630,7 @@ void Widget::openFolderAndSelectFile(const QString &filePath)
         qDebug() << "Failed to parse path:" << nativePath;
     }
 }
+*/
 
 /*
  * Opens the folder containing the given file in the user's default file manager
@@ -2626,7 +2642,8 @@ void Widget::openFolderAndSelectFile(const QString &filePath)
  * - If the file or folder cannot be resolved, still opens the folder.
  * - Safe for Windows 7 32-bit and Qt5.
  */
-void Widget::openFolderAndSelectFileEx(const QString &filePath)
+/*
+  void Widget::openFolderAndSelectFileEx(const QString &filePath)
 {
     QFileInfo fi(filePath);
     if (!fi.exists())
@@ -2688,6 +2705,7 @@ void Widget::openFolderAndSelectFileEx(const QString &filePath)
         QProcess::startDetached("explorer.exe", QStringList() << QDir::toNativeSeparators(folderPath));
     }
 }
+*/
 
 void Widget::on_pushButtonResetFilter_clicked()
 {

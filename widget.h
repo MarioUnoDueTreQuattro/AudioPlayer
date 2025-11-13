@@ -46,10 +46,10 @@ private slots:
     void playlistTableWindowClosed();
     void infoWindowFocusReceived();
     void infoWindowClosed();
-    void openGoogleSearch(const QString &text);
-    void openFolderAndSelectFile(const QString &filePath);
-    void openFolderAndSelectFileEx(const QString &filePath);
-    void openFolderAndSelectFileInExplorer(const QString &filePath);
+//    void openGoogleSearch(const QString &text);
+//    void openFolderAndSelectFile(const QString &filePath);
+//    void openFolderAndSelectFileEx(const QString &filePath);
+//    void openFolderAndSelectFileInExplorer(const QString &filePath);
     void switchVolume();
     void handleVolumeUp();
     void handleVolumeDown();
@@ -106,8 +106,8 @@ private:
     int findTrackIndex(const QString &filePath);
     void forgetPlayed();
     void handlePlay();
-    void copyCurrentName();
-    void copyCurrentFullPath();
+//    void copyCurrentName();
+//    void copyCurrentFullPath();
     void setKeyboardShortcuts();
     void setSignalsConnections();
     SettingsManager *settingsMgr;
