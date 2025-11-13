@@ -1059,7 +1059,7 @@ void Widget::handleItemDoubleClicked()
 
 void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 {
-    bool b_Debug = false;
+    bool b_Debug = true;
     if (b_Debug) qDebug() << __FUNCTION__ << "Line:" << __LINE__ << state;
     switch (state)
     {
@@ -1093,7 +1093,7 @@ void Widget::handleMediaStateChanged(QMediaPlayer::State state)
 
 void Widget::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
-    bool b_Debug = false;
+    bool b_Debug = true;
     // qDebug() << __FUNCTION__ << "Line:" << __LINE__ << status;
     if (b_Debug) LOG_MSG_SHORT(status);
     switch (status)
@@ -1247,7 +1247,8 @@ void Widget::clearPlaylist(bool silent)
     // m_playlist = new QMediaPlaylist(this);
     // m_player->setPlaylist(m_playlist);
     m_playedList.clear();
-    m_playlist->clear(); // new empty playlist is safe
+    // m_playlist->clear(); // new empty playlist is safe
+    // m_bPlaylistCleaned = true;
     m_shuffleHistory.clear(); // no history needed
     ui->listWidget->clear();
     if (m_bTablePlaylist && m_playlistView != nullptr) m_playlistView->clear();
@@ -1594,7 +1595,7 @@ void Widget::handleSliderMoved(int position)
 
 void Widget::handleMediaError(QMediaPlayer::Error error)
 {
-    // qDebug() << __FUNCTION__;
+    qDebug() << __FUNCTION__;
     QString errorText;
     switch (error)
     {
@@ -1865,7 +1866,8 @@ void Widget::handleLoadPlaylist()
         if (m_bAutoplay)
         {
             m_playlist->setCurrentIndex(0);
-            m_player->play();
+            handlePlay();
+            //m_player->play();
         }
     }
     //savePlaylist ();
@@ -1905,8 +1907,13 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     if (m_bTablePlaylist && m_playlistView != nullptr) m_playlistView->clear();
     ui->listWidget->clear();
     ui->listWidget->viewport()->update();
-    bool bEmptyPlaylist = m_playlist->isEmpty();
-    if (!bEmptyPlaylist) m_playlist->clear();
+    if (m_playlist->mediaCount() > 0)
+    {
+        m_playlist->clear();
+        // LOG_MSG_SHORT("m_playlist->mediaCount() > 0 - Cleaned");
+        // LOG_MSG_SHORT("m_playlist->mediaCount() =" << m_playlist->mediaCount());
+    }
+    m_playlistView->blockSignals(true);
     while (!in.atEnd())
     {
         QString line = in.readLine().trimmed();
@@ -1919,8 +1926,10 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
             qDebug() << "Skipped non-existent file:" << line;
     }
     file.close();
+    m_playlistView->blockSignals(false);
     if (restoreLastTrack && m_playlist->mediaCount() > 0)
     {
+        // LOG_MSG("restoreLastTrack && m_playlist->mediaCount() > 0");
         // Restore last track index safely
         //ui->listWidget->blockSignals(true);
         int idx = qBound(0, m_lastTrackIndex, m_playlist->mediaCount() - 1);
@@ -1936,6 +1945,7 @@ void Widget::loadPlaylistFile(const QString &filePath, bool restoreLastTrack, bo
     }
     else
     {
+        // LOG_MSG("NOT restoreLastTrack && m_playlist->mediaCount() > 0");
         m_lastTrackIndex = -1;
         m_lastTrackPosition = 0;
     }
