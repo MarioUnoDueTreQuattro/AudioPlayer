@@ -20,6 +20,7 @@ SOURCES += \
     info_widget.cpp \
     main.cpp \
     playlist_delegates.cpp \
+    playlist_helper.cpp \
     playlist_sortmodel.cpp \
     playlist_table.cpp \
     settings.cpp \
@@ -45,6 +46,7 @@ HEADERS += \
     database_manager.h \
     info_widget.h \
     playlist_delegates.h \
+    playlist_helper.h \
     playlist_sortmodel.h \
     playlist_table.h \
     settings.h \
