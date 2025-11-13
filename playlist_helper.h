@@ -23,6 +23,8 @@ public:
     static void copyCurrentName(QTableView *tableView);
     static void copyCurrentFullPath(QMediaPlaylist *playlist, QListWidget *listWidget);
     static void copyCurrentFullPath(QMediaPlaylist *playlist, QTableView *tableView);
+    static QString getCurrentFullPath(QTableView *tableView);
+    static QString getCurrentFullPath(QMediaPlaylist *playlist, QListWidget *listWidget);
 private:
     PlaylistHelper(); // Private constructor - utility class, no instances
 };

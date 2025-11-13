@@ -13,6 +13,45 @@
     #include <QDesktopServices>
 #endif
 
+QString PlaylistHelper::getCurrentFullPath(QTableView *tableView)
+{
+    QModelIndex currentIndex = tableView->currentIndex();
+    if (currentIndex.isValid())
+    {
+        // Get full path from UserRole + 1
+        QString fullPath = tableView->model()->data(currentIndex, Qt::UserRole + 1).toString();
+        if (!fullPath.isEmpty())
+        {
+            return fullPath;
+        }
+        else
+        {
+            qDebug() << "Selected cell has no file path";
+            return QString();
+        }
+    }
+    else
+    {
+        qDebug() << "No item selected for searching.";
+        return QString();
+    }
+}
+
+QString PlaylistHelper::getCurrentFullPath(QMediaPlaylist *playlist, QListWidget *listWidget)
+{
+    QString sCurrentQUrl = playlist->media(listWidget->currentRow()).canonicalUrl().toLocalFile();
+    if (sCurrentQUrl.isEmpty() == false)
+    {
+        sCurrentQUrl = QDir::toNativeSeparators(sCurrentQUrl);
+        return sCurrentQUrl;
+    }
+    else
+    {
+        qDebug() << "No item selected for copying.";
+        return QString();
+    }
+}
+
 void PlaylistHelper::copyCurrentName(QListWidget *playlist)
 {
     QListWidgetItem *currentItem = playlist->currentItem();

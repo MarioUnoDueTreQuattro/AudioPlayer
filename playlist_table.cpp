@@ -1,6 +1,7 @@
 #include "playlist_table.h"
 #include "database_manager.h"
 #include "playlist_delegates.h"
+#include "playlist_helper.h"
 #include "ui_playlist_table.h"
 #include "utility.h"
 #include <QApplication>
@@ -2187,15 +2188,15 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
     // playlistTableAction = contextMenu.addAction(tr("Show playlist table"));
     // playlistTableAction->setIcon(QIcon(":/img/img/icons8-playlist_trim-48.png"));
     // }
-    // contextMenu.addSeparator();
-    // QAction *searchAction = contextMenu.addAction(tr("Search on Google"));
-    // searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
-    // QAction *selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
-    // selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
-    // QAction *copyNameAction = contextMenu.addAction(tr("Copy file name"));
-    // copyNameAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_file-48.png"));
-    // QAction *copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
-    // copyFullPathAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_path-48.png"));
+    contextMenu.addSeparator();
+    QAction *searchAction = contextMenu.addAction(tr("Search on Google"));
+    searchAction->setIcon(QIcon(":/img/img/icons8-google-48.png"));
+    QAction *selectInExplorerAction = contextMenu.addAction(tr("Select in file manager"));
+    selectInExplorerAction->setIcon(QIcon(":/img/img/Folder_audio.png"));
+    QAction *copyNameAction = contextMenu.addAction(tr("Copy file name"));
+    copyNameAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_file-48.png"));
+    QAction *copyFullPathAction = contextMenu.addAction(tr("Copy full pathname"));
+    copyFullPathAction->setIcon(QIcon(":/img/img/icons8-copy-to-clipboard_path-48.png"));
     // contextMenu.addSeparator();
     // QAction *loadAction = contextMenu.addAction(tr("Load playlist"));
     // QAction *saveAction = contextMenu.addAction(tr("Save playlist"));
@@ -2214,6 +2215,26 @@ void PlaylistTable::showPlaylistContextMenu(const QPoint &pos)
             QModelIndex proxyIndex = m_sortModel->index(mapSourceRowToProxy(m_model, m_sortModel, m_CurrentItem->row()), 0);
             m_view->scrollTo(proxyIndex, QAbstractItemView::PositionAtCenter); //EnsureVisible);
         }
+    }
+    else if (selectedAction == searchAction)
+    {
+        QString sFullPath = PlaylistHelper::getCurrentFullPath(m_view);
+        QFileInfo fi(sFullPath);
+        QString searchString = fi.baseName(); // Complete filename with extension
+        if (!searchString.isNull()) PlaylistHelper::openGoogleSearch(searchString);
+    }
+    else if (selectedAction == selectInExplorerAction)
+    {
+        QString sFullPath = PlaylistHelper::getCurrentFullPath(m_view);
+        if (!sFullPath.isNull()) PlaylistHelper::openFolderAndSelectFileEx(sFullPath);
+    }
+    else if (selectedAction == copyNameAction)
+    {
+        PlaylistHelper::copyCurrentName(m_view);
+    }
+    else if (selectedAction == copyFullPathAction)
+    {
+        PlaylistHelper::copyCurrentFullPath(m_playlist, m_view);
     }
     else if (selectedAction == ratingRemoveAction)
     {
